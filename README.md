@@ -1,2 +1,2 @@
-# ![icons8-lótus-48](https://github.com/user-attachments/assets/e8e2d37b-f0ad-46c8-ad89-8aace762417f) lotus
+# ![icons8-lótus-96](https://github.com/user-attachments/assets/63c1c8cc-552d-42e0-9a39-bd4e73059f6f) Lotus Engine
 
