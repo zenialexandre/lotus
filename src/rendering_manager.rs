@@ -41,11 +41,13 @@ pub(crate) struct State {
     queue: Queue,
     surface_configuration: SurfaceConfiguration,
     pub(crate) physical_size: PhysicalSize<u32>,
+    color: Color,
     window: Arc<Window>
 }
 
 impl State {
     pub(crate) async fn new(window: Arc<Window>) -> State {
+        let color: Color = Color::WHITE;
         let physical_size: PhysicalSize<u32> = window.inner_size();
         let instance: Instance = Instance::new(&InstanceDescriptor{
             backends: Backends::PRIMARY,
@@ -93,6 +95,7 @@ impl State {
             queue,
             surface_configuration,
             physical_size,
+            color,
             window
         };
     }
@@ -110,8 +113,20 @@ impl State {
         }
     }
 
-    pub(crate) fn input(&mut self, event: &WindowEvent) -> bool {
-        return false;
+    pub(crate) fn input(&mut self, window_event: &WindowEvent) -> bool {
+        match window_event {
+            WindowEvent::CursorMoved { device_id: _, position } => {
+                let color: Color = Color {
+                    r: position.x / self.physical_size.width as f64,
+                    g: position.y / self.physical_size.height as f64,
+                    b: 0.1,
+                    a: 1.0
+                };
+                self.color = color;
+                return true;
+            },
+            _ =>  { return false; }
+        }
     }
 
     pub(crate) fn update(&mut self) {
@@ -132,12 +147,14 @@ impl State {
                     view: &texture_view,
                     resolve_target: None,
                     ops: Operations {
+                        /*
                         load: LoadOp::Clear(Color {
                             r: 0.1,
                             g: 0.2,
                             b: 0.3,
                             a: 1.0
-                        }),
+                        })*/
+                        load: LoadOp::Clear(self.color),
                         store: StoreOp::Store
                     },
                 })],

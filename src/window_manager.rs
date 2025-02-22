@@ -33,38 +33,40 @@ impl ApplicationHandler for Application {
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
         if let Some(state) = &mut self.state {
-            match window_event {
-                WindowEvent::CloseRequested => {
-                    println!("Close button pressed.");
-                    event_loop.exit();
-                },
-                WindowEvent::Resized(new_size) => {
-                    state.resize(new_size);
-                }
-                WindowEvent::RedrawRequested => {
-                    state.window().request_redraw();
-                    state.update();
+            if !state.input(&window_event) {
+                match window_event {
+                    WindowEvent::CloseRequested => {
+                        println!("Close button pressed.");
+                        event_loop.exit();
+                    },
+                    WindowEvent::Resized(new_size) => {
+                        state.resize(new_size);
+                    }
+                    WindowEvent::RedrawRequested => {
+                        state.window().request_redraw();
+                        state.update();
 
-                    match state.render() {
-                        Ok(_) => {}
+                        match state.render() {
+                            Ok(_) => {}
 
-                        Err(
-                            SurfaceError::Lost | SurfaceError::Outdated
-                        ) => state.resize(state.physical_size),
+                            Err(
+                                SurfaceError::Lost | SurfaceError::Outdated
+                            ) => state.resize(state.physical_size),
 
-                        Err(
-                            SurfaceError::OutOfMemory | SurfaceError::Other
-                        ) => {
-                            log::error!("Application OOMKilled.");
-                            event_loop.exit();
-                        }
+                            Err(
+                                SurfaceError::OutOfMemory | SurfaceError::Other
+                            ) => {
+                                log::error!("Application OOMKilled.");
+                                event_loop.exit();
+                            }
 
-                        Err(SurfaceError::Timeout) => {
-                            log::warn!("Surface Timeout.")
+                            Err(SurfaceError::Timeout) => {
+                                log::warn!("Surface Timeout.")
+                            }
                         }
                     }
+                    _ => ()
                 }
-                _ => ()
             }
         }
     }
