@@ -5,6 +5,7 @@ use winit::{
 };
 use wgpu::{
     include_wgsl,
+    vertex_attr_array,
     Adapter,
     Backends,
     Color,
@@ -43,6 +44,11 @@ use wgpu::{
     PipelineLayout,
     PipelineCompilationOptions,
     VertexState,
+    VertexStepMode,
+    VertexBufferLayout,
+    VertexAttribute,
+    VertexFormat,
+    BufferAddress,
     FragmentState,
     PrimitiveState,
     PrimitiveTopology,
@@ -83,6 +89,18 @@ const VERTICES: &[Vertex] = &[
     Vertex { position: [-0.5, -0.5, 0.0], color: [0.0, 1.0, 0.0] },
     Vertex { position: [0.5, -0.5, 0.0], color: [0.0, 0.0, 1.0] }
 ];
+
+impl Vertex {
+    const VERTEX_ATTRIBUTES: [VertexAttribute; 2] = vertex_attr_array![0 => Float32x3, 1 => Float32x3];
+
+    fn descriptor() -> VertexBufferLayout<'static> {
+        return VertexBufferLayout {
+            array_stride: std::mem::size_of::<Self>() as BufferAddress,
+            step_mode: VertexStepMode::Vertex,
+            attributes: &Self::VERTEX_ATTRIBUTES
+        };
+    }
+}
 
 impl State {
     pub(crate) async fn new(window: Arc<Window>) -> State {
@@ -169,7 +187,10 @@ impl State {
                 alpha_to_coverage_enabled: false
             },
             multiview: None,
-            cache: None
+            cache: None,
+            vertex: VertexState {
+                buffers: &[Vertex::descriptor()]
+            }
         });
 
         let vertex_buffer: Buffer = device.create_buffer_init(&BufferInitDescriptor {
