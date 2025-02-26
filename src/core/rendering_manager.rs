@@ -47,7 +47,6 @@ use wgpu::{
     VertexStepMode,
     VertexBufferLayout,
     VertexAttribute,
-    VertexFormat,
     BufferAddress,
     FragmentState,
     PrimitiveState,
@@ -58,6 +57,18 @@ use wgpu::{
     MultisampleState,
     Buffer,
     BufferUsages,
+    IndexFormat,
+    TextureSampleType,
+    SamplerBindingType,
+    BindGroup,
+    BindGroupDescriptor,
+    BindGroupEntry,
+    BindingType,
+    BindGroupLayoutDescriptor,
+    BindGroupLayout,
+    BindGroupLayoutEntry,
+    BindingResource,
+    ShaderStages,
     util::{
         BufferInitDescriptor,
         DeviceExt
@@ -65,11 +76,13 @@ use wgpu::{
 };
 use std::sync::Arc;
 
+use super::texture;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct Vertex {
     position: [f32; 3],
-    color: [f32; 3]
+    texture_coordinates: [f32; 2]
 }
 
 pub(crate) struct State {
@@ -81,17 +94,29 @@ pub(crate) struct State {
     color: Color,
     window: Arc<Window>,
     render_pipeline: RenderPipeline,
-    vertex_buffer: Buffer
+    vertex_buffer: Buffer,
+    index_buffer: Buffer,
+    num_indices: u32,
+    diffuse_bind_group: BindGroup,
+    diffuse_texture: texture::Texture
 }
 
 const VERTICES: &[Vertex] = &[
-    Vertex { position: [0.0, 0.5, 0.0], color: [1.0, 0.0, 0.0] },
-    Vertex { position: [-0.5, -0.5, 0.0], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [0.5, -0.5, 0.0], color: [0.0, 0.0, 1.0] }
+    Vertex { position: [-0.0868241, 0.49240386, 0.0], texture_coordinates: [0.4131759, 0.00759614], }, // A
+    Vertex { position: [-0.49513406, 0.06958647, 0.0], texture_coordinates: [0.0048659444, 0.43041354], }, // B
+    Vertex { position: [-0.21918549, -0.44939706, 0.0], texture_coordinates: [0.28081453, 0.949397], }, // C
+    Vertex { position: [0.35966998, -0.3473291, 0.0], texture_coordinates: [0.85967, 0.84732914], }, // D
+    Vertex { position: [0.44147372, 0.2347359, 0.0], texture_coordinates: [0.9414737, 0.2652641], }, // E
+];
+
+const INDICES: &[u16] = &[
+    0, 1, 4,
+    1, 2, 4,
+    2, 3, 4
 ];
 
 impl Vertex {
-    const VERTEX_ATTRIBUTES: [VertexAttribute; 2] = vertex_attr_array![0 => Float32x3, 1 => Float32x3];
+    const VERTEX_ATTRIBUTES: [VertexAttribute; 2] = vertex_attr_array![0 => Float32x3, 1 => Float32x2];
 
     fn descriptor() -> VertexBufferLayout<'static> {
         return VertexBufferLayout {
@@ -146,10 +171,51 @@ impl State {
             desired_maximum_frame_latency: 2
         };
 
-        let shader_module: ShaderModule = device.create_shader_module(include_wgsl!("shader.wgsl"));
+        let diffuse_bytes = include_bytes!("../../assets/textures/happy_tree_test.png");
+        let diffuse_texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "happy_tree_test.png").unwrap();
+
+        let texture_bind_group_layout: BindGroupLayout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("texture_bind_group_layout"),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: TextureSampleType::Float {
+                            filterable: true
+                        }
+                    },
+                    count: None
+                },
+                BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                    count: None
+                },
+            ]
+        });
+        let diffuse_bind_group: BindGroup = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("diffuse_bind_group"),
+            layout: &texture_bind_group_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(&diffuse_texture.texture_view)
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(&diffuse_texture.sampler)
+                }
+            ]
+        });
+
+        let shader_module: ShaderModule = device.create_shader_module(include_wgsl!("../../assets/shaders/shader.wgsl"));
         let render_pipeline_layout: PipelineLayout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[],
+            bind_group_layouts: &[&texture_bind_group_layout],
             push_constant_ranges: &[]
         });
         let render_pipeline: RenderPipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
@@ -158,7 +224,7 @@ impl State {
             vertex: VertexState {
                 module: &shader_module,
                 entry_point: Some("vs_main"),
-                buffers: &[],
+                buffers: &[Vertex::descriptor()],
                 compilation_options: PipelineCompilationOptions::default()
             },
             fragment: Some(FragmentState {
@@ -187,10 +253,7 @@ impl State {
                 alpha_to_coverage_enabled: false
             },
             multiview: None,
-            cache: None,
-            vertex: VertexState {
-                buffers: &[Vertex::descriptor()]
-            }
+            cache: None
         });
 
         let vertex_buffer: Buffer = device.create_buffer_init(&BufferInitDescriptor {
@@ -198,6 +261,13 @@ impl State {
             contents: bytemuck::cast_slice(VERTICES),
             usage: BufferUsages::VERTEX
         });
+        let index_buffer: Buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(INDICES),
+            usage: BufferUsages::INDEX
+        });
+
+        let num_indices: u32 = INDICES.len() as u32;
 
         return Self {
             surface,
@@ -208,7 +278,11 @@ impl State {
             color,
             window,
             render_pipeline,
-            vertex_buffer
+            vertex_buffer,
+            index_buffer,
+            num_indices,
+            diffuse_bind_group,
+            diffuse_texture
         };
     }
 
@@ -275,7 +349,10 @@ impl State {
                 timestamp_writes: None
             });
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..3, 0..1);
+            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.index_buffer.slice(..), IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
         self.queue.submit(std::iter::once(command_encoder.finish()));
         surface_texture.present();

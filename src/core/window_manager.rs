@@ -14,7 +14,7 @@ use winit::{
 };
 use std::sync::Arc;
 
-use crate::rendering_manager::State;
+use super::rendering_manager::State;
 
 #[derive(Default)]
 struct Application {
@@ -72,7 +72,7 @@ impl ApplicationHandler for Application {
     }
 }
 
-pub(crate) async fn open_default_window() {
+pub async fn open_default_window() {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
