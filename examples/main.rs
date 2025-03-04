@@ -1,5 +1,5 @@
-use lotus::core::window_manager::open_default_window;
+use lotus::{core::windowing_manager::WindowConfiguration, initialize_with_configuration};
 
 fn main() {
-    pollster::block_on(open_default_window());
+    initialize_with_configuration(WindowConfiguration::default());
 }

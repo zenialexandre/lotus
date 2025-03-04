@@ -172,7 +172,7 @@ impl State {
         };
 
         let diffuse_bytes = include_bytes!("../../assets/textures/happy_tree_test.png");
-        let diffuse_texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "happy_tree_test.png").unwrap();
+        let diffuse_texture: texture::Texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "happy_tree_test.png").unwrap();
 
         let texture_bind_group_layout: BindGroupLayout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("texture_bind_group_layout"),
@@ -313,10 +313,6 @@ impl State {
             },
             _ =>  { return false; }
         }
-    }
-
-    pub(crate) fn update(&mut self) {
-        //..
     }
 
     pub(crate) fn render(&mut self) -> Result<(), SurfaceError> {
