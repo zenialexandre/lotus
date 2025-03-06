@@ -11,6 +11,7 @@ use winit::{
         Window,
         WindowAttributes,
         WindowId,
+        WindowButtons,
         Icon
     },
     dpi::{
@@ -26,7 +27,7 @@ use std::{
 };
 
 use super::{
-    rendering_manager::State,
+    rendering_manager::RenderState,
     game_loop::GameLoop
 };
 
@@ -41,7 +42,8 @@ pub struct WindowConfiguration {
     resizable: bool,
     decorations: bool,
     transparent: bool,
-    visible: bool
+    visible: bool,
+    enabled_buttons: WindowButtons
 }
 
 impl Default for WindowConfiguration {
@@ -55,8 +57,9 @@ impl Default for WindowConfiguration {
             position_y: 100.,
             resizable: true,
             decorations: true,
-            transparent: false,
-            visible: true
+            transparent: true,
+            visible: true,
+            enabled_buttons: WindowButtons::all()
         };
     }
 }
@@ -77,7 +80,7 @@ impl WindowConfiguration {
 struct Application {
     window: Option<Arc<Window>>,
     window_configuration: Option<WindowConfiguration>,
-    state: Option<State>,
+    render_state: Option<RenderState>,
     game_loop: GameLoop
 }
 
@@ -98,6 +101,7 @@ impl ApplicationHandler for Application {
             window_attributes.decorations = window_configuration.decorations;
             window_attributes.transparent = window_configuration.transparent;
             window_attributes.visible = window_configuration.visible;
+            window_attributes.enabled_buttons = window_configuration.enabled_buttons;
             window_attributes.window_icon = WindowConfiguration::get_icon_by_path(window_configuration.icon_path.clone());
 
             Arc::new(event_loop.create_window(window_attributes).unwrap())
@@ -106,30 +110,30 @@ impl ApplicationHandler for Application {
         };
         self.window = Some(window.clone());
 
-        let state: State = pollster::block_on(State::new(window));
-        self.state = Some(state);
+        let render_state: RenderState = pollster::block_on(RenderState::new(window));
+        self.render_state = Some(render_state);
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
-        if let Some(state) = &mut self.state {
-            if !state.input(&window_event) {
+        if let Some(render_state) = &mut self.render_state {
+            if !render_state.input(&window_event) {
                 match window_event {
                     WindowEvent::CloseRequested => {
                         println!("Close button pressed.");
                         event_loop.exit();
                     },
                     WindowEvent::Resized(new_size) => {
-                        state.resize(new_size);
+                        render_state.resize(new_size);
                     }
                     WindowEvent::RedrawRequested => {
-                        state.window().request_redraw();
+                        render_state.window().request_redraw();
 
-                        match state.render() {
+                        match render_state.render() {
                             Ok(_) => {}
 
                             Err(
                                 SurfaceError::Lost | SurfaceError::Outdated
-                            ) => state.resize(state.physical_size),
+                            ) => render_state.resize(render_state.physical_size),
 
                             Err(
                                 SurfaceError::OutOfMemory | SurfaceError::Other
@@ -150,7 +154,7 @@ impl ApplicationHandler for Application {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if let Some(state) = &mut self.state {
+        if let Some(state) = &mut self.render_state {
             self.game_loop.run(state, event_loop);
         }
     }
@@ -164,14 +168,14 @@ pub async fn initialize_application(window_configuration: Option<WindowConfigura
     let mut application: Application = if let Some(window_configuration_unwrapped) = window_configuration {
         Application {
             window: None,
-            state: None,
+            render_state: None,
             window_configuration: Some(window_configuration_unwrapped),
             game_loop: GameLoop::new()
         }
     } else {
         Application {
             window: None,
-            state: None,
+            render_state: None,
             window_configuration: None,
             game_loop: GameLoop::new()
         }

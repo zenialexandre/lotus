@@ -1,3 +1,4 @@
+use cgmath::{Matrix4, SquareMatrix};
 use winit::{
     dpi::PhysicalSize,
     event::WindowEvent,
@@ -12,6 +13,9 @@ use wgpu::{
     ColorTargetState,
     ColorWrites,
     BlendState,
+    BlendComponent,
+    BlendFactor,
+    BlendOperation,
     CommandEncoder,
     CommandEncoderDescriptor,
     Device,
@@ -57,6 +61,7 @@ use wgpu::{
     MultisampleState,
     Buffer,
     BufferUsages,
+    BufferBindingType,
     IndexFormat,
     TextureSampleType,
     SamplerBindingType,
@@ -85,10 +90,10 @@ struct Vertex {
     texture_coordinates: [f32; 2]
 }
 
-pub(crate) struct State {
+pub(crate) struct RenderState {
     surface: Surface<'static>,
     device: Device,
-    queue: Queue,
+    pub(crate) queue: Queue,
     surface_configuration: SurfaceConfiguration,
     pub(crate) physical_size: PhysicalSize<u32>,
     color: Color,
@@ -98,7 +103,9 @@ pub(crate) struct State {
     index_buffer: Buffer,
     num_indices: u32,
     diffuse_bind_group: BindGroup,
-    diffuse_texture: texture::Texture
+    diffuse_texture: texture::Texture,
+    pub(crate) transform_buffer: Buffer,
+    transform_bind_group: BindGroup
 }
 
 const VERTICES: &[Vertex] = &[
@@ -115,6 +122,27 @@ const INDICES: &[u16] = &[
     2, 3, 4
 ];
 
+const TRIANGLE_VERTICES: &[Vertex] = &[
+    Vertex { position: [0.0, 0.5, 0.0], texture_coordinates: [0.0, 0.0] }, // Topo
+    Vertex { position: [-0.5, -0.5, 0.0], texture_coordinates: [0.0, 0.0] }, // Inferior Esquerdo
+    Vertex { position: [0.5, -0.5, 0.0], texture_coordinates: [0.0, 0.0] }, // Inferior Direito
+];
+
+const TRIANGLE_INDICES: &[u16] = &[0, 1, 2];
+
+// -> The Sprite can be represented by two Triangles that form a Square.
+const SPRITE_VERTICES: &[Vertex] = &[
+    Vertex { position: [-0.5, -0.5, 0.0], texture_coordinates: [0.0, 1.0] }, // Left Down
+    Vertex { position: [0.5, -0.5, 0.0], texture_coordinates: [1.0, 1.0] }, // Right Down
+    Vertex { position: [0.5, 0.5, 0.0], texture_coordinates: [1.0, 0.0] },  // Right Up
+    Vertex { position: [-0.5, 0.5, 0.0], texture_coordinates: [0.0, 0.0] }, // Left Up
+];
+
+const SPRITE_INDICES: &[u16] = &[
+    0, 1, 2, // First Triangle
+    2, 3, 0  // Second Triangle
+];
+
 impl Vertex {
     const VERTEX_ATTRIBUTES: [VertexAttribute; 2] = vertex_attr_array![0 => Float32x3, 1 => Float32x2];
 
@@ -127,8 +155,8 @@ impl Vertex {
     }
 }
 
-impl State {
-    pub(crate) async fn new(window: Arc<Window>) -> State {
+impl RenderState {
+    pub(crate) async fn new(window: Arc<Window>) -> RenderState {
         let color: Color = Color::WHITE;
         let physical_size: PhysicalSize<u32> = window.inner_size();
         let instance: Instance = Instance::new(&InstanceDescriptor{
@@ -171,8 +199,8 @@ impl State {
             desired_maximum_frame_latency: 2
         };
 
-        let diffuse_bytes = include_bytes!("../../assets/textures/happy_tree_test.png");
-        let diffuse_texture: texture::Texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "happy_tree_test.png").unwrap();
+        let diffuse_bytes = include_bytes!("../../assets/textures/lotus_pink_128x128.png");
+        let diffuse_texture: texture::Texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "sprite").unwrap();
 
         let texture_bind_group_layout: BindGroupLayout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("texture_bind_group_layout"),
@@ -212,10 +240,43 @@ impl State {
             ]
         });
 
-        let shader_module: ShaderModule = device.create_shader_module(include_wgsl!("../../assets/shaders/shader.wgsl"));
+        let identity_matrix: Matrix4<f32> = Matrix4::identity();
+        let identity_matrix_unwrapped: [[f32; 4]; 4] = *identity_matrix.as_ref();
+        let transform_buffer: Buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Transform Buffer"),
+            contents: bytemuck::cast_slice(&[identity_matrix_unwrapped]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+        });
+        let transform_bind_group_layout: BindGroupLayout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("transform_bind_group_layout"),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::VERTEX,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                }
+            ]
+        });
+        let transform_bind_group: BindGroup = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("transform_bind_group"),
+            layout: &transform_bind_group_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: transform_buffer.as_entire_binding()
+                }
+            ]
+        });
+
+        let shader_module: ShaderModule = device.create_shader_module(include_wgsl!("../../assets/shaders/shader_main.wgsl"));
         let render_pipeline_layout: PipelineLayout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&texture_bind_group_layout],
+            bind_group_layouts: &[&texture_bind_group_layout, &transform_bind_group_layout],
             push_constant_ranges: &[]
         });
         let render_pipeline: RenderPipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
@@ -232,7 +293,18 @@ impl State {
                 entry_point: Some("fs_main"),
                 targets: &[Some(ColorTargetState {
                     format: surface_configuration.format,
-                    blend: Some(BlendState::REPLACE),
+                    blend: Some(BlendState {
+                        color: BlendComponent {
+                            src_factor: BlendFactor::SrcAlpha,
+                            dst_factor: BlendFactor::OneMinusSrcAlpha,
+                            operation: BlendOperation::Add
+                        },
+                        alpha: BlendComponent {
+                            src_factor: BlendFactor::SrcAlpha,
+                            dst_factor: BlendFactor::OneMinusSrcAlpha,
+                            operation: BlendOperation::Add
+                        }
+                    }),
                     write_mask: ColorWrites::ALL
                 })],
                 compilation_options: PipelineCompilationOptions::default()
@@ -282,7 +354,9 @@ impl State {
             index_buffer,
             num_indices,
             diffuse_bind_group,
-            diffuse_texture
+            diffuse_texture,
+            transform_buffer,
+            transform_bind_group
         };
     }
 
@@ -302,13 +376,13 @@ impl State {
     pub(crate) fn input(&mut self, window_event: &WindowEvent) -> bool {
         match window_event {
             WindowEvent::CursorMoved { device_id: _, position } => {
-                let color: Color = Color {
+                /*let color: Color = Color {
                     r: position.x / self.physical_size.width as f64,
                     g: position.y / self.physical_size.height as f64,
                     b: 0.1,
                     a: 1.0
                 };
-                self.color = color;
+                self.color = color;*/
                 return true;
             },
             _ =>  { return false; }
@@ -346,6 +420,7 @@ impl State {
             });
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), IndexFormat::Uint16);
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
