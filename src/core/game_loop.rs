@@ -19,8 +19,8 @@ pub(crate) enum GameLoopState {
 pub struct GameLoop {
     game_loop_state: GameLoopState,
     delta_time: Duration,
-    accumulated_time: Duration,
-    previous_time: Instant,
+    accumulated_time_from_last_update: Duration,
+    previous_time_of_last_run: Instant,
     sprite_position: Vector2<f32>
 }
 
@@ -29,21 +29,21 @@ impl GameLoop {
         return Self {
             game_loop_state: GameLoopState::Running,
             delta_time: Duration::from_secs_f32(1.0 / 60.0), // 60 FPS
-            accumulated_time: Duration::ZERO,
-            previous_time: Instant::now(),
-            sprite_position: Vector2::new(0.10, 0.25)
+            accumulated_time_from_last_update: Duration::ZERO,
+            previous_time_of_last_run: Instant::now(),
+            sprite_position: Vector2::new(0.10, 0.25) // temp
         };
     }
 
     pub(crate) fn run(&mut self, render_state: &mut RenderState, event_loop: &ActiveEventLoop) {
         let now: Instant = Instant::now();
-        let elapsed_time: Duration = now - self.previous_time;
-        self.previous_time = now;
-        self.accumulated_time += elapsed_time;
+        let elapsed_time_from_last_run: Duration = now - self.previous_time_of_last_run;
+        self.previous_time_of_last_run = now;
+        self.accumulated_time_from_last_update += elapsed_time_from_last_run;
 
-        while self.accumulated_time >= self.delta_time {
+        while self.accumulated_time_from_last_update >= self.delta_time {
             self.update(self.get_delta_time_as_seconds(), render_state);
-            self.accumulated_time -= self.delta_time;
+            self.accumulated_time_from_last_update -= self.delta_time;
         }
         self.render(render_state, event_loop);
     }

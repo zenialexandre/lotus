@@ -81,13 +81,12 @@ use wgpu::{
 };
 use std::sync::Arc;
 
-use super::texture;
+use super::{texture, color};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 struct Vertex {
     position: [f32; 3],
-    texture_coordinates: [f32; 2]
 }
 
 pub(crate) struct RenderState {
@@ -96,18 +95,19 @@ pub(crate) struct RenderState {
     pub(crate) queue: Queue,
     surface_configuration: SurfaceConfiguration,
     pub(crate) physical_size: PhysicalSize<u32>,
-    color: Color,
+    pub(crate) color: Option<color::Color>,
     window: Arc<Window>,
     render_pipeline: RenderPipeline,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
-    num_indices: u32,
-    diffuse_bind_group: BindGroup,
-    diffuse_texture: texture::Texture,
+    number_of_indices: u32,
+    diffuse_bind_group: Option<BindGroup>,
+    color_bind_group: Option<BindGroup>,
     pub(crate) transform_buffer: Buffer,
     transform_bind_group: BindGroup
 }
 
+/*
 const VERTICES: &[Vertex] = &[
     Vertex { position: [-0.0868241, 0.49240386, 0.0], texture_coordinates: [0.4131759, 0.00759614], }, // A
     Vertex { position: [-0.49513406, 0.06958647, 0.0], texture_coordinates: [0.0048659444, 0.43041354], }, // B
@@ -120,16 +120,17 @@ const INDICES: &[u16] = &[
     0, 1, 4,
     1, 2, 4,
     2, 3, 4
-];
+];*/
 
 const TRIANGLE_VERTICES: &[Vertex] = &[
-    Vertex { position: [0.0, 0.5, 0.0], texture_coordinates: [0.0, 0.0] }, // Topo
-    Vertex { position: [-0.5, -0.5, 0.0], texture_coordinates: [0.0, 0.0] }, // Inferior Esquerdo
-    Vertex { position: [0.5, -0.5, 0.0], texture_coordinates: [0.0, 0.0] }, // Inferior Direito
+    Vertex { position: [0.0, 0.3, 0.0] },
+    Vertex { position: [-0.3, -0.3, 0.0] },
+    Vertex { position: [0.3, -0.3, 0.0] },
 ];
 
 const TRIANGLE_INDICES: &[u16] = &[0, 1, 2];
 
+/*
 // -> The Sprite can be represented by two Triangles that form a Square.
 const SPRITE_VERTICES: &[Vertex] = &[
     Vertex { position: [-0.5, -0.5, 0.0], texture_coordinates: [0.0, 1.0] }, // Left Down
@@ -141,10 +142,10 @@ const SPRITE_VERTICES: &[Vertex] = &[
 const SPRITE_INDICES: &[u16] = &[
     0, 1, 2, // First Triangle
     2, 3, 0  // Second Triangle
-];
+];*/
 
 impl Vertex {
-    const VERTEX_ATTRIBUTES: [VertexAttribute; 2] = vertex_attr_array![0 => Float32x3, 1 => Float32x2];
+    const VERTEX_ATTRIBUTES: [VertexAttribute; 1] = vertex_attr_array![0 => Float32x3];
 
     fn descriptor() -> VertexBufferLayout<'static> {
         return VertexBufferLayout {
@@ -157,7 +158,6 @@ impl Vertex {
 
 impl RenderState {
     pub(crate) async fn new(window: Arc<Window>) -> RenderState {
-        let color: Color = Color::WHITE;
         let physical_size: PhysicalSize<u32> = window.inner_size();
         let instance: Instance = Instance::new(&InstanceDescriptor{
             backends: Backends::PRIMARY,
@@ -199,6 +199,7 @@ impl RenderState {
             desired_maximum_frame_latency: 2
         };
 
+        /*
         let diffuse_bytes = include_bytes!("../../assets/textures/lotus_pink_128x128.png");
         let diffuse_texture: texture::Texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "sprite").unwrap();
 
@@ -238,6 +239,37 @@ impl RenderState {
                     resource: BindingResource::Sampler(&diffuse_texture.sampler)
                 }
             ]
+        });*/
+
+        let color_buffer: Buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Color Buffer"),
+            contents:bytemuck::cast_slice(&color::to_array(Color::BLACK)),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+        });
+        let color_bind_group_layout: BindGroupLayout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("Color Bind Group Layout"),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT | ShaderStages::VERTEX,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                }
+            ]
+        });
+        let color_bind_group: BindGroup = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Color Bind Group"),
+            layout: &color_bind_group_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: color_buffer.as_entire_binding()
+                }
+            ]
         });
 
         let identity_matrix: Matrix4<f32> = Matrix4::identity();
@@ -273,10 +305,10 @@ impl RenderState {
             ]
         });
 
-        let shader_module: ShaderModule = device.create_shader_module(include_wgsl!("../../assets/shaders/shader_main.wgsl"));
+        let shader_module: ShaderModule = device.create_shader_module(include_wgsl!("../../assets/shaders/color_shader.wgsl"));
         let render_pipeline_layout: PipelineLayout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&texture_bind_group_layout, &transform_bind_group_layout],
+            bind_group_layouts: &[&color_bind_group_layout, &transform_bind_group_layout],
             push_constant_ranges: &[]
         });
         let render_pipeline: RenderPipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
@@ -293,18 +325,7 @@ impl RenderState {
                 entry_point: Some("fs_main"),
                 targets: &[Some(ColorTargetState {
                     format: surface_configuration.format,
-                    blend: Some(BlendState {
-                        color: BlendComponent {
-                            src_factor: BlendFactor::SrcAlpha,
-                            dst_factor: BlendFactor::OneMinusSrcAlpha,
-                            operation: BlendOperation::Add
-                        },
-                        alpha: BlendComponent {
-                            src_factor: BlendFactor::SrcAlpha,
-                            dst_factor: BlendFactor::OneMinusSrcAlpha,
-                            operation: BlendOperation::Add
-                        }
-                    }),
+                    blend: None,
                     write_mask: ColorWrites::ALL
                 })],
                 compilation_options: PipelineCompilationOptions::default()
@@ -330,16 +351,16 @@ impl RenderState {
 
         let vertex_buffer: Buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(VERTICES),
+            contents: bytemuck::cast_slice(TRIANGLE_VERTICES),
             usage: BufferUsages::VERTEX
         });
         let index_buffer: Buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(INDICES),
+            contents: bytemuck::cast_slice(TRIANGLE_INDICES),
             usage: BufferUsages::INDEX
         });
 
-        let num_indices: u32 = INDICES.len() as u32;
+        let number_of_indices: u32 = TRIANGLE_INDICES.len() as u32;
 
         return Self {
             surface,
@@ -347,14 +368,14 @@ impl RenderState {
             queue,
             surface_configuration,
             physical_size,
-            color,
+            color: None,
             window,
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            num_indices,
-            diffuse_bind_group,
-            diffuse_texture,
+            number_of_indices,
+            color_bind_group: Some(color_bind_group),
+            diffuse_bind_group: None,
             transform_buffer,
             transform_bind_group
         };
@@ -410,7 +431,7 @@ impl RenderState {
                             b: 0.3,
                             a: 1.0
                         })*/
-                        load: LoadOp::Clear(self.color),
+                        load: LoadOp::Clear(color::to_wgpu(self.color.unwrap())),
                         store: StoreOp::Store
                     },
                 })],
@@ -419,11 +440,16 @@ impl RenderState {
                 timestamp_writes: None
             });
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+
+            if let Some(_diffuse_bind_group) = &self.diffuse_bind_group {
+                render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+            } else {
+                render_pass.set_bind_group(0, &self.color_bind_group, &[]);
+            }
             render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            render_pass.draw_indexed(0..self.number_of_indices, 0, 0..1);
         }
         self.queue.submit(std::iter::once(command_encoder.finish()));
         surface_texture.present();

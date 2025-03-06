@@ -1,4 +1,4 @@
-// This is the main shader that will be used to render Sprites and Geometric Shapes.
+// This is the shader that will be used to render objects with texture.
 
 // Vertex shader
 // -> Create the vertices to create the object.
@@ -28,15 +28,8 @@ fn vs_main(model: VertexInput) -> VertexOutput {
 
 @group(0) @binding(0) var texture: texture_2d<f32>;
 @group(0) @binding(1) var texture_sampler: sampler;
-//@group(2) @binding(0) var<uniform> color: vec4<f32>;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    /*
-    if (color.a > 0.0) {
-        return color;
-    } else {
-        return textureSample(texture, texture_sampler, in.texture_coordinates);   
-    }*/
     return textureSample(texture, texture_sampler, in.texture_coordinates);
 }

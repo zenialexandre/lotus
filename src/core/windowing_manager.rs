@@ -28,6 +28,7 @@ use std::{
 
 use super::{
     rendering_manager::RenderState,
+    color::Color,
     game_loop::GameLoop
 };
 
@@ -35,6 +36,7 @@ use super::{
 pub struct WindowConfiguration {
     icon_path: String,
     title: String,
+    background_color: Color,
     width: f64,
     height: f64,
     position_x: f64,
@@ -51,6 +53,7 @@ impl Default for WindowConfiguration {
         return Self {
             icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
             title: "New Game!".to_string(),
+            background_color: Color::WHITE,
             width: 800.,
             height: 600.,
             position_x: 100.,
@@ -86,6 +89,7 @@ struct Application {
 
 impl ApplicationHandler for Application {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let mut color: Color = Color::BLACK;
         let window: Arc<Window> = if let Some(window_configuration) = &self.window_configuration {
             let mut window_attributes: WindowAttributes = Window::default_attributes();
             window_attributes.title = window_configuration.title.clone();
@@ -103,6 +107,7 @@ impl ApplicationHandler for Application {
             window_attributes.visible = window_configuration.visible;
             window_attributes.enabled_buttons = window_configuration.enabled_buttons;
             window_attributes.window_icon = WindowConfiguration::get_icon_by_path(window_configuration.icon_path.clone());
+            color = window_configuration.background_color;
 
             Arc::new(event_loop.create_window(window_attributes).unwrap())
         } else {
@@ -110,7 +115,8 @@ impl ApplicationHandler for Application {
         };
         self.window = Some(window.clone());
 
-        let render_state: RenderState = pollster::block_on(RenderState::new(window));
+        let mut render_state: RenderState = pollster::block_on(RenderState::new(window));
+        render_state.color = Some(color);
         self.render_state = Some(render_state);
     }
 
