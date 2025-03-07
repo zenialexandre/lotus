@@ -1,12 +1,8 @@
 use std::time::{Duration, Instant};
-use cgmath::{Deg, Matrix4, Vector2};
 use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
 
-use super::{
-    rendering_manager::RenderState,
-    transform::Transform
-};
+use super::rendering_manager::RenderState;
 
 #[derive(Default)]
 pub(crate) enum GameLoopState {
@@ -21,17 +17,19 @@ pub struct GameLoop {
     delta_time: Duration,
     accumulated_time_from_last_update: Duration,
     previous_time_of_last_run: Instant,
-    sprite_position: Vector2<f32>
+    pub setup: fn(render_state: &mut RenderState),
+    update: fn(render_state: &mut RenderState, delta_time: f32),
 }
 
 impl GameLoop {
-    pub fn new() -> Self {
+    pub fn new(setup: fn(render_state: &mut RenderState), update: fn(render_state: &mut RenderState, delta_time: f32)) -> Self {
         return Self {
             game_loop_state: GameLoopState::Running,
             delta_time: Duration::from_secs_f32(1.0 / 60.0), // 60 FPS
             accumulated_time_from_last_update: Duration::ZERO,
             previous_time_of_last_run: Instant::now(),
-            sprite_position: Vector2::new(0.10, 0.25) // temp
+            setup,
+            update
         };
     }
 
@@ -42,27 +40,10 @@ impl GameLoop {
         self.accumulated_time_from_last_update += elapsed_time_from_last_run;
 
         while self.accumulated_time_from_last_update >= self.delta_time {
-            self.update(self.get_delta_time_as_seconds(), render_state);
+            (self.update)(render_state, self.get_delta_time_as_seconds());
             self.accumulated_time_from_last_update -= self.delta_time;
         }
         self.render(render_state, event_loop);
-    }
-
-    fn update(&mut self, delta_time: f32, render_state: &mut RenderState) {
-        self.sprite_position.x += 0.1 * delta_time; // x Pixels per second
-
-        let transform_matrix: Matrix4<f32> = Transform::new(
-            self.sprite_position,
-            Deg(0.0),
-            Vector2::new(1., 1.)
-        ).to_matrix();
-        let transform_matrix_as_ref: &[[f32; 4]; 4] = transform_matrix.as_ref();
-
-        render_state.queue.write_buffer(
-            &render_state.transform_buffer,
-            0,
-            bytemuck::cast_slice(&[*transform_matrix_as_ref])
-        );
     }
 
     fn render(&self, render_state: &mut RenderState, event_loop: &ActiveEventLoop) {

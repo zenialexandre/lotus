@@ -4,3 +4,5 @@ pub mod rendering_manager;
 pub mod texture;
 pub mod transform;
 pub mod color;
+pub mod shape;
+pub mod macros;

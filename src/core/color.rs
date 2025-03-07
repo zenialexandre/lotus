@@ -4,12 +4,12 @@ pub enum Color {
     WHITE,
     RED,
     GREEN,
-    BLUE,
+    BLUE
 }
 
 impl Color {
     pub fn to_rgba(&self) -> [f64; 4] {
-        match *self {
+        match self {
             Color::BLACK => [0.0, 0.0, 0.0, 1.0],
             Color::WHITE => [1.0, 1.0, 1.0, 1.0],
             Color::RED => [1.0, 0.0, 0.0, 1.0],

@@ -34,18 +34,18 @@ use super::{
 
 #[derive(Clone)]
 pub struct WindowConfiguration {
-    icon_path: String,
-    title: String,
-    background_color: Color,
-    width: f64,
-    height: f64,
-    position_x: f64,
-    position_y: f64,
-    resizable: bool,
-    decorations: bool,
-    transparent: bool,
-    visible: bool,
-    enabled_buttons: WindowButtons
+    pub icon_path: String,
+    pub title: String,
+    pub background_color: Color,
+    pub width: f64,
+    pub height: f64,
+    pub position_x: f64,
+    pub position_y: f64,
+    pub resizable: bool,
+    pub decorations: bool,
+    pub transparent: bool,
+    pub visible: bool,
+    pub enabled_buttons: WindowButtons
 }
 
 impl Default for WindowConfiguration {
@@ -118,6 +118,8 @@ impl ApplicationHandler for Application {
         let mut render_state: RenderState = pollster::block_on(RenderState::new(window));
         render_state.color = Some(color);
         self.render_state = Some(render_state);
+
+        (self.game_loop.setup)(&mut self.render_state.as_mut().unwrap()); // Runs the Setup code once!
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
@@ -134,6 +136,7 @@ impl ApplicationHandler for Application {
                     WindowEvent::RedrawRequested => {
                         render_state.window().request_redraw();
 
+                        /*
                         match render_state.render() {
                             Ok(_) => {}
 
@@ -151,7 +154,7 @@ impl ApplicationHandler for Application {
                             Err(SurfaceError::Timeout) => {
                                 log::warn!("Surface Timeout.")
                             }
-                        }
+                        }*/
                     }
                     _ => ()
                 }
@@ -160,13 +163,17 @@ impl ApplicationHandler for Application {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if let Some(state) = &mut self.render_state {
-            self.game_loop.run(state, event_loop);
+        if let Some(render_state) = &mut self.render_state {
+            self.game_loop.run(render_state, event_loop);
         }
     }
 }
 
-pub async fn initialize_application(window_configuration: Option<WindowConfiguration>) {
+pub async fn initialize_application(
+    window_configuration: Option<WindowConfiguration>,
+    setup: fn(render_state: &mut RenderState),
+    update: fn(render_state: &mut RenderState, delta_time: f32)
+) {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
@@ -176,14 +183,14 @@ pub async fn initialize_application(window_configuration: Option<WindowConfigura
             window: None,
             render_state: None,
             window_configuration: Some(window_configuration_unwrapped),
-            game_loop: GameLoop::new()
+            game_loop: GameLoop::new(setup, update)
         }
     } else {
         Application {
             window: None,
             render_state: None,
             window_configuration: None,
-            game_loop: GameLoop::new()
+            game_loop: GameLoop::new(setup, update)
         }
     };
     let _ = event_loop.run_app(&mut application);
