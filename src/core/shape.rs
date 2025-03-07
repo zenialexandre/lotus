@@ -76,7 +76,7 @@ impl GeometryType {
         }
     }
 
-    pub fn to_indices_array(&self) -> Vec<u16> {
+    pub fn to_index_array(&self) -> Vec<u16> {
         match self {
             GeometryType::Triangle => vec![0, 1, 2],
             GeometryType::Square => {

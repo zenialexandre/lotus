@@ -253,9 +253,52 @@ impl RenderState {
     }
 }
 
+/*pub fn render_sprite? {
+    let diffuse_bytes = include_bytes!("../../assets/textures/lotus_pink_128x128.png");
+        let diffuse_texture: texture::Texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "sprite").unwrap();
+
+        let texture_bind_group_layout: BindGroupLayout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("texture_bind_group_layout"),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: TextureSampleType::Float {
+                            filterable: true
+                        }
+                    },
+                    count: None
+                },
+                BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                    count: None
+                },
+            ]
+        });
+        let diffuse_bind_group: BindGroup = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("diffuse_bind_group"),
+            layout: &texture_bind_group_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(&diffuse_texture.texture_view)
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(&diffuse_texture.sampler)
+                }
+            ]
+        });
+}*/
+
 pub fn render_shape(render_state: &mut RenderState, shape: shape::Shape) {
     let vertices: &[Vertex] = &shape.geometry_type.to_vertex_array(shape::Orientation::Horizontal);
-    let indices: &[u16] = &shape.geometry_type.to_indices_array();
+    let indices: &[u16] = &shape.geometry_type.to_index_array();
 
     let color_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Color Buffer"),
