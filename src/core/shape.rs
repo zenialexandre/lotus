@@ -1,9 +1,10 @@
-use super::{rendering_manager::Vertex, color::Color};
+use super::{rendering_manager::Vertex, color::Color, transform::Transform};
 
 pub struct Shape {
     pub orientation: Orientation,
     pub geometry_type: GeometryType,
-    pub color: Color
+    pub color: Color,
+    pub transform: Transform
 }
 
 pub struct Circle {

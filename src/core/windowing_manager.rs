@@ -136,7 +136,6 @@ impl ApplicationHandler for Application {
                     WindowEvent::RedrawRequested => {
                         render_state.window().request_redraw();
 
-                        /*
                         match render_state.render() {
                             Ok(_) => {}
 
@@ -154,7 +153,7 @@ impl ApplicationHandler for Application {
                             Err(SurfaceError::Timeout) => {
                                 log::warn!("Surface Timeout.")
                             }
-                        }*/
+                        }
                     }
                     _ => ()
                 }

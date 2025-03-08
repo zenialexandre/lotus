@@ -80,10 +80,10 @@ use wgpu::{
         DeviceExt
     }
 };
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
-use super::{texture, color, shape};
-use crate::utils::constants::shader::COLOR_SHADER;
+use super::{color, shape::{Orientation, Shape}, sprite::Sprite, texture};
+use crate::utils::constants::shader::{TEXTURE_SHADER, COLOR_SHADER};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -176,10 +176,10 @@ impl RenderState {
             render_pipeline: None,
             vertex_buffer: None,
             index_buffer: None,
+            transform_buffer: None,
             number_of_indices: None,
             color_bind_group: None,
             diffuse_bind_group: None,
-            transform_buffer: None,
             transform_bind_group: None
         };
     }
@@ -199,7 +199,7 @@ impl RenderState {
 
     pub(crate) fn input(&mut self, window_event: &WindowEvent) -> bool {
         match window_event {
-            WindowEvent::CursorMoved { device_id: _, position } => {
+            WindowEvent::CursorMoved { device_id: _, position: _ } => {
                 /*let color: Color = Color {
                     r: position.x / self.physical_size.width as f64,
                     g: position.y / self.physical_size.height as f64,
@@ -253,12 +253,17 @@ impl RenderState {
     }
 }
 
-/*pub fn render_sprite? {
-    let diffuse_bytes = include_bytes!("../../assets/textures/lotus_pink_128x128.png");
-        let diffuse_texture: texture::Texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "sprite").unwrap();
+pub fn render_sprite(render_state: &mut RenderState, sprite: Sprite) {
+    if let Ok(diffuse_dynamic_image) = image::open(Path::new(sprite.path.as_str())) {
+        let diffuse_texture: texture::Texture = texture::Texture::from_image(
+            &render_state.device,
+            &render_state.queue,
+            &diffuse_dynamic_image,
+            Some("Sprite")
+        ).unwrap();
 
-        let texture_bind_group_layout: BindGroupLayout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("texture_bind_group_layout"),
+        let diffuse_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("Diffuse Bind Group Layout"),
             entries: &[
                 BindGroupLayoutEntry {
                     binding: 0,
@@ -280,9 +285,9 @@ impl RenderState {
                 },
             ]
         });
-        let diffuse_bind_group: BindGroup = device.create_bind_group(&BindGroupDescriptor {
-            label: Some("diffuse_bind_group"),
-            layout: &texture_bind_group_layout,
+        let diffuse_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Diffuse Bind Group"),
+            layout: &diffuse_bind_group_layout,
             entries: &[
                 BindGroupEntry {
                     binding: 0,
@@ -294,12 +299,29 @@ impl RenderState {
                 }
             ]
         });
-}*/
 
-pub fn render_shape(render_state: &mut RenderState, shape: shape::Shape) {
-    let vertices: &[Vertex] = &shape.geometry_type.to_vertex_array(shape::Orientation::Horizontal);
-    let indices: &[u16] = &shape.geometry_type.to_index_array();
+        let (transform_bind_group, transform_bind_group_layout, transform_buffer) = get_transform_bindings(render_state);
+        let render_pipeline: RenderPipeline = get_render_pipeline(
+            render_state,
+            vec![&diffuse_bind_group_layout, &transform_bind_group_layout],
+            TEXTURE_SHADER
+        );
+        let vertex_buffer: Buffer = get_vertex_buffer(render_state, &sprite.vertices);
+        let (index_buffer, number_of_indices) = get_index_attributes(render_state, &sprite.indices);
 
+        render_state.render_pipeline = Some(render_pipeline);
+        render_state.diffuse_bind_group = Some(diffuse_bind_group);
+        render_state.transform_bind_group = Some(transform_bind_group);
+        render_state.transform_buffer = Some(transform_buffer);
+        render_state.vertex_buffer = Some(vertex_buffer);
+        render_state.index_buffer = Some(index_buffer);
+        render_state.number_of_indices = Some(number_of_indices);
+    } else {
+        panic!("Image not found on the render_sprite process!");
+    }
+}
+
+pub fn render_shape(render_state: &mut RenderState, shape: Shape) {
     let color_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Color Buffer"),
         contents:bytemuck::cast_slice(&color::to_array(Color::BLACK)),
@@ -331,6 +353,25 @@ pub fn render_shape(render_state: &mut RenderState, shape: shape::Shape) {
         ]
     });
 
+    let (transform_bind_group, transform_bind_group_layout, transform_buffer) = get_transform_bindings(render_state);
+    let render_pipeline: RenderPipeline = get_render_pipeline(
+        render_state,
+        vec![&color_bind_group_layout, &transform_bind_group_layout],
+        COLOR_SHADER
+    );
+    let vertex_buffer: Buffer = get_vertex_buffer(render_state, &shape.geometry_type.to_vertex_array(Orientation::Horizontal));
+    let (index_buffer, number_of_indices) = get_index_attributes(render_state, &shape.geometry_type.to_index_array());
+
+    render_state.render_pipeline = Some(render_pipeline);
+    render_state.color_bind_group = Some(color_bind_group);
+    render_state.transform_bind_group = Some(transform_bind_group);
+    render_state.transform_buffer = Some(transform_buffer);
+    render_state.vertex_buffer = Some(vertex_buffer);
+    render_state.index_buffer = Some(index_buffer);
+    render_state.number_of_indices = Some(number_of_indices);
+}
+
+fn get_transform_bindings(render_state: &mut RenderState) -> (BindGroup, BindGroupLayout, Buffer) {
     let identity_matrix: Matrix4<f32> = Matrix4::identity();
     let identity_matrix_unwrapped: [[f32; 4]; 4] = *identity_matrix.as_ref();
     let transform_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
@@ -339,7 +380,7 @@ pub fn render_shape(render_state: &mut RenderState, shape: shape::Shape) {
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
     });
     let transform_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-        label: Some("transform_bind_group_layout"),
+        label: Some("Transform Bind Group Layout"),
         entries: &[
             BindGroupLayoutEntry {
                 binding: 0,
@@ -354,7 +395,7 @@ pub fn render_shape(render_state: &mut RenderState, shape: shape::Shape) {
         ]
     });
     let transform_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
-        label: Some("transform_bind_group"),
+        label: Some("Transform Bind Group"),
         layout: &transform_bind_group_layout,
         entries: &[
             BindGroupEntry {
@@ -363,14 +404,17 @@ pub fn render_shape(render_state: &mut RenderState, shape: shape::Shape) {
             }
         ]
     });
+    return (transform_bind_group, transform_bind_group_layout, transform_buffer);
+}
 
+fn get_render_pipeline(render_state: &mut RenderState, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
     let shader_module: ShaderModule = render_state.device.create_shader_module(ShaderModuleDescriptor {
         label: Some("Shader Module"),
-        source: ShaderSource::Wgsl(COLOR_SHADER.into())
+        source: ShaderSource::Wgsl(shader_source.into())
     });
     let render_pipeline_layout: PipelineLayout = render_state.device.create_pipeline_layout(&PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[&color_bind_group_layout, &transform_bind_group_layout],
+        bind_group_layouts: &bind_group_layouts[..],
         push_constant_ranges: &[]
     });
     let render_pipeline: RenderPipeline = render_state.device.create_render_pipeline(&RenderPipelineDescriptor {
@@ -387,7 +431,7 @@ pub fn render_shape(render_state: &mut RenderState, shape: shape::Shape) {
             entry_point: Some("fs_main"),
             targets: &[Some(ColorTargetState {
                 format: render_state.surface_configuration.format,
-                blend: None,
+                blend: get_blend_state(shader_source),
                 write_mask: ColorWrites::ALL
             })],
             compilation_options: PipelineCompilationOptions::default()
@@ -410,23 +454,41 @@ pub fn render_shape(render_state: &mut RenderState, shape: shape::Shape) {
         multiview: None,
         cache: None
     });
+    return render_pipeline;
+}
 
-    let vertex_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
+fn get_blend_state(shader_source: &str) -> Option<BlendState> {
+    if shader_source.contains("texture") {
+        return Some(BlendState {
+            color: BlendComponent {
+                src_factor: BlendFactor::SrcAlpha,
+                dst_factor: BlendFactor::OneMinusSrcAlpha,
+                operation: BlendOperation::Add
+            },
+            alpha: BlendComponent {
+                src_factor: BlendFactor::SrcAlpha,
+                dst_factor: BlendFactor::OneMinusSrcAlpha,
+                operation: BlendOperation::Add
+            }
+        });
+    }
+    return None;
+}
+
+fn get_vertex_buffer(render_state: &mut RenderState, vertex_array: &[Vertex]) -> Buffer {
+    return render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Vertex Buffer"),
-        contents: bytemuck::cast_slice(vertices),
+        contents: bytemuck::cast_slice(vertex_array),
         usage: BufferUsages::VERTEX
     });
+}
+
+fn get_index_attributes(render_state: &mut RenderState, index_array: &[u16]) -> (Buffer, u32) {
+    let number_of_indices: u32 = index_array.len() as u32;
     let index_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Index Buffer"),
-        contents: bytemuck::cast_slice(indices),
+        contents: bytemuck::cast_slice(index_array),
         usage: BufferUsages::INDEX
     });
-    let number_of_indices: u32 = indices.len() as u32;
-
-    render_state.render_pipeline = Some(render_pipeline);
-    render_state.color_bind_group = Some(color_bind_group);
-    render_state.transform_bind_group = Some(transform_bind_group);
-    render_state.vertex_buffer = Some(vertex_buffer);
-    render_state.index_buffer = Some(index_buffer);
-    render_state.number_of_indices = Some(number_of_indices);
+    return (index_buffer, number_of_indices);
 }

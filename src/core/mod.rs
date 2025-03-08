@@ -5,4 +5,5 @@ pub mod texture;
 pub mod transform;
 pub mod color;
 pub mod shape;
+pub mod sprite;
 pub mod macros;
