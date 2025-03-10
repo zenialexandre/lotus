@@ -1,7 +1,6 @@
 use cgmath::{
-    Deg,
+    ortho,
     Matrix4,
-    PerspectiveFov,
     SquareMatrix
 };
 use winit::{
@@ -246,8 +245,8 @@ impl RenderState {
                 0.0, 
                 self.physical_size.width as f32, 
                 self.physical_size.height as f32, 
-        0.0,
-        1.0
+                0.0,
+                1.0
             );
 
             if let Some(_diffuse_bind_group) = &self.diffuse_bind_group {
@@ -393,12 +392,7 @@ fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLa
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
     });
 
-    let projection_matrix: Matrix4<f32> = PerspectiveFov {
-        fovy: Deg(45.0).into(),
-        aspect: render_state.physical_size.width as f32 / render_state.physical_size.height as f32,
-        near: 0.1,
-        far: 100.0
-    }.into();
+    let projection_matrix: Matrix4<f32> = get_projection_matrix(render_state);
     let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
     let projection_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Projection Buffer"),
@@ -446,6 +440,18 @@ fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLa
         ]
     });
     return (transform_bind_group, transform_bind_group_layout, transform_buffer);
+}
+
+fn get_projection_matrix(render_state: &RenderState) -> Matrix4<f32> {
+    let aspect_ratio: f32 = render_state.physical_size.width as f32 / render_state.physical_size.height as f32;
+    return ortho(
+        -aspect_ratio,
+        aspect_ratio as f32,
+        -1.0,
+        1.0,
+        -1.0,
+        1.0
+    );
 }
 
 fn get_render_pipeline(render_state: &RenderState, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
