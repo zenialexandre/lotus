@@ -14,6 +14,7 @@ struct VertexOutput {
 };
 
 @group(1) @binding(0) var<uniform> transform: mat4x4<f32>;
+@group(1) @binding(1) var<uniform> projection: mat4x4<f32>;
 
 @vertex
 fn vs_main(model: VertexInput) -> VertexOutput {

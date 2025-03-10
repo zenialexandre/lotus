@@ -16,3 +16,4 @@ bytemuck = { version = "1.22.0", features = [ "derive" ] }
 image = { version = "0.25.5", features = ["png", "jpeg"] }
 anyhow = "1.0.97"
 cgmath = "0.18"
+lotus_proc_macros = { path = "lotus_proc_macros" }

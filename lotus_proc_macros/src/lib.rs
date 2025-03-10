@@ -1,0 +1,14 @@
+extern crate proc_macro;
+use quote::quote;
+use syn::{parse_macro_input, DeriveInput};
+
+#[proc_macro_derive(Component)]
+pub fn derive_component(token_stream: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let derive_input: DeriveInput = parse_macro_input!(token_stream as DeriveInput);
+    let name: &syn::Ident = &derive_input.ident;
+
+    let gen: proc_macro2::TokenStream = quote! {
+        impl crate::core::ecs::component::Component for #name {}
+    };
+    return gen.into();
+}
