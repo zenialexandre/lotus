@@ -1,4 +1,4 @@
-use super::{rendering_manager::Vertex, color::Color, transform::Transform};
+use super::{managers::rendering_manager::Vertex, color::Color, transform::Transform};
 
 pub struct Shape {
     pub orientation: Orientation,

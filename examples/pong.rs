@@ -1,14 +1,4 @@
-use lotus::{
-    *,
-    core::{
-        windowing_manager::*,
-        rendering_manager::*,
-        shape::*,
-        sprite::*,
-        color::*,
-        transform::*
-    }
-};
+use lotus::*;
 use cgmath::{Deg, Matrix4, Vector2};
 
 your_game!(
@@ -30,17 +20,17 @@ your_game!(
     update
 );
 
-fn setup(render_state: &mut RenderState) {
+fn setup(engine_context: &mut EngineContext) {
     //render_my_shape(render_state);
-    render_my_sprite(render_state);
+    render_my_sprite(&mut engine_context.render_state);
 }
 
-fn update(render_state: &mut RenderState, delta_time: f32) {
+fn update(engine_context: &mut EngineContext) {
     let transform_matrix: Matrix4<f32> = Transform::new(Vector2::new(0.10, 0.25), Deg(0.), Vector2::new(1., 1.)).to_matrix();
     let transform_matrix_as_ref: &[[f32; 4]; 4] = transform_matrix.as_ref();
 
-    render_state.queue.write_buffer(
-        &render_state.transform_buffer.as_mut().unwrap(),
+    engine_context.render_state.queue.write_buffer(
+        &engine_context.render_state.transform_buffer.as_mut().unwrap(),
         0,
         bytemuck::cast_slice(&[*transform_matrix_as_ref])
     );

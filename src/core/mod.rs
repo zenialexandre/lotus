@@ -1,9 +1,10 @@
 pub mod game_loop;
-pub mod windowing_manager;
-pub mod rendering_manager;
+pub mod managers;
 pub mod texture;
 pub mod transform;
 pub mod color;
 pub mod shape;
 pub mod sprite;
 pub mod macros;
+pub mod ecs;
+pub mod engine;

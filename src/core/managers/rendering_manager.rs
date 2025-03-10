@@ -82,7 +82,7 @@ use wgpu::{
 };
 use std::{path::Path, sync::Arc};
 
-use super::{color, shape::{Orientation, Shape}, sprite::Sprite, texture};
+use super::super::{color, shape::{Orientation, Shape}, sprite::Sprite, texture};
 use crate::utils::constants::shader::{TEXTURE_SHADER, COLOR_SHADER};
 
 #[repr(C)]
@@ -371,7 +371,7 @@ pub fn render_shape(render_state: &mut RenderState, shape: Shape) {
     render_state.number_of_indices = Some(number_of_indices);
 }
 
-fn get_transform_bindings(render_state: &mut RenderState) -> (BindGroup, BindGroupLayout, Buffer) {
+fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLayout, Buffer) {
     let identity_matrix: Matrix4<f32> = Matrix4::identity();
     let identity_matrix_unwrapped: [[f32; 4]; 4] = *identity_matrix.as_ref();
     let transform_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
@@ -407,7 +407,7 @@ fn get_transform_bindings(render_state: &mut RenderState) -> (BindGroup, BindGro
     return (transform_bind_group, transform_bind_group_layout, transform_buffer);
 }
 
-fn get_render_pipeline(render_state: &mut RenderState, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
+fn get_render_pipeline(render_state: &RenderState, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
     let shader_module: ShaderModule = render_state.device.create_shader_module(ShaderModuleDescriptor {
         label: Some("Shader Module"),
         source: ShaderSource::Wgsl(shader_source.into())
@@ -475,7 +475,7 @@ fn get_blend_state(shader_source: &str) -> Option<BlendState> {
     return None;
 }
 
-fn get_vertex_buffer(render_state: &mut RenderState, vertex_array: &[Vertex]) -> Buffer {
+fn get_vertex_buffer(render_state: &RenderState, vertex_array: &[Vertex]) -> Buffer {
     return render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Vertex Buffer"),
         contents: bytemuck::cast_slice(vertex_array),
@@ -483,7 +483,7 @@ fn get_vertex_buffer(render_state: &mut RenderState, vertex_array: &[Vertex]) ->
     });
 }
 
-fn get_index_attributes(render_state: &mut RenderState, index_array: &[u16]) -> (Buffer, u32) {
+fn get_index_attributes(render_state: &RenderState, index_array: &[u16]) -> (Buffer, u32) {
     let number_of_indices: u32 = index_array.len() as u32;
     let index_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Index Buffer"),

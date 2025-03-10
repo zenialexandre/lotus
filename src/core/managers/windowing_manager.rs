@@ -26,11 +26,14 @@ use std::{
     sync::Arc
 };
 
-use super::{
-    rendering_manager::RenderState,
+use crate::core::engine::EngineContext;
+
+use super::super::{
+    ecs::world::World,
     color::Color,
     game_loop::GameLoop
 };
+use super::rendering_manager::RenderState;
 
 #[derive(Clone)]
 pub struct WindowConfiguration {
@@ -83,7 +86,7 @@ impl WindowConfiguration {
 struct Application {
     window: Option<Arc<Window>>,
     window_configuration: Option<WindowConfiguration>,
-    render_state: Option<RenderState>,
+    engine_context: Option<EngineContext>,
     game_loop: GameLoop
 }
 
@@ -117,61 +120,61 @@ impl ApplicationHandler for Application {
 
         let mut render_state: RenderState = pollster::block_on(RenderState::new(window));
         render_state.color = Some(color);
-        self.render_state = Some(render_state);
 
-        (self.game_loop.setup)(&mut self.render_state.as_mut().unwrap()); // Runs the Setup code once!
+        let world: World = World::new();
+        self.engine_context = Some(EngineContext::new(render_state, world, 0.0));
+
+        (self.game_loop.setup)(self.engine_context.as_mut().unwrap()); // Runs the Setup code once!
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
-        if let Some(render_state) = &mut self.render_state {
-            if !render_state.input(&window_event) {
-                match window_event {
-                    WindowEvent::CloseRequested => {
-                        println!("Close button pressed.");
-                        event_loop.exit();
-                    },
-                    WindowEvent::Resized(new_size) => {
-                        render_state.resize(new_size);
-                    }
-                    WindowEvent::RedrawRequested => {
-                        render_state.window().request_redraw();
+        let render_state: &mut RenderState = &mut self.engine_context.as_mut().unwrap().render_state;
 
-                        match render_state.render() {
-                            Ok(_) => {}
+        if !render_state.input(&window_event) {
+            match window_event {
+                WindowEvent::CloseRequested => {
+                    println!("Close button pressed.");
+                    event_loop.exit();
+                },
+                WindowEvent::Resized(new_size) => {
+                    render_state.resize(new_size);
+                }
+                WindowEvent::RedrawRequested => {
+                    render_state.window().request_redraw();
 
-                            Err(
-                                SurfaceError::Lost | SurfaceError::Outdated
-                            ) => render_state.resize(render_state.physical_size),
+                    match render_state.render() {
+                        Ok(_) => {}
 
-                            Err(
-                                SurfaceError::OutOfMemory | SurfaceError::Other
-                            ) => {
-                                log::error!("Application OOMKilled.");
-                                event_loop.exit();
-                            }
+                        Err(
+                            SurfaceError::Lost | SurfaceError::Outdated
+                        ) => render_state.resize(render_state.physical_size),
 
-                            Err(SurfaceError::Timeout) => {
-                                log::warn!("Surface Timeout.")
-                            }
+                        Err(
+                            SurfaceError::OutOfMemory | SurfaceError::Other
+                        ) => {
+                            log::error!("Application OOMKilled.");
+                            event_loop.exit();
+                        }
+
+                        Err(SurfaceError::Timeout) => {
+                            log::warn!("Surface Timeout.")
                         }
                     }
-                    _ => ()
                 }
+                _ => ()
             }
         }
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if let Some(render_state) = &mut self.render_state {
-            self.game_loop.run(render_state, event_loop);
-        }
+        self.game_loop.run(self.engine_context.as_mut().unwrap(), event_loop);
     }
 }
 
 pub async fn initialize_application(
     window_configuration: Option<WindowConfiguration>,
-    setup: fn(render_state: &mut RenderState),
-    update: fn(render_state: &mut RenderState, delta_time: f32)
+    setup: fn(engine_context: &mut EngineContext),
+    update: fn(engine_context: &mut EngineContext)
 ) {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
@@ -180,14 +183,14 @@ pub async fn initialize_application(
     let mut application: Application = if let Some(window_configuration_unwrapped) = window_configuration {
         Application {
             window: None,
-            render_state: None,
+            engine_context: None,
             window_configuration: Some(window_configuration_unwrapped),
             game_loop: GameLoop::new(setup, update)
         }
     } else {
         Application {
             window: None,
-            render_state: None,
+            engine_context: None,
             window_configuration: None,
             game_loop: GameLoop::new(setup, update)
         }

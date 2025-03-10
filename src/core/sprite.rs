@@ -1,4 +1,4 @@
-use super::{rendering_manager::Vertex, shape::{GeometryType, Orientation}, transform::Transform};
+use super::{managers::rendering_manager::Vertex, shape::{GeometryType, Orientation}, transform::Transform};
 
 pub struct Sprite {
     pub path: String,
