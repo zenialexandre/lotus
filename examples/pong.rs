@@ -10,11 +10,11 @@ your_game!(
         height: 600.,
         position_x: 200.,
         position_y: 150.,
-        resizable: false,
+        resizable: true,
         decorations: true,
         transparent: false,
         visible: true,
-        enabled_buttons: winit::window::WindowButtons::CLOSE | winit::window::WindowButtons::MINIMIZE
+        enabled_buttons: winit::window::WindowButtons::all()
     },
     setup,
     update

@@ -110,6 +110,7 @@ pub struct RenderState {
     number_of_indices: Option<u32>,
     diffuse_bind_group: Option<BindGroup>,
     color_bind_group: Option<BindGroup>,
+    projection_buffer: Option<Buffer>,
     pub transform_buffer: Option<Buffer>,
     transform_bind_group: Option<BindGroup>
 }
@@ -181,6 +182,7 @@ impl RenderState {
             vertex_buffer: None,
             index_buffer: None,
             transform_buffer: None,
+            projection_buffer: None,
             number_of_indices: None,
             color_bind_group: None,
             diffuse_bind_group: None,
@@ -198,6 +200,15 @@ impl RenderState {
             self.surface_configuration.width = new_size.width;
             self.surface_configuration.height = new_size.height;
             self.surface.configure(&self.device, &self.surface_configuration);
+
+            let projection_matrix: Matrix4<f32> = get_projection_matrix(&self);
+            let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
+
+            self.queue.write_buffer(
+                &self.projection_buffer.as_ref().unwrap(),
+                0,
+                bytemuck::cast_slice(&[projection_matrix_unwrapped])
+            );
         }
     }
 
@@ -312,7 +323,13 @@ pub fn render_sprite(render_state: &mut RenderState, sprite: Sprite) {
             ]
         });
 
-        let (transform_bind_group, transform_bind_group_layout, transform_buffer) = get_transform_bindings(render_state);
+        let (
+            transform_bind_group,
+            transform_bind_group_layout,
+            transform_buffer,
+            projection_buffer
+        ) = get_transform_bindings(render_state);
+
         let render_pipeline: RenderPipeline = get_render_pipeline(
             render_state,
             vec![&diffuse_bind_group_layout, &transform_bind_group_layout],
@@ -325,6 +342,7 @@ pub fn render_sprite(render_state: &mut RenderState, sprite: Sprite) {
         render_state.diffuse_bind_group = Some(diffuse_bind_group);
         render_state.transform_bind_group = Some(transform_bind_group);
         render_state.transform_buffer = Some(transform_buffer);
+        render_state.projection_buffer = Some(projection_buffer);
         render_state.vertex_buffer = Some(vertex_buffer);
         render_state.index_buffer = Some(index_buffer);
         render_state.number_of_indices = Some(number_of_indices);
@@ -365,7 +383,13 @@ pub fn render_shape(render_state: &mut RenderState, shape: Shape) {
         ]
     });
 
-    let (transform_bind_group, transform_bind_group_layout, transform_buffer) = get_transform_bindings(render_state);
+    let (
+        transform_bind_group,
+        transform_bind_group_layout,
+        transform_buffer,
+        projection_buffer
+    ) = get_transform_bindings(render_state);
+
     let render_pipeline: RenderPipeline = get_render_pipeline(
         render_state,
         vec![&color_bind_group_layout, &transform_bind_group_layout],
@@ -378,12 +402,13 @@ pub fn render_shape(render_state: &mut RenderState, shape: Shape) {
     render_state.color_bind_group = Some(color_bind_group);
     render_state.transform_bind_group = Some(transform_bind_group);
     render_state.transform_buffer = Some(transform_buffer);
+    render_state.projection_buffer = Some(projection_buffer);
     render_state.vertex_buffer = Some(vertex_buffer);
     render_state.index_buffer = Some(index_buffer);
     render_state.number_of_indices = Some(number_of_indices);
 }
 
-fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLayout, Buffer) {
+fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLayout, Buffer, Buffer) {
     let identity_matrix: Matrix4<f32> = Matrix4::identity();
     let identity_matrix_unwrapped: [[f32; 4]; 4] = *identity_matrix.as_ref();
     let transform_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
@@ -392,14 +417,7 @@ fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLa
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
     });
 
-    let projection_matrix: Matrix4<f32> = get_projection_matrix(render_state);
-    let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
-    let projection_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Projection Buffer"),
-        contents: bytemuck::cast_slice(&[projection_matrix_unwrapped]),
-        usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
-    });
-
+    let projection_buffer: Buffer = get_projection_buffer(render_state);
     let transform_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
         label: Some("Transform Bind Group Layout"),
         entries: &[
@@ -439,7 +457,17 @@ fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLa
             }
         ]
     });
-    return (transform_bind_group, transform_bind_group_layout, transform_buffer);
+    return (transform_bind_group, transform_bind_group_layout, transform_buffer, projection_buffer);
+}
+
+pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {
+    let projection_matrix: Matrix4<f32> = get_projection_matrix(render_state);
+    let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
+    return render_state.device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("Projection Buffer"),
+        contents: bytemuck::cast_slice(&[projection_matrix_unwrapped]),
+        usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+    });
 }
 
 fn get_projection_matrix(render_state: &RenderState) -> Matrix4<f32> {
