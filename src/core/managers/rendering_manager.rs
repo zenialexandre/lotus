@@ -1,4 +1,9 @@
-use cgmath::{Matrix4, SquareMatrix};
+use cgmath::{
+    Deg,
+    Matrix4,
+    PerspectiveFov,
+    SquareMatrix
+};
 use winit::{
     dpi::PhysicalSize,
     event::WindowEvent,
@@ -236,6 +241,14 @@ impl RenderState {
                 timestamp_writes: None
             });
             render_pass.set_pipeline(&self.render_pipeline.as_mut().unwrap());
+            render_pass.set_viewport(
+                0.0,
+                0.0, 
+                self.physical_size.width as f32, 
+                self.physical_size.height as f32, 
+        0.0,
+        1.0
+            );
 
             if let Some(_diffuse_bind_group) = &self.diffuse_bind_group {
                 render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
@@ -379,11 +392,35 @@ fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLa
         contents: bytemuck::cast_slice(&[identity_matrix_unwrapped]),
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
     });
+
+    let projection_matrix: Matrix4<f32> = PerspectiveFov {
+        fovy: Deg(45.0).into(),
+        aspect: render_state.physical_size.width as f32 / render_state.physical_size.height as f32,
+        near: 0.1,
+        far: 100.0
+    }.into();
+    let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
+    let projection_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("Projection Buffer"),
+        contents: bytemuck::cast_slice(&[projection_matrix_unwrapped]),
+        usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+    });
+
     let transform_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
         label: Some("Transform Bind Group Layout"),
         entries: &[
             BindGroupLayoutEntry {
                 binding: 0,
+                visibility: ShaderStages::VERTEX,
+                ty: BindingType::Buffer {
+                    ty: BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None
+                },
+                count: None
+            },
+            BindGroupLayoutEntry {
+                binding: 1,
                 visibility: ShaderStages::VERTEX,
                 ty: BindingType::Buffer {
                     ty: BufferBindingType::Uniform,
@@ -401,6 +438,10 @@ fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLa
             BindGroupEntry {
                 binding: 0,
                 resource: transform_buffer.as_entire_binding()
+            },
+            BindGroupEntry {
+                binding: 1,
+                resource: projection_buffer.as_entire_binding()
             }
         ]
     });

@@ -1,6 +1,8 @@
 use cgmath::{Deg, Matrix4, Vector2, Vector3};
 
-#[derive(Clone, Debug)]
+use lotus_proc_macros::Component;
+
+#[derive(Clone, Debug, Component)]
 pub struct Transform {
     pub position: Vector2<f32>,
     pub rotation: Deg<f32>,

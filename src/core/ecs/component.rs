@@ -1,3 +1,3 @@
-pub(crate) trait Component {
-    
+pub trait Component {
+   //.. 
 }
