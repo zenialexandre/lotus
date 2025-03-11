@@ -8,7 +8,15 @@ pub fn derive_component(token_stream: proc_macro::TokenStream) -> proc_macro::To
     let name: &syn::Ident = &derive_input.ident;
 
     let gen: proc_macro2::TokenStream = quote! {
-        impl crate::core::ecs::component::Component for #name {}
+        impl crate::core::ecs::component::Component for #name {
+            fn as_any(&self) -> &dyn std::any::Any {
+                return self;
+            }
+
+            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                return self;
+            }
+        }
     };
     return gen.into();
 }
