@@ -31,7 +31,7 @@ pub(crate) struct Texture {
 }
 
 impl Texture {
-    pub(crate) fn from_bytes(
+    pub(crate) fn _from_bytes(
         device: &Device,
         queue: &Queue,
         bytes: &[u8],

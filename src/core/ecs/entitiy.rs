@@ -1,7 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct Entity(u32);
+use uuid::Uuid;
 
-pub struct EntityDescriptor {
-    label: String,
-    //..    
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Entity(pub Uuid);

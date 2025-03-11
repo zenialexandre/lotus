@@ -1,10 +1,12 @@
-use super::{managers::rendering_manager::Vertex, color::Color, transform::Transform};
+use lotus_proc_macros::Component;
 
+use super::{color::Color, managers::rendering_manager::Vertex};
+
+#[derive(Component)]
 pub struct Shape {
     pub orientation: Orientation,
     pub geometry_type: GeometryType,
-    pub color: Color,
-    pub transform: Transform
+    pub color: Color
 }
 
 pub struct Circle {
