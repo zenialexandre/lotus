@@ -2,23 +2,37 @@ use lotus_proc_macros::Component;
 
 use super::{color::Color, managers::rendering_manager::Vertex};
 
-#[derive(Component)]
+#[derive(Clone, Debug, Component)]
 pub struct Shape {
     pub orientation: Orientation,
     pub geometry_type: GeometryType,
     pub color: Color
 }
 
+impl Shape {
+    pub fn new(orientation: Orientation, geometry_type: GeometryType, color: Color) -> Self {
+        let shape: Shape = Self {
+            orientation,
+            geometry_type,
+            color
+        };
+        return shape;
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Circle {
     pub number_of_segments: u16,
     pub radius: f32
 }
 
+#[derive(Clone, Debug)]
 pub enum Orientation {
     Horizontal,
     Vertical
 }
 
+#[derive(Clone, Debug)]
 pub enum GeometryType {
     Triangle,
     Square,

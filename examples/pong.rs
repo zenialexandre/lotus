@@ -1,6 +1,24 @@
 use lotus::*;
-use cgmath::{Matrix4, Vector2};
+use cgmath::Vector2;
 use std::cell::RefCell;
+
+#[derive(Component)]
+struct FirstSprite();
+
+impl FirstSprite {
+    fn new() -> Self {
+        return Self();
+    }
+}
+
+#[derive(Component)]
+struct SecondSprite();
+
+impl SecondSprite {
+    fn new() -> Self {
+        return Self();
+    }
+}
 
 your_game!(
     WindowConfiguration {
@@ -22,38 +40,64 @@ your_game!(
 );
 
 fn setup(engine_context: &mut EngineContext) {
-    let sprite: Sprite = Sprite::new(
-        "assets/textures/lotus_pink_256x256.png".to_string(),
-    );
-    render_sprite(&mut engine_context.render_state, sprite.clone()); // This should be moved to the spawn
+    let sprite: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
+    let sprite2: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
 
     engine_context.world.spawn(
+        &mut engine_context.render_state,
         &mut vec![
             RefCell::new(Box::new(sprite)),
-            RefCell::new(Box::new(Transform::new(Vector2::new(0.10, 0.25), 0., Vector2::new(1., 1.))))
+            RefCell::new(Box::new(Transform::new(Vector2::new(0.10, 0.60), 0., Vector2::new(1., 1.)))),
+            RefCell::new(Box::new(FirstSprite::new()))
+        ]
+    );
+
+    engine_context.world.spawn(
+        &mut engine_context.render_state,
+        &mut vec![
+            RefCell::new(Box::new(sprite2)),
+            RefCell::new(Box::new(Transform::new(Vector2::new(0.10, 0.25), 0., Vector2::new(1., 1.)))),
+            RefCell::new(Box::new(SecondSprite::new()))
         ]
     );
 }
 
 fn update(engine_context: &mut EngineContext) {
-    let mut query: Query = Query::new(&engine_context.world)
+    let mut first_sprite_query: Query = Query::new(&engine_context.world)
+        .with_components::<FirstSprite>()
         .with_components::<Sprite>()
         .with_components::<Transform>();
+    let first_sprite_query_results = first_sprite_query.get_entities_by_components_mut().unwrap();
 
-    let (_entity, mut components) = query.get_entity_by_components_mut().unwrap();
+    let mut second_sprite_query: Query = Query::new(&engine_context.world)
+        .with_components::<SecondSprite>()
+        .with_components::<Sprite>()
+        .with_components::<Transform>();
+    let second_sprite_query_results = second_sprite_query.get_entities_by_components_mut().unwrap();
 
-    for component in &mut components {
-        if let Some(transform) = component.as_any_mut().downcast_mut::<Transform>() {
-            transform.rotation += 100. * engine_context.delta;
+    for first_sprite_query_result in first_sprite_query_results {
+        let (_entity, mut components) = first_sprite_query_result;
 
-            let transform_matrix: Matrix4<f32> = transform.to_matrix();
-            let transform_matrix_as_ref: &[[f32; 4]; 4] = transform_matrix.as_ref();
+        for component in &mut components {
+            if let Some(transform) = component.as_any_mut().downcast_mut::<Transform>() {
+                let mut rotation: f32 = transform.get_rotation();
+                rotation += 100. * engine_context.delta;
+                transform.set_rotation(&engine_context, rotation);
+                transform.set_scale(&engine_context, Vector2::new(10. * engine_context.delta, 10. * engine_context.delta));
+            }
+        }
+    }
 
-            engine_context.render_state.queue.write_buffer(
-                &engine_context.render_state.transform_buffer.as_mut().unwrap(),
-                0,
-                bytemuck::cast_slice(&[*transform_matrix_as_ref])
-            );
+    for second_sprite_query_result in second_sprite_query_results {
+        let (_entity, mut components) = second_sprite_query_result;
+
+        for component in &mut components {
+            if let Some(transform) = component.as_any_mut().downcast_mut::<Transform>() {
+                let mut rotation: f32 = transform.get_rotation();
+                rotation += -100. * engine_context.delta;
+                transform.set_rotation(&engine_context, rotation);
+                transform.set_scale(&engine_context, Vector2::new(10. * engine_context.delta, 10. * engine_context.delta));
+            }
         }
     }
 }

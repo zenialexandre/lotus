@@ -84,10 +84,14 @@ use wgpu::{
         DeviceExt
     }
 };
-use std::{path::Path, sync::Arc};
+use std::{
+    cell::RefMut,
+    path::Path,
+    sync::Arc
+};
 
-use super::super::{color, shape::{Orientation, Shape}, sprite::Sprite, texture};
-use crate::utils::constants::shader::{TEXTURE_SHADER, COLOR_SHADER};
+use super::super::{color, shape::{Orientation, Shape}, transform::Transform, sprite::Sprite, texture, ecs::{entitiy::Entity, world::World, component::Component}};
+use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -112,7 +116,8 @@ pub struct RenderState {
     color_bind_group: Option<BindGroup>,
     projection_buffer: Option<Buffer>,
     pub transform_buffer: Option<Buffer>,
-    transform_bind_group: Option<BindGroup>
+    transform_bind_group: Option<BindGroup>,
+    pub entities_to_render: Vec<Entity>
 }
 
 impl Vertex {
@@ -186,7 +191,8 @@ impl RenderState {
             number_of_indices: None,
             color_bind_group: None,
             diffuse_bind_group: None,
-            transform_bind_group: None
+            transform_bind_group: None,
+            entities_to_render: Vec::new()
         };
     }
 
@@ -204,11 +210,13 @@ impl RenderState {
             let projection_matrix: Matrix4<f32> = get_projection_matrix(&self);
             let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
 
-            self.queue.write_buffer(
-                &self.projection_buffer.as_ref().unwrap(),
-                0,
-                bytemuck::cast_slice(&[projection_matrix_unwrapped])
-            );
+            if let Some(projection_buffer) = self.projection_buffer.as_ref() {
+                self.queue.write_buffer(
+                    projection_buffer,
+                    0,
+                    bytemuck::cast_slice(&[projection_matrix_unwrapped])
+                );
+            }
         }
     }
 
@@ -228,7 +236,17 @@ impl RenderState {
         }
     }
 
-    pub(crate) fn render(&mut self) -> Result<(), SurfaceError> {
+    pub(crate) fn add_entity_to_render(&mut self, entity: Entity) {
+        self.entities_to_render.push(entity);
+    }
+
+    pub(crate) fn remove_entity_to_render(&mut self, entity: &Entity) {
+        if let Some(index) = self.entities_to_render.iter().position(|e| e == entity) {
+            self.entities_to_render.remove(index);
+        }
+    }
+
+    pub(crate) fn render(&mut self, world: &World) -> Result<(), SurfaceError> {
         let surface_texture: SurfaceTexture = self.surface.get_current_texture()?;
         let texture_view: TextureView = surface_texture.texture.create_view(&TextureViewDescriptor::default());
         let mut command_encoder: CommandEncoder = self.device.create_command_encoder(&CommandEncoderDescriptor {
@@ -250,7 +268,6 @@ impl RenderState {
                 occlusion_query_set: None,
                 timestamp_writes: None
             });
-            render_pass.set_pipeline(&self.render_pipeline.as_mut().unwrap());
             render_pass.set_viewport(
                 0.0,
                 0.0, 
@@ -260,65 +277,140 @@ impl RenderState {
                 1.0
             );
 
-            if let Some(_diffuse_bind_group) = &self.diffuse_bind_group {
-                render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-            } else {
-                render_pass.set_bind_group(0, &self.color_bind_group, &[]);
+            for entity in self.entities_to_render.clone() {
+                if world.is_entity_alive(entity) {
+                    let components: Vec<RefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
+
+                    if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
+                        let transform: Option<&Transform> = components.iter().find_map(|component| component.as_any().downcast_ref::<Transform>());
+
+                        self.setup_sprite_rendering(sprite, transform);
+                        render_pass.set_pipeline(&self.render_pipeline.as_mut().unwrap());
+                        render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+                        render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
+                        render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
+                        render_pass.set_index_buffer(self.index_buffer.as_mut().unwrap().slice(..), IndexFormat::Uint16);
+                        render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
+                    } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
+                        let transform: Option<&Transform> = components.iter().find_map(|component| component.as_any().downcast_ref::<Transform>());
+
+                        self.setup_shape_rendering(shape, transform);
+                        render_pass.set_pipeline(&self.render_pipeline.as_mut().unwrap());
+                        render_pass.set_bind_group(0, &self.color_bind_group, &[]);
+                        render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
+                        render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
+                        render_pass.set_index_buffer(self.index_buffer.as_mut().unwrap().slice(..), IndexFormat::Uint16);
+                        render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
+                    }
+                }
             }
-            render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
-            render_pass.set_index_buffer(self.index_buffer.as_mut().unwrap().slice(..), IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
         }
         self.queue.submit(std::iter::once(command_encoder.finish()));
         surface_texture.present();
         return Ok(());
     }
-}
 
-pub fn render_sprite(render_state: &mut RenderState, sprite: Sprite) {
-    if let Ok(diffuse_dynamic_image) = image::open(Path::new(sprite.path.as_str())) {
-        let diffuse_texture: texture::Texture = texture::Texture::from_image(
-            &render_state.device,
-            &render_state.queue,
-            &diffuse_dynamic_image,
-            Some("Sprite")
-        ).unwrap();
+    pub(crate) fn setup_sprite_rendering(&mut self, sprite: &Sprite, transform: Option<&Transform>) {
+        if let Ok(diffuse_dynamic_image) = image::open(Path::new(sprite.path.as_str())) {
+            let diffuse_texture: texture::Texture = texture::Texture::from_image(
+                &self.device,
+                &self.queue,
+                &diffuse_dynamic_image,
+                Some("Sprite")
+            ).unwrap();
 
-        let diffuse_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("Diffuse Bind Group Layout"),
+            let diffuse_bind_group_layout: BindGroupLayout = self.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                label: Some("Diffuse Bind Group Layout"),
+                entries: &[
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: TextureSampleType::Float {
+                                filterable: true
+                            }
+                        },
+                        count: None
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                        count: None
+                    },
+                ]
+            });
+            let diffuse_bind_group: BindGroup = self.device.create_bind_group(&BindGroupDescriptor {
+                label: Some("Diffuse Bind Group"),
+                layout: &diffuse_bind_group_layout,
+                entries: &[
+                    BindGroupEntry {
+                        binding: 0,
+                        resource: BindingResource::TextureView(&diffuse_texture.texture_view)
+                    },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: BindingResource::Sampler(&diffuse_texture.sampler)
+                    }
+                ]
+            });
+
+            let (
+                transform_bind_group,
+                transform_bind_group_layout,
+                projection_buffer
+            ) = get_transform_bindings(self, transform);
+
+            let render_pipeline: RenderPipeline = get_render_pipeline(
+                self,
+                vec![&diffuse_bind_group_layout, &transform_bind_group_layout],
+                TEXTURE_SHADER
+            );
+            let vertex_buffer: Buffer = get_vertex_buffer(self, &sprite.vertices);
+            let (index_buffer, number_of_indices) = get_index_attributes(self, &sprite.indices);
+
+            self.render_pipeline = Some(render_pipeline);
+            self.diffuse_bind_group = Some(diffuse_bind_group);
+            self.transform_bind_group = Some(transform_bind_group);
+            self.projection_buffer = Some(projection_buffer);
+            self.vertex_buffer = Some(vertex_buffer);
+            self.index_buffer = Some(index_buffer);
+            self.number_of_indices = Some(number_of_indices);
+        } else {
+            panic!("Image not found on the render_sprite process!");
+        }
+    }
+
+    pub(crate) fn setup_shape_rendering(&mut self, shape: &Shape, transform: Option<&Transform>) {
+        let color_buffer: Buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Color Buffer"),
+            contents:bytemuck::cast_slice(&color::to_array(Color::BLACK)),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+        });
+        let color_bind_group_layout: BindGroupLayout = self.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("Color Bind Group Layout"),
             entries: &[
                 BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Texture {
-                        multisampled: false,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        sample_type: TextureSampleType::Float {
-                            filterable: true
-                        }
+                    visibility: ShaderStages::FRAGMENT | ShaderStages::VERTEX,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
                     },
                     count: None
-                },
-                BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
-                    count: None
-                },
+                }
             ]
         });
-        let diffuse_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
-            label: Some("Diffuse Bind Group"),
-            layout: &diffuse_bind_group_layout,
+        let color_bind_group: BindGroup = self.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("Color Bind Group"),
+            layout: &color_bind_group_layout,
             entries: &[
                 BindGroupEntry {
                     binding: 0,
-                    resource: BindingResource::TextureView(&diffuse_texture.texture_view)
-                },
-                BindGroupEntry {
-                    binding: 1,
-                    resource: BindingResource::Sampler(&diffuse_texture.sampler)
+                    resource: color_buffer.as_entire_binding()
                 }
             ]
         });
@@ -326,97 +418,28 @@ pub fn render_sprite(render_state: &mut RenderState, sprite: Sprite) {
         let (
             transform_bind_group,
             transform_bind_group_layout,
-            transform_buffer,
             projection_buffer
-        ) = get_transform_bindings(render_state);
+        ) = get_transform_bindings(self, transform);
 
         let render_pipeline: RenderPipeline = get_render_pipeline(
-            render_state,
-            vec![&diffuse_bind_group_layout, &transform_bind_group_layout],
-            TEXTURE_SHADER
+            self,
+            vec![&color_bind_group_layout, &transform_bind_group_layout],
+            COLOR_SHADER
         );
-        let vertex_buffer: Buffer = get_vertex_buffer(render_state, &sprite.vertices);
-        let (index_buffer, number_of_indices) = get_index_attributes(render_state, &sprite.indices);
+        let vertex_buffer: Buffer = get_vertex_buffer(self, &shape.geometry_type.to_vertex_array(Orientation::Horizontal));
+        let (index_buffer, number_of_indices) = get_index_attributes(self, &shape.geometry_type.to_index_array());
 
-        render_state.render_pipeline = Some(render_pipeline);
-        render_state.diffuse_bind_group = Some(diffuse_bind_group);
-        render_state.transform_bind_group = Some(transform_bind_group);
-        render_state.transform_buffer = Some(transform_buffer);
-        render_state.projection_buffer = Some(projection_buffer);
-        render_state.vertex_buffer = Some(vertex_buffer);
-        render_state.index_buffer = Some(index_buffer);
-        render_state.number_of_indices = Some(number_of_indices);
-    } else {
-        panic!("Image not found on the render_sprite process!");
+        self.render_pipeline = Some(render_pipeline);
+        self.color_bind_group = Some(color_bind_group);
+        self.transform_bind_group = Some(transform_bind_group);
+        self.projection_buffer = Some(projection_buffer);
+        self.vertex_buffer = Some(vertex_buffer);
+        self.index_buffer = Some(index_buffer);
+        self.number_of_indices = Some(number_of_indices);
     }
 }
 
-pub fn render_shape(render_state: &mut RenderState, shape: Shape) {
-    let color_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Color Buffer"),
-        contents:bytemuck::cast_slice(&color::to_array(Color::BLACK)),
-        usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
-    });
-    let color_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-        label: Some("Color Bind Group Layout"),
-        entries: &[
-            BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::FRAGMENT | ShaderStages::VERTEX,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None
-                },
-                count: None
-            }
-        ]
-    });
-    let color_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
-        label: Some("Color Bind Group"),
-        layout: &color_bind_group_layout,
-        entries: &[
-            BindGroupEntry {
-                binding: 0,
-                resource: color_buffer.as_entire_binding()
-            }
-        ]
-    });
-
-    let (
-        transform_bind_group,
-        transform_bind_group_layout,
-        transform_buffer,
-        projection_buffer
-    ) = get_transform_bindings(render_state);
-
-    let render_pipeline: RenderPipeline = get_render_pipeline(
-        render_state,
-        vec![&color_bind_group_layout, &transform_bind_group_layout],
-        COLOR_SHADER
-    );
-    let vertex_buffer: Buffer = get_vertex_buffer(render_state, &shape.geometry_type.to_vertex_array(Orientation::Horizontal));
-    let (index_buffer, number_of_indices) = get_index_attributes(render_state, &shape.geometry_type.to_index_array());
-
-    render_state.render_pipeline = Some(render_pipeline);
-    render_state.color_bind_group = Some(color_bind_group);
-    render_state.transform_bind_group = Some(transform_bind_group);
-    render_state.transform_buffer = Some(transform_buffer);
-    render_state.projection_buffer = Some(projection_buffer);
-    render_state.vertex_buffer = Some(vertex_buffer);
-    render_state.index_buffer = Some(index_buffer);
-    render_state.number_of_indices = Some(number_of_indices);
-}
-
-fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLayout, Buffer, Buffer) {
-    let identity_matrix: Matrix4<f32> = Matrix4::identity();
-    let identity_matrix_unwrapped: [[f32; 4]; 4] = *identity_matrix.as_ref();
-    let transform_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("Transform Buffer"),
-        contents: bytemuck::cast_slice(&[identity_matrix_unwrapped]),
-        usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
-    });
-
+fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Transform>) -> (BindGroup, BindGroupLayout, Buffer) {
     let projection_buffer: Buffer = get_projection_buffer(render_state);
     let transform_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
         label: Some("Transform Bind Group Layout"),
@@ -443,13 +466,33 @@ fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLa
             }
         ]
     });
+
+    if let Some(transform_unwrapped) = transform {
+        let transform_matrix_unwrapped: [[f32; 4]; 4] = *transform_unwrapped.to_matrix().as_ref();
+        let transform_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Transform Buffer"),
+            contents: bytemuck::cast_slice(&[transform_matrix_unwrapped]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+        });
+        render_state.transform_buffer = Some(transform_buffer);
+    } else {
+        let identity_matrix: Matrix4<f32> = Matrix4::identity();
+        let identity_matrix_unwrapped: [[f32; 4]; 4] = *identity_matrix.as_ref();
+        let transform_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("Transform Buffer"),
+            contents: bytemuck::cast_slice(&[identity_matrix_unwrapped]),
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+        });
+        render_state.transform_buffer = Some(transform_buffer);
+    }
+
     let transform_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
         label: Some("Transform Bind Group"),
         layout: &transform_bind_group_layout,
         entries: &[
             BindGroupEntry {
                 binding: 0,
-                resource: transform_buffer.as_entire_binding()
+                resource: render_state.transform_buffer.as_ref().unwrap().as_entire_binding()
             },
             BindGroupEntry {
                 binding: 1,
@@ -457,7 +500,7 @@ fn get_transform_bindings(render_state: &RenderState) -> (BindGroup, BindGroupLa
             }
         ]
     });
-    return (transform_bind_group, transform_bind_group_layout, transform_buffer, projection_buffer);
+    return (transform_bind_group, transform_bind_group_layout, projection_buffer);
 }
 
 pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {

@@ -13,3 +13,4 @@ pub use core::ecs::world::*;
 pub use core::ecs::entitiy::*;
 pub use core::ecs::component::*;
 pub use core::ecs::query::*;
+pub use lotus_proc_macros::Component;

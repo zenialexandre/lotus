@@ -19,15 +19,17 @@ impl<'a> Query<'a> {
         return self;
     }
 
-    pub fn get_entity_by_components_mut(&mut self) -> Option<(Entity, Vec<RefMut<'a, Box<dyn Component>>>)> {
+    pub fn get_entities_by_components_mut(&'a mut self) -> Option<Vec<(Entity, Vec<RefMut<'a, Box<dyn Component>>>)>> {
         let archetype_unique_key: u64 = self.world.get_archetype_unique_key(&mut self.parameters);
         let archetype: &Archetype = self.world.archetypes.get(&archetype_unique_key)?;
-        let components: Vec<RefMut<'a, Box<dyn Component>>> = self.world.get_entity_components_mut(&*archetype.entities.first()?)?;
+        let mut results = Vec::new();
 
-        return Some((
-            *archetype.entities.first()?,
-            components
-        ));
+        for entity in &archetype.entities {
+            if let Some(components) = self.world.get_entity_components_mut(entity) {
+                results.push((*entity, components));
+            }
+        }
+        return Some(results);
     }
 
     fn _matches(&self, entity_components: &[&mut dyn Component]) -> bool {

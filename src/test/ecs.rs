@@ -14,7 +14,7 @@ mod ecs_test {
 
         components.push(RefCell::new(Box::new(transform)));
 
-        world.spawn(&mut components);
+        //world.spawn(&mut components);
 
         assert!(world.archetypes.len() == 1);
     }

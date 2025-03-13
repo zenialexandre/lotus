@@ -14,8 +14,7 @@ use std::{
 };
 use uuid::Uuid;
 
-use crate::Transform;
-
+use crate::{Transform, RenderState};
 use super::{component::Component, entitiy::Entity};
 
 pub struct Archetype {
@@ -55,7 +54,7 @@ impl World {
     }
 
     // When spawning, the render should draw this entity.
-    pub fn spawn(&mut self, components: &mut Vec<RefCell<Box<dyn Component>>>) -> Entity {
+    pub fn spawn(&mut self, render_state: &mut RenderState, components: &mut Vec<RefCell<Box<dyn Component>>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
         let has_transform: bool = components.iter().any(|c| c.borrow().as_any().is::<Transform>());
 
@@ -70,14 +69,16 @@ impl World {
         let moved_components: Vec<RefCell<Box<dyn Component>>> = take(components);
         archetype.add_entity(entity, moved_components);
 
+        render_state.add_entity_to_render(entity);
+
         return entity;
     }
 
-    // When despawning, the render should erase this entity.
-    pub fn despawn(&mut self, entity: Entity) {
+    pub fn despawn(&mut self, render_state: &mut RenderState, entity: &Entity) {
         if let Some((_, archetype)) = self.archetypes.iter_mut().find(|(_, arch)| arch.entities.contains(&entity)) {
             if let Some(index) = archetype.entities.iter().position(|e| e.0 == entity.0) {
                 archetype.entities.remove(index);
+                render_state.remove_entity_to_render(entity);
             }
         }
     }
@@ -111,5 +112,9 @@ impl World {
             }
         }
         return None;
+    }
+
+    pub fn is_entity_alive(&self, entity: Entity) -> bool {
+        return self.archetypes.values().any(|archetype| archetype.entities.iter().any(|e| e.0 == entity.0));    
     }
 }

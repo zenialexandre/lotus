@@ -1,4 +1,3 @@
-use wgpu::SurfaceError;
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -124,7 +123,7 @@ impl ApplicationHandler for Application {
         let world: World = World::new();
         self.engine_context = Some(EngineContext::new(render_state, world, 0.0));
 
-        (self.game_loop.setup)(self.engine_context.as_mut().unwrap()); // Runs the Setup code once!
+        (self.game_loop.setup)(self.engine_context.as_mut().unwrap());
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
@@ -141,25 +140,6 @@ impl ApplicationHandler for Application {
                 }
                 WindowEvent::RedrawRequested => {
                     render_state.window().request_redraw();
-
-                    match render_state.render() {
-                        Ok(_) => {}
-
-                        Err(
-                            SurfaceError::Lost | SurfaceError::Outdated
-                        ) => render_state.resize(render_state.physical_size),
-
-                        Err(
-                            SurfaceError::OutOfMemory | SurfaceError::Other
-                        ) => {
-                            log::error!("Application OOMKilled.");
-                            event_loop.exit();
-                        }
-
-                        Err(SurfaceError::Timeout) => {
-                            log::warn!("Surface Timeout.")
-                        }
-                    }
                 }
                 _ => ()
             }

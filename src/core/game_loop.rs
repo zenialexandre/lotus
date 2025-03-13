@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
 
-use super::{engine::EngineContext, managers::rendering_manager::RenderState};
+use super::{engine::EngineContext, managers::rendering_manager::RenderState, ecs::world::World};
 
 #[derive(Default)]
 pub(crate) enum GameLoopState {
@@ -45,11 +45,11 @@ impl GameLoop {
             (self.update)(engine_context);
             self.accumulated_time_from_last_update -= self.delta;
         }
-        self.render(&mut engine_context.render_state, event_loop);
+        self.render(&mut engine_context.render_state, &engine_context.world, event_loop);
     }
 
-    fn render(&self, render_state: &mut RenderState, event_loop: &ActiveEventLoop) {
-        match render_state.render() {
+    fn render(&self, render_state: &mut RenderState, world: &World, event_loop: &ActiveEventLoop) {
+        match render_state.render(world) {
             Ok(_) => {}
 
             Err(
