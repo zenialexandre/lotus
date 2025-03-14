@@ -51,11 +51,11 @@ impl GeometryType {
                 ]
             },
             GeometryType::Square => {
-                vec![
-                    Vertex { position: [-0.5, -0.5, 0.0], texture_coordinates: [0.0, 1.0] }, // Left Down
-                    Vertex { position: [0.5, -0.5, 0.0], texture_coordinates: [1.0, 1.0] },  // Right Down
-                    Vertex { position: [0.5, 0.5, 0.0], texture_coordinates: [1.0, 0.0] },   // Right Up
-                    Vertex { position: [-0.5, 0.5, 0.0], texture_coordinates: [0.0, 0.0] }   // Left Up
+                vec![ 
+                    Vertex { position: [-1.0, -1.0, 0.0], texture_coordinates: [0.0, 1.0] }, // Canto inferior esquerdo
+                    Vertex { position: [1.0, -1.0, 0.0], texture_coordinates: [1.0, 1.0] },  // Canto inferior direito
+                    Vertex { position: [1.0, 1.0, 0.0], texture_coordinates: [1.0, 0.0] },   // Canto superior direito
+                    Vertex { position: [-1.0, 1.0, 0.0], texture_coordinates: [0.0, 0.0] }
                 ]
             },
             GeometryType::Rectangle => {

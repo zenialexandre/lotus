@@ -36,6 +36,7 @@ use wgpu::{
     RequestAdapterOptions,
     StoreOp,
     Surface,
+    RenderPass,
     SurfaceCapabilities,
     SurfaceConfiguration,
     SurfaceError,
@@ -91,7 +92,7 @@ use std::{
 };
 
 use super::super::{color, shape::{Orientation, Shape}, transform::Transform, sprite::Sprite, texture, ecs::{entitiy::Entity, world::World, component::Component}};
-use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER};
+use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER, BACKGROUND_SHADER};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -107,6 +108,7 @@ pub struct RenderState {
     surface_configuration: SurfaceConfiguration,
     pub(crate) physical_size: PhysicalSize<u32>,
     pub(crate) color: Option<color::Color>,
+    pub(crate) background_image_path: Option<String>,
     window: Arc<Window>,
     render_pipeline: Option<RenderPipeline>,
     vertex_buffer: Option<Buffer>,
@@ -182,6 +184,7 @@ impl RenderState {
             surface_configuration,
             physical_size,
             color: None,
+            background_image_path: None,
             window,
             render_pipeline: None,
             vertex_buffer: None,
@@ -254,13 +257,13 @@ impl RenderState {
         });
 
         {
-            let mut render_pass = command_encoder.begin_render_pass(&RenderPassDescriptor {
+            let mut render_pass: RenderPass<'_> = command_encoder.begin_render_pass(&RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(RenderPassColorAttachment {
                     view: &texture_view,
                     resolve_target: None,
                     ops: Operations {
-                        load: LoadOp::Clear(color::to_wgpu(self.color.unwrap())),
+                        load: LoadOp::Clear(color::to_wgpu(self.color.unwrap_or_else(|| color::Color::WHITE))),
                         store: StoreOp::Store
                     },
                 })],
@@ -277,30 +280,28 @@ impl RenderState {
                 1.0
             );
 
+            if let Some(background_image_path) = &self.background_image_path {
+                let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
+                self.setup_sprite_rendering(&background_sprite, None, BACKGROUND_SHADER);
+                self.apply_render_pass_with_values(&mut render_pass, self.diffuse_bind_group.as_ref().unwrap().clone());
+            }
+
             for entity in self.entities_to_render.clone() {
                 if world.is_entity_alive(entity) {
                     let components: Vec<RefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
 
                     if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
-                        let transform: Option<&Transform> = components.iter().find_map(|component| component.as_any().downcast_ref::<Transform>());
-
-                        self.setup_sprite_rendering(sprite, transform);
-                        render_pass.set_pipeline(&self.render_pipeline.as_mut().unwrap());
-                        render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-                        render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
-                        render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
-                        render_pass.set_index_buffer(self.index_buffer.as_mut().unwrap().slice(..), IndexFormat::Uint16);
-                        render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
+                        let transform: Option<&Transform> = components.iter()
+                            .find_map(|component| component.as_any().downcast_ref::<Transform>()
+                        );
+                        self.setup_sprite_rendering(sprite, transform, TEXTURE_SHADER);
+                        self.apply_render_pass_with_values(&mut render_pass, self.diffuse_bind_group.as_ref().unwrap().clone());
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
-                        let transform: Option<&Transform> = components.iter().find_map(|component| component.as_any().downcast_ref::<Transform>());
-
+                        let transform: Option<&Transform> = components.iter()
+                            .find_map(|component| component.as_any().downcast_ref::<Transform>()
+                        );
                         self.setup_shape_rendering(shape, transform);
-                        render_pass.set_pipeline(&self.render_pipeline.as_mut().unwrap());
-                        render_pass.set_bind_group(0, &self.color_bind_group, &[]);
-                        render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
-                        render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
-                        render_pass.set_index_buffer(self.index_buffer.as_mut().unwrap().slice(..), IndexFormat::Uint16);
-                        render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
+                        self.apply_render_pass_with_values(&mut render_pass, self.color_bind_group.as_ref().unwrap().clone());
                     }
                 }
             }
@@ -310,7 +311,16 @@ impl RenderState {
         return Ok(());
     }
 
-    pub(crate) fn setup_sprite_rendering(&mut self, sprite: &Sprite, transform: Option<&Transform>) {
+    pub(crate) fn apply_render_pass_with_values(&mut self, render_pass: &mut RenderPass<'_>, generic_bind_group: BindGroup) {
+        render_pass.set_pipeline(&self.render_pipeline.as_mut().unwrap());
+        render_pass.set_bind_group(0, &generic_bind_group, &[]);
+        render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
+        render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
+        render_pass.set_index_buffer(self.index_buffer.as_mut().unwrap().slice(..), IndexFormat::Uint16);
+        render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
+    }
+
+    pub(crate) fn setup_sprite_rendering(&mut self, sprite: &Sprite, transform: Option<&Transform>, shader_souce: &str) {
         if let Ok(diffuse_dynamic_image) = image::open(Path::new(sprite.path.as_str())) {
             let diffuse_texture: texture::Texture = texture::Texture::from_image(
                 &self.device,
@@ -366,7 +376,7 @@ impl RenderState {
             let render_pipeline: RenderPipeline = get_render_pipeline(
                 self,
                 vec![&diffuse_bind_group_layout, &transform_bind_group_layout],
-                TEXTURE_SHADER
+                shader_souce
             );
             let vertex_buffer: Buffer = get_vertex_buffer(self, &sprite.vertices);
             let (index_buffer, number_of_indices) = get_index_attributes(self, &sprite.indices);

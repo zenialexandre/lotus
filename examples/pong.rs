@@ -24,7 +24,8 @@ your_game!(
     WindowConfiguration {
         icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
         title: "Pong Game :)".to_string(),
-        background_color: lotus::core::color::Color::WHITE,
+        background_color: None,
+        background_image_path: Some("assets/textures/pong/pong_background_2560x1600.png".to_string()),
         width: 800.,
         height: 600.,
         position_x: 200.,
@@ -40,8 +41,8 @@ your_game!(
 );
 
 fn setup(engine_context: &mut EngineContext) {
-    let sprite: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
-    let sprite2: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
+    let sprite: Sprite = Sprite::new("assets/textures/pong/gray_racket_256x256.png".to_string());
+    let sprite2: Sprite = Sprite::new("assets/textures/pong/pink_racket_256x256.png".to_string());
 
     engine_context.world.spawn(
         &mut engine_context.render_state,

@@ -5,9 +5,9 @@ use crate::EngineContext;
 
 #[derive(Clone, Debug, Component)]
 pub struct Transform {
-    position: Vector2<f32>,
-    rotation: f32,
-    scale: Vector2<f32>
+    pub position: Vector2<f32>,
+    pub rotation: f32,
+    pub scale: Vector2<f32>
 }
 
 impl Default for Transform {
