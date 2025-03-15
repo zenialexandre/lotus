@@ -14,8 +14,8 @@ use std::{
 };
 use uuid::Uuid;
 
-use crate::{Transform, RenderState};
-use super::{component::Component, entitiy::Entity};
+use crate::{core::input::Input, RenderState, Transform};
+use super::{component::Component, entitiy::Entity, resource::Resource};
 
 pub struct Archetype {
     pub entities: Vec<Entity>,
@@ -43,17 +43,18 @@ impl Archetype {
 }
 
 pub struct World {
-    pub archetypes: HashMap<u64, Archetype>
+    pub archetypes: HashMap<u64, Archetype>,
+    pub resources: Vec<Box<dyn Resource>>
 }
 
 impl World {
     pub fn new() -> Self {
         return Self {
-            archetypes: HashMap::new()
+            archetypes: HashMap::new(),
+            resources: vec![Box::new(Input::default())]
         };
     }
 
-    // When spawning, the render should draw this entity.
     pub fn spawn(&mut self, render_state: &mut RenderState, components: &mut Vec<RefCell<Box<dyn Component>>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
         let has_transform: bool = components.iter().any(|c| c.borrow().as_any().is::<Transform>());
@@ -65,7 +66,6 @@ impl World {
         let archetype_unique_key: u64 = self.get_archetype_unique_key(&mut components_types_ids);
         let archetype: &mut Archetype = self.archetypes.entry(archetype_unique_key).or_insert_with(Archetype::new);
         
-        // Moving the ownership after the operations are done.
         let moved_components: Vec<RefCell<Box<dyn Component>>> = take(components);
         archetype.add_entity(entity, moved_components);
 

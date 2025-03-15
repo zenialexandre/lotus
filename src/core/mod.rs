@@ -8,3 +8,4 @@ pub mod sprite;
 pub mod macros;
 pub mod ecs;
 pub mod engine;
+pub mod input;

@@ -1,10 +1,13 @@
 use winit::{
     application::ApplicationHandler,
-    event::WindowEvent,
+    event::{
+        WindowEvent,
+        ElementState
+    },
     event_loop::{
         ActiveEventLoop,
         ControlFlow,
-        EventLoop
+        EventLoop,
     },
     window::{
         Window,
@@ -25,7 +28,7 @@ use std::{
     sync::Arc
 };
 
-use crate::core::engine::EngineContext;
+use crate::core::{engine::EngineContext, input::Input};
 
 use super::super::{
     ecs::world::World,
@@ -75,7 +78,7 @@ impl WindowConfiguration {
     pub fn get_icon_by_path(icon_path: String) -> Option<Icon> {
         if let Ok(image) = image::open(Path::new(icon_path.as_str())) {
             let icon_image = image.into_rgba8();
-            let (icon_width, icon_height) = icon_image.dimensions();
+            let (icon_width, icon_height): (u32, u32) = icon_image.dimensions();
             let icon_rgba: Vec<u8> = icon_image.into_raw();
             let icon: Icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
             return Some(icon);
@@ -95,6 +98,7 @@ impl ApplicationHandler for Application {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let mut color: Option<Color> = None;
         let mut background_image_path: String = String::new();
+
         let window: Arc<Window> = if let Some(window_configuration) = &self.window_configuration {
             let mut window_attributes: WindowAttributes = Window::default_attributes();
             window_attributes.title = window_configuration.title.clone();
@@ -137,7 +141,11 @@ impl ApplicationHandler for Application {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
-        let render_state: &mut RenderState = &mut self.engine_context.as_mut().unwrap().render_state;
+        let engine_context: &mut EngineContext = &mut self.engine_context.as_mut().unwrap();
+        let render_state: &mut RenderState = &mut engine_context.render_state;
+        let input_resource: &mut Input = &mut engine_context.world.resources.iter_mut().filter_map(
+            |resource| resource.as_any_mut().downcast_mut::<Input>()
+        ).next().unwrap();
 
         if !render_state.input(&window_event) {
             match window_event {
@@ -147,7 +155,25 @@ impl ApplicationHandler for Application {
                 },
                 WindowEvent::Resized(new_size) => {
                     render_state.resize(new_size);
-                }
+                },
+                WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
+                    if ElementState::Pressed == event.state {
+                        input_resource.pressed_keys.insert(event.physical_key);
+                    } else if ElementState::Released == event.state {
+                        input_resource.pressed_keys.remove(&event.physical_key);
+                    }
+                },
+                WindowEvent::MouseInput { device_id: _, state, button } => {
+                    if ElementState::Pressed == state {
+                        input_resource.pressed_mouse_buttons.insert(button);
+                    } else if ElementState::Released == state {
+                        input_resource.pressed_mouse_buttons.remove(&button);
+                    }
+                },
+                WindowEvent::CursorMoved { device_id: _, position } => {
+                    input_resource.mouse_position.0 = position.x as f32;
+                    input_resource.mouse_position.1 = position.y as f32;
+                },
                 WindowEvent::RedrawRequested => {
                     render_state.window().request_redraw();
                 }
