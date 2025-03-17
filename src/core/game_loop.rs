@@ -1,19 +1,19 @@
 use std::time::{Duration, Instant};
+use lotus_proc_macros::Resource;
 use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
 
 use super::{engine::EngineContext, managers::rendering_manager::RenderState, ecs::world::World};
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub(crate) enum GameLoopState {
     #[default]
     Running,
-    Paused,
-    Ended
+    Paused
 }
 
 pub struct GameLoop {
-    game_loop_state: GameLoopState,
+    state: GameLoopState,
     delta: Duration,
     accumulated_time_from_last_update: Duration,
     previous_time_of_last_run: Instant,
@@ -21,10 +21,15 @@ pub struct GameLoop {
     update: fn(engine_context: &mut EngineContext),
 }
 
+#[derive(Clone, Debug, Resource)]
+pub struct GameLoopListener {
+    pub state: GameLoopState
+}
+
 impl GameLoop {
     pub fn new(setup: fn(engine_context: &mut EngineContext), update: fn(engine_context: &mut EngineContext)) -> Self {
         return Self {
-            game_loop_state: GameLoopState::Running,
+            state: GameLoopState::Running,
             delta: Duration::from_secs_f32(1.0 / 60.0), // 60 FPS
             accumulated_time_from_last_update: Duration::ZERO,
             previous_time_of_last_run: Instant::now(),
@@ -39,13 +44,15 @@ impl GameLoop {
         self.previous_time_of_last_run = now;
         self.accumulated_time_from_last_update += elapsed_time_from_last_run;
 
-        engine_context.delta = self.get_delta_as_seconds();
+        if GameLoopState::Running == self.state {
+            engine_context.delta = self.get_delta_as_seconds();
 
-        while self.accumulated_time_from_last_update >= self.delta {
-            (self.update)(engine_context);
-            self.accumulated_time_from_last_update -= self.delta;
+            while self.accumulated_time_from_last_update >= self.delta {
+                (self.update)(engine_context);
+                self.accumulated_time_from_last_update -= self.delta;
+            }
+            self.render(&mut engine_context.render_state, &engine_context.world, event_loop);
         }
-        self.render(&mut engine_context.render_state, &engine_context.world, event_loop);
     }
 
     fn render(&self, render_state: &mut RenderState, world: &World, event_loop: &ActiveEventLoop) {
@@ -67,6 +74,14 @@ impl GameLoop {
                 log::warn!("Surface Timeout.")
             }
         }
+    }
+
+    pub fn pause(&mut self) {
+        self.state = GameLoopState::Paused;
+    }
+
+    pub fn resume(&mut self) {
+        self.state = GameLoopState::Running;
     }
 
     pub fn get_delta(&self) -> Duration {

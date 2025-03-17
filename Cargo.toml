@@ -16,5 +16,11 @@ bytemuck = { version = "1.22.0", features = [ "derive" ] }
 image = { version = "0.25.5", features = ["png", "jpeg"] }
 anyhow = "1.0.97"
 cgmath = "0.18"
-uuid = { version = "1.15.1", features = ["v4"] }
-lotus_proc_macros = { path = "lotus_proc_macros" }
+uuid = { version = "1.16.0", features = ["v4"] }
+lotus_proc_macros = { path = "lotus_proc_macros", version = "0.1.0" }
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-leve = 3
