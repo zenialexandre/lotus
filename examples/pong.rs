@@ -1,4 +1,4 @@
-use lotus::*;
+use lotus_engine::*;
 use cgmath::Vector2;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use std::cell::RefCell;
