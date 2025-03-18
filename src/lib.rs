@@ -7,6 +7,7 @@ pub mod test;
 
 pub use core::managers::rendering_manager::*;
 pub use core::managers::windowing_manager::*;
+pub use core::game_loop::*;
 pub use core::engine::*;
 pub use core::color::*;
 pub use core::shape::*;

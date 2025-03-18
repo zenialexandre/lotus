@@ -51,6 +51,7 @@ pub struct WindowConfiguration {
     pub decorations: bool,
     pub transparent: bool,
     pub visible: bool,
+    pub active: bool,
     pub enabled_buttons: WindowButtons
 }
 
@@ -69,6 +70,7 @@ impl Default for WindowConfiguration {
             decorations: true,
             transparent: true,
             visible: true,
+            active: true,
             enabled_buttons: WindowButtons::all()
         };
     }
@@ -114,9 +116,10 @@ impl ApplicationHandler for Application {
             window_attributes.decorations = window_configuration.decorations;
             window_attributes.transparent = window_configuration.transparent;
             window_attributes.visible = window_configuration.visible;
+            window_attributes.active = window_configuration.active;
             window_attributes.enabled_buttons = window_configuration.enabled_buttons;
             window_attributes.window_icon = WindowConfiguration::get_icon_by_path(window_configuration.icon_path.clone());
-            
+
             if let Some(background_color) = window_configuration.background_color {
                 color = Some(background_color);
             }

@@ -35,6 +35,7 @@ your_game!(
         decorations: true,
         transparent: false,
         visible: true,
+        active: true,
         enabled_buttons: winit::window::WindowButtons::CLOSE | winit::window::WindowButtons::MINIMIZE
     },
     setup,
@@ -65,6 +66,10 @@ fn setup(engine_context: &mut EngineContext) {
 }
 
 fn update(engine_context: &mut EngineContext) {
+    let input: &Input = engine_context.world.resources.iter().filter_map(
+        |resource| resource.as_any().downcast_ref::<Input>()
+    ).next().unwrap();
+
     let mut first_sprite_query: Query = Query::new(&engine_context.world)
         .with_components::<LeftRacket>()
         .with_components::<Sprite>()
@@ -82,10 +87,6 @@ fn update(engine_context: &mut EngineContext) {
 
         for component in &mut components {
             if let Some(transform) = component.as_any_mut().downcast_mut::<Transform>() {
-                let input: &Input = engine_context.world.resources.iter().filter_map(
-                    |resource| resource.as_any().downcast_ref::<Input>()
-                ).next().unwrap();
-    
                 if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyW)) {
                     let y: f32 = transform.position.y + 0.35 * engine_context.delta;
                     transform.set_position(&engine_context, Vector2::new(transform.position.x, y));
@@ -102,10 +103,6 @@ fn update(engine_context: &mut EngineContext) {
 
         for component in &mut components {
             if let Some(transform) = component.as_any_mut().downcast_mut::<Transform>() {
-                let input: &Input = engine_context.world.resources.iter().filter_map(
-                    |resource| resource.as_any().downcast_ref::<Input>()
-                ).next().unwrap();
-    
                 if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowUp)) {
                     let y: f32 = transform.position.y + 0.35 * engine_context.delta;
                     transform.set_position(&engine_context, Vector2::new(transform.position.x, y));
@@ -114,6 +111,14 @@ fn update(engine_context: &mut EngineContext) {
                     transform.set_position(&engine_context, Vector2::new(transform.position.x, y));
                 }
             }
+        }
+    }
+
+    if input.is_key_pressed(PhysicalKey::Code(KeyCode::Escape)) {
+        if GameLoopState::Running == engine_context.game_loop_listener.state {
+            engine_context.game_loop_listener.pause();
+        } else {
+            engine_context.game_loop_listener.resume();
         }
     }
 }
