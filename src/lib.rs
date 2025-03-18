@@ -14,6 +14,7 @@ pub use core::shape::*;
 pub use core::sprite::*;
 pub use core::transform::*;
 pub use core::input::*;
+pub use core::collision::*;
 pub use core::ecs::world::*;
 pub use core::ecs::entitiy::*;
 pub use core::ecs::component::*;

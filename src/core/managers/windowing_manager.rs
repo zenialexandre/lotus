@@ -99,7 +99,7 @@ struct Application {
 impl ApplicationHandler for Application {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let mut color: Option<Color> = None;
-        let mut background_image_path: String = String::new();
+        let mut background_image_path: Option<String> = None;
 
         let window: Arc<Window> = if let Some(window_configuration) = &self.window_configuration {
             let mut window_attributes: WindowAttributes = Window::default_attributes();
@@ -125,7 +125,7 @@ impl ApplicationHandler for Application {
             }
 
             if let Some(background_image_path_unwrapped) = &window_configuration.background_image_path {
-                background_image_path = background_image_path_unwrapped.to_string();
+                background_image_path = Some(background_image_path_unwrapped.to_string());
             }
             Arc::new(event_loop.create_window(window_attributes).unwrap())
         } else {
@@ -135,7 +135,7 @@ impl ApplicationHandler for Application {
 
         let mut render_state: RenderState = pollster::block_on(RenderState::new(window));
         render_state.color = color;
-        render_state.background_image_path = Some(background_image_path);
+        render_state.background_image_path = background_image_path;
 
         let world: World = World::new();
         self.engine_context = Some(EngineContext::new(render_state, world, 0.0));

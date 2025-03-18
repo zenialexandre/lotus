@@ -26,6 +26,15 @@ pub struct Circle {
     pub radius: f32
 }
 
+impl Circle {
+    pub fn new(number_of_segments: u16, radius: f32) -> Self {
+        return Self {
+            number_of_segments,
+            radius
+        };
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum Orientation {
     Horizontal,

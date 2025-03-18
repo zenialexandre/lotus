@@ -50,7 +50,6 @@ impl Transform {
 
     pub fn set_position(&mut self, engine_context: &EngineContext, position: Vector2<f32>) {
         self.position = position;
-
         self.write_update_to_buffer(engine_context);
     }
 
@@ -60,7 +59,6 @@ impl Transform {
 
     pub fn set_rotation(&mut self, engine_context: &EngineContext, rotation: f32) {
         self.rotation = rotation;
-
         self.write_update_to_buffer(engine_context);
     }
 
@@ -70,7 +68,6 @@ impl Transform {
 
     pub fn set_scale(&mut self, engine_context: &EngineContext, scale: Vector2<f32>) {
         self.scale = scale;
-
         self.write_update_to_buffer(engine_context);
     }
 

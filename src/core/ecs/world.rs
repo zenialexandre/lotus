@@ -65,10 +65,9 @@ impl World {
         let mut components_types_ids: Vec<TypeId> = components.iter().map(|c| c.borrow().type_id()).collect();
         let archetype_unique_key: u64 = self.get_archetype_unique_key(&mut components_types_ids);
         let archetype: &mut Archetype = self.archetypes.entry(archetype_unique_key).or_insert_with(Archetype::new);
-        
+
         let moved_components: Vec<RefCell<Box<dyn Component>>> = take(components);
         archetype.add_entity(entity, moved_components);
-
         render_state.add_entity_to_render(entity);
 
         return entity;

@@ -12,7 +12,6 @@ use wgpu::{
     vertex_attr_array,
     Adapter,
     Backends,
-    Color,
     ColorTargetState,
     ColorWrites,
     BlendState,
@@ -396,7 +395,7 @@ impl RenderState {
     pub(crate) fn setup_shape_rendering(&mut self, shape: &Shape, transform: Option<&Transform>) {
         let color_buffer: Buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Color Buffer"),
-            contents:bytemuck::cast_slice(&color::to_array(Color::BLACK)),
+            contents:bytemuck::cast_slice(&color::to_array(color::to_wgpu(shape.color))),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
         });
         let color_bind_group_layout: BindGroupLayout = self.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
@@ -600,7 +599,7 @@ fn get_blend_state(shader_source: &str) -> Option<BlendState> {
             }
         });
     }
-    return None;
+    return Some(BlendState::REPLACE);
 }
 
 fn get_vertex_buffer(render_state: &RenderState, vertex_array: &[Vertex]) -> Buffer {

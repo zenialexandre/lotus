@@ -16,7 +16,7 @@ pub struct GameLoop {
     delta: Duration,
     previous_time_of_last_run: Instant,
     pub setup: fn(engine_context: &mut EngineContext),
-    update: fn(engine_context: &mut EngineContext),
+    pub update: fn(engine_context: &mut EngineContext),
 }
 
 #[derive(Clone, Debug, Resource)]
