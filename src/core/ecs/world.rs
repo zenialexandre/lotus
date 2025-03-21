@@ -1,8 +1,7 @@
 use std::{
     any::TypeId,
     cell::{
-        RefCell,
-        RefMut
+        Ref, RefCell, RefMut
     },
     collections::HashMap,
     hash::{
@@ -14,7 +13,7 @@ use std::{
 };
 use uuid::Uuid;
 
-use crate::{core::input::Input, RenderState, Transform};
+use crate::{Collision, Input, RenderState, Transform};
 use super::{component::Component, entitiy::Entity, resource::Resource};
 
 pub struct Archetype {
@@ -82,6 +81,26 @@ impl World {
         }
     }
 
+    pub fn sync_transformations_with_collisions(&mut self) {
+        for archetype in self.archetypes.values_mut() {
+            if let (Some(transforms), Some(collisions)) = (
+                archetype.components.get(&TypeId::of::<Transform>()),
+                archetype.components.get(&TypeId::of::<Collision>())
+            ) {
+                for (transform, collision) in transforms.iter().zip(collisions) {
+                    let transform: Ref<'_, Box<dyn Component>> = transform.borrow();
+                    let mut collision: RefMut<'_, Box<dyn Component>> = collision.borrow_mut();
+
+                    if let Some(collision) = collision.as_any_mut().downcast_mut::<Collision>() {
+                        let transform: &Transform = transform.as_any().downcast_ref::<Transform>().unwrap();
+                        collision.collider.position = transform.get_position();
+                        collision.collider.scale = transform.get_scale();
+                    }
+                }
+            }
+        }
+    }
+
     pub fn get_archetype_unique_key(&self, components_types_ids: &mut Vec<TypeId>) -> u64 {
         components_types_ids.sort();
         return self.get_hash_from_ids(&components_types_ids);
@@ -94,6 +113,42 @@ impl World {
             type_id.hash(&mut default_hasher);
         }
         return default_hasher.finish();
+    }
+
+    pub fn get_entity_component<T: Component + 'static>(&self, entity: &Entity) -> Option<Ref<'_, T>> {
+        for archetype in self.archetypes.values() {
+            if archetype.entities.contains(entity) {
+                let type_id: TypeId = TypeId::of::<T>();
+
+                if let Some(components) = archetype.components.get(&type_id) {
+                    if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
+                        return Some(
+                            Ref::map(components[index].borrow(),
+                            |component| component.as_any().downcast_ref::<T>().unwrap()
+                        ));
+                    }
+                }
+            }
+        }
+        return None;
+    }
+
+    pub fn get_entity_component_mut<T: Component + 'static>(&self, entity: &Entity) -> Option<RefMut<'_, T>> {
+        for archetype in self.archetypes.values() {
+            if archetype.entities.contains(entity) {
+                let type_id: TypeId = TypeId::of::<T>();
+
+                if let Some(components) = archetype.components.get(&type_id) {
+                    if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
+                        return Some(
+                            RefMut::map(components[index].borrow_mut(),
+                            |component| component.as_any_mut().downcast_mut::<T>().unwrap()
+                        ));
+                    }
+                }
+            }
+        }
+        return None;
     }
 
     pub fn get_entity_components_mut<'a>(&'a self, entity: &'a Entity) -> Option<Vec<RefMut<'a, Box<dyn Component>>>> {

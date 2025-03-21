@@ -61,10 +61,10 @@ impl GeometryType {
             },
             GeometryType::Square => {
                 vec![ 
-                    Vertex { position: [-1.0, -1.0, 0.0], texture_coordinates: [0.0, 1.0] }, // Canto inferior esquerdo
-                    Vertex { position: [1.0, -1.0, 0.0], texture_coordinates: [1.0, 1.0] },  // Canto inferior direito
-                    Vertex { position: [1.0, 1.0, 0.0], texture_coordinates: [1.0, 0.0] },   // Canto superior direito
-                    Vertex { position: [-1.0, 1.0, 0.0], texture_coordinates: [0.0, 0.0] }
+                    Vertex { position: [-1.0, -1.0, 0.0], texture_coordinates: [0.0, 1.0] }, // Bottom Left
+                    Vertex { position: [1.0, -1.0, 0.0], texture_coordinates: [1.0, 1.0] },  // Bottom Right
+                    Vertex { position: [1.0, 1.0, 0.0], texture_coordinates: [1.0, 0.0] },   // Top Right
+                    Vertex { position: [-1.0, 1.0, 0.0], texture_coordinates: [0.0, 0.0] }   // Top Left
                 ]
             },
             GeometryType::Rectangle => {

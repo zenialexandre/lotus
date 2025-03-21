@@ -42,6 +42,7 @@ impl GameLoop {
         engine_context.delta = elapsed_time_from_last_run.as_secs_f32();
 
         (self.update)(engine_context);
+        engine_context.world.sync_transformations_with_collisions();
 
         if GameLoopState::Running == engine_context.game_loop_listener.state {
             self.render(&mut engine_context.render_state, &engine_context.world, event_loop);

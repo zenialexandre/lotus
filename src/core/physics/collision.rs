@@ -28,10 +28,10 @@ pub enum CollisionAlgorithm {
 }
 
 impl CollisionAlgorithm {
-    pub fn check(&self, a: Collider, b: Collider) -> bool {
+    pub fn check(&self, a: &Collider, b: &Collider) -> bool {
         match self {
-            CollisionAlgorithm::Aabb => { return Self::check_aabb(&a, &b) },
-            CollisionAlgorithm::Sat => { return Self::check_sat(&a, &b) }
+            CollisionAlgorithm::Aabb => { return Self::check_aabb(a, b) },
+            CollisionAlgorithm::Sat => { return Self::check_sat(a, b) }
         }
     }
 
@@ -54,15 +54,17 @@ impl CollisionAlgorithm {
 
 #[derive(Clone, Debug, Component)]
 pub struct Collision {
-    pub algorithm: CollisionAlgorithm,
     pub collider: Collider
 }
 
 impl Collision {
-    pub fn new(algorithm: CollisionAlgorithm, collider: Collider) -> Self {
+    pub fn new(collider: Collider) -> Self {
         return Self {
-            algorithm,
             collider
         };
+    }
+
+    pub fn check(algorithm: CollisionAlgorithm, a: &Collision, b: &Collision) -> bool {
+        return algorithm.check(&a.collider, &b.collider);
     }
 }

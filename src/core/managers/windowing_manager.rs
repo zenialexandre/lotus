@@ -138,8 +138,12 @@ impl ApplicationHandler for Application {
         render_state.background_image_path = background_image_path;
 
         let world: World = World::new();
-        self.engine_context = Some(EngineContext::new(render_state, world, 0.0));
-
+        self.engine_context = Some(EngineContext::new(
+            render_state,
+            world,
+            self.window_configuration.as_ref().unwrap().clone(),
+            0.
+        ));
         (self.game_loop.setup)(self.engine_context.as_mut().unwrap());
     }
 

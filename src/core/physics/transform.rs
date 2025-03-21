@@ -15,7 +15,7 @@ impl Default for Transform {
         return Self {
             position: Vector2::new(0., 0.),
             rotation: 0.,
-            scale: Vector2::new(1., 1.)
+            scale: Vector2::new(0.25, 0.25)
         };
     }
 }

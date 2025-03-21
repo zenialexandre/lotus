@@ -1,14 +1,13 @@
 #[cfg(test)]
 mod ecs_test {
     use std::cell::RefCell;
-
     use cgmath::Vector2;
-
     use crate::{core::ecs::{component::Component, world::World}, Transform};
 
+    // Check the best way to mock RenderState?
     #[test]
     fn entity_creation_test() {
-        let mut world: World = World::new();
+        let world: World = World::new();
         let mut components: Vec<RefCell<Box<dyn Component>>> = Vec::new();
         let transform: Transform = Transform::new(Vector2::new(0.10, 0.25), 0., Vector2::new(1., 1.));
 
