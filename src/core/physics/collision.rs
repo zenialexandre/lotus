@@ -1,7 +1,7 @@
 use cgmath::Vector2;
 use lotus_proc_macros::Component;
 
-use crate::GeometryType;
+use super::super::shape::GeometryType;
 
 #[derive(Clone, Debug)]
 pub struct Collider {
@@ -16,6 +16,14 @@ impl Collider {
             geometry_type,
             position,
             scale
+        };
+    }
+
+    pub fn new_simple(geometry_type: GeometryType) -> Self {
+        return Self {
+            geometry_type,
+            position: Vector2::new(0.0, 0.0),
+            scale: Vector2::new(0.0, 0.0)
         };
     }
 }

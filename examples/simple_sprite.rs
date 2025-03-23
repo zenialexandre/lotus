@@ -1,0 +1,33 @@
+use lotus_engine::*;
+use std::cell::{Ref, RefCell, RefMut};
+use cgmath::Vector2;
+
+your_game!(
+    WindowConfiguration::default(),
+    setup,
+    update
+);
+
+fn setup(context: &mut Context) {
+    let sprite: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
+
+    context.world.spawn(
+        &mut context.render_state,
+        &mut vec![
+            RefCell::new(Box::new(sprite)),
+            RefCell::new(Box::new(Transform::new(Vector2::new(-0.50, -0.50), 0.0, Vector2::new(0.25, 0.25)))),
+            RefCell::new(Box::new(Velocity::new(Vector2::new(0.25, 0.25))))
+        ]
+    );
+}
+
+fn update(context: &mut Context) {
+    let mut query: Query = Query::new(&context.world).with_components::<Sprite>();
+    let results: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+    let entity: &Entity = results.first().unwrap();
+
+    let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
+    let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(entity).unwrap();
+
+    transform.position.y += velocity.value.y * context.delta;
+}

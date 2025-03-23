@@ -28,14 +28,16 @@ use std::{
     sync::Arc
 };
 
-use crate::core::{engine::EngineContext, input::Input};
-
-use super::super::{
-    ecs::world::World,
-    color::Color,
-    game_loop::GameLoop
+use super::{
+    rendering_manager::RenderState,
+    super::{
+        ecs::world::World,
+        color::Color,
+        game_loop::GameLoop,
+        engine::Context,
+        input::Input
+    }
 };
-use super::rendering_manager::RenderState;
 
 #[derive(Clone)]
 pub struct WindowConfiguration {
@@ -62,10 +64,10 @@ impl Default for WindowConfiguration {
             title: "New Game!".to_string(),
             background_color: Some(Color::WHITE),
             background_image_path: None,
-            width: 800.,
-            height: 600.,
-            position_x: 100.,
-            position_y: 100.,
+            width: 800.0,
+            height: 600.0,
+            position_x: 100.0,
+            position_y: 100.0,
             resizable: true,
             decorations: true,
             transparent: true,
@@ -92,7 +94,7 @@ impl WindowConfiguration {
 struct Application {
     window: Option<Arc<Window>>,
     window_configuration: Option<WindowConfiguration>,
-    engine_context: Option<EngineContext>,
+    context: Option<Context>,
     game_loop: GameLoop
 }
 
@@ -138,19 +140,19 @@ impl ApplicationHandler for Application {
         render_state.background_image_path = background_image_path;
 
         let world: World = World::new();
-        self.engine_context = Some(EngineContext::new(
+        self.context = Some(Context::new(
             render_state,
             world,
             self.window_configuration.as_ref().unwrap().clone(),
             0.
         ));
-        (self.game_loop.setup)(self.engine_context.as_mut().unwrap());
+        (self.game_loop.setup)(self.context.as_mut().unwrap());
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
-        let engine_context: &mut EngineContext = &mut self.engine_context.as_mut().unwrap();
-        let render_state: &mut RenderState = &mut engine_context.render_state;
-        let input_resource: &mut Input = &mut engine_context.world.resources.iter_mut().filter_map(
+        let context: &mut Context = &mut self.context.as_mut().unwrap();
+        let render_state: &mut RenderState = &mut context.render_state;
+        let input_resource: &mut Input = &mut context.world.resources.iter_mut().filter_map(
             |resource| resource.as_any_mut().downcast_mut::<Input>()
         ).next().unwrap();
 
@@ -190,14 +192,14 @@ impl ApplicationHandler for Application {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        self.game_loop.run(self.engine_context.as_mut().unwrap(), event_loop);
+        self.game_loop.run(self.context.as_mut().unwrap(), event_loop);
     }
 }
 
 pub async fn initialize_application(
     window_configuration: Option<WindowConfiguration>,
-    setup: fn(engine_context: &mut EngineContext),
-    update: fn(engine_context: &mut EngineContext)
+    setup: fn(context: &mut Context),
+    update: fn(context: &mut Context)
 ) {
     env_logger::init();
     let event_loop = EventLoop::new().unwrap();
@@ -206,14 +208,14 @@ pub async fn initialize_application(
     let mut application: Application = if let Some(window_configuration_unwrapped) = window_configuration {
         Application {
             window: None,
-            engine_context: None,
+            context: None,
             window_configuration: Some(window_configuration_unwrapped),
             game_loop: GameLoop::new(setup, update)
         }
     } else {
         Application {
             window: None,
-            engine_context: None,
+            context: None,
             window_configuration: None,
             game_loop: GameLoop::new(setup, update)
         }

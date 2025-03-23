@@ -1,7 +1,7 @@
 use cgmath::{Deg, Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
 
-use crate::EngineContext;
+use super::super::engine::Context;
 
 #[derive(Clone, Debug, Component)]
 pub struct Transform {
@@ -13,8 +13,8 @@ pub struct Transform {
 impl Default for Transform {
     fn default() -> Self {
         return Self {
-            position: Vector2::new(0., 0.),
-            rotation: 0.,
+            position: Vector2::new(0.0, 0.0),
+            rotation: 0.0,
             scale: Vector2::new(0.25, 0.25)
         };
     }
@@ -35,12 +35,12 @@ impl Transform {
             Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, 1.);
     }
 
-    pub fn write_update_to_buffer(&self, engine_context: &EngineContext) {
+    pub fn write_update_to_buffer(&self, context: &Context) {
         let transform_matrix: Matrix4<f32> = self.to_matrix();
         let transform_matrix_as_ref: &[[f32; 4]; 4] = transform_matrix.as_ref();
 
-        if let Some(transform_buffer) = engine_context.render_state.transform_buffer.as_ref() {
-            engine_context.render_state.queue.write_buffer(
+        if let Some(transform_buffer) = context.render_state.transform_buffer.as_ref() {
+            context.render_state.queue.write_buffer(
                 transform_buffer,
                 0,
                 bytemuck::cast_slice(&[*transform_matrix_as_ref])
@@ -48,27 +48,32 @@ impl Transform {
         }
     }
 
-    pub fn set_position(&mut self, engine_context: &EngineContext, position: Vector2<f32>) {
+    fn _interpolate(&mut self, context: &Context, alpha: f32) {
+        let interpolated_position: Vector2<f32> = self.position * (1.0 - alpha) + self.position * alpha;
+        self.set_position(context, interpolated_position);
+    }
+
+    pub fn set_position(&mut self, context: &Context, position: Vector2<f32>) {
         self.position = position;
-        self.write_update_to_buffer(engine_context);
+        self.write_update_to_buffer(context);
     }
 
     pub fn get_position(&self) -> Vector2<f32> {
         return self.position;
     }
 
-    pub fn set_rotation(&mut self, engine_context: &EngineContext, rotation: f32) {
+    pub fn set_rotation(&mut self, context: &Context, rotation: f32) {
         self.rotation = rotation;
-        self.write_update_to_buffer(engine_context);
+        self.write_update_to_buffer(context);
     }
 
     pub fn get_rotation(&self) -> f32 {
         return self.rotation;
     }
 
-    pub fn set_scale(&mut self, engine_context: &EngineContext, scale: Vector2<f32>) {
+    pub fn set_scale(&mut self, context: &Context, scale: Vector2<f32>) {
         self.scale = scale;
-        self.write_update_to_buffer(engine_context);
+        self.write_update_to_buffer(context);
     }
 
     pub fn get_scale(&self) -> Vector2<f32> {

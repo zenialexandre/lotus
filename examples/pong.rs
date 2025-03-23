@@ -1,7 +1,14 @@
 use lotus_engine::*;
-use cgmath::Vector2;
+use cgmath::{InnerSpace, Vector2};
+use rand::{rngs::ThreadRng, Rng};
 use winit::keyboard::{KeyCode, PhysicalKey};
-use std::cell::{RefCell, RefMut};
+use std::cell::{Ref, RefCell, RefMut};
+
+#[derive(Component)]
+struct Border();
+
+#[derive(Component)]
+struct Racket();
 
 #[derive(Component)]
 struct GrayRacket();
@@ -17,11 +24,11 @@ your_game!(
         icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
         title: "Pong Game :)".to_string(),
         background_color: None,
-        background_image_path: Some("assets/textures/pong/pong_background_2560x1600.png".to_string()),
-        width: 800.,
-        height: 600.,
-        position_x: 200.,
-        position_y: 150.,
+        background_image_path: Some("assets/textures/pong/pong_background_960x600.png".to_string()), // Background Image with resolution similar to the window
+        width: 960.0,
+        height: 600.0,
+        position_x: 200.0,
+        position_y: 150.0,
         resizable: false,
         decorations: true,
         transparent: false,
@@ -33,163 +40,197 @@ your_game!(
     update
 );
 
-fn setup(engine_context: &mut EngineContext) {
+fn setup(context: &mut Context) {
     let gray_racket_sprite: Sprite = Sprite::new("assets/textures/pong/gray_racket_256x256.png".to_string());
     let pink_racket_sprite: Sprite = Sprite::new("assets/textures/pong/pink_racket_256x256.png".to_string());
     let pong_ball_sprite: Sprite = Sprite::new("assets/textures/pong/pong_ball_left_256x256.png".to_string());
 
-    engine_context.world.spawn(
-        &mut engine_context.render_state,
+    spawn_border(context, Vector2::new(0.0, -1.0));
+    spawn_border(context, Vector2::new(0.0, 1.0));
+
+    context.world.spawn(
+        &mut context.render_state,
         &mut vec![
             RefCell::new(Box::new(gray_racket_sprite)),
-            RefCell::new(Box::new(Transform::new(Vector2::new(-0.90, 0.23), 0., Vector2::new(0.25, 0.25)))),
+            RefCell::new(Box::new(Transform::new(Vector2::new(-1.0, 0.23), 0.0, Vector2::new(0.25, 0.25)))),
+            RefCell::new(Box::new(Racket())),
             RefCell::new(Box::new(GrayRacket())),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(0., 0.50)))),
-            RefCell::new(Box::new(Collision::new(
-                Collider::new(GeometryType::Rectangle, Vector2::new(-0.80, 0.23), Vector2::new(1., 1.))
-            )))
+            RefCell::new(Box::new(Velocity::new(Vector2::new(1.0, 1.0)))),
+            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Square))))
         ]
     );
 
-    engine_context.world.spawn(
-        &mut engine_context.render_state,
+    context.world.spawn(
+        &mut context.render_state,
         &mut vec![
             RefCell::new(Box::new(pink_racket_sprite)),
-            RefCell::new(Box::new(Transform::new(Vector2::new(0.90, 0.25), 0., Vector2::new(0.25, 0.25)))),
+            RefCell::new(Box::new(Transform::new(Vector2::new(1.0, 0.25), 0.0, Vector2::new(0.25, 0.25)))),
+            RefCell::new(Box::new(Racket())),
             RefCell::new(Box::new(PinkRacket())),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(0., 0.50)))),
-            RefCell::new(Box::new(Collision::new(
-                Collider::new(GeometryType::Rectangle, Vector2::new(0.80, 0.25), Vector2::new(1., 1.))
-            )))
+            RefCell::new(Box::new(Velocity::new(Vector2::new(1.0, 1.0)))),
+            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Square))))
         ]
     );
 
-    engine_context.world.spawn(
-        &mut engine_context.render_state,
+    context.world.spawn(
+        &mut context.render_state,
         &mut vec![
             RefCell::new(Box::new(pong_ball_sprite)),
-            RefCell::new(Box::new(Transform::new(Vector2::new(0., 0.), 0., Vector2::new(0.25, 0.25)))),
+            RefCell::new(Box::new(Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25)))),
             RefCell::new(Box::new(PongBall())),
-            RefCell::new(Box::new(Collision::new(
-                Collider::new(GeometryType::Rectangle, Vector2::new(0., 0.), Vector2::new(1., 1.))
-            ))),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(100., 50.)))),
+            RefCell::new(Box::new(Velocity::new(Vector2::new(0.85, 0.85)))),
+            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Square))))
         ]
     );
 }
 
-fn update(engine_context: &mut EngineContext) {
+fn update(context: &mut Context) {
     let input: Input = {
-        let resources: &Vec<Box<dyn Resource>> = &engine_context.world.resources;
+        let resources: &Vec<Box<dyn Resource>> = &context.world.resources;
         resources.iter().filter_map(|resource| resource.as_any().downcast_ref::<Input>()).next().cloned().unwrap()
     };
+    let mut pong_ball_query: Query = Query::new(&context.world).with_components::<PongBall>();
+    let pong_ball_entities: Vec<Entity> = pong_ball_query.get_entities_ids_flex().unwrap();
+    let pong_ball: &Entity = pong_ball_entities.first().unwrap();
+    let mut thread_rng: ThreadRng = rand::rng();
+    let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
 
-    move_gray_racket(engine_context, &input);
-    move_pink_racket(engine_context, &input);
-    //apply_velocity(engine_context);
-    check_for_collision(engine_context);
+    move_gray_racket(context, &input);
+    move_pink_racket(context, &input);
+    move_pong_ball(context, pong_ball);
+    check_rackets_ball_collision(context, pong_ball, random_factor);
+    check_borders_ball_collision(context, pong_ball, random_factor);
+    respawn_pong_ball_after_outbounds(context, pong_ball);
 
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::Escape)) {
-        if GameLoopState::Running == engine_context.game_loop_listener.state {
-            engine_context.game_loop_listener.pause();
+        if GameLoopState::Running == context.game_loop_listener.state {
+            context.game_loop_listener.pause();
         } else {
-            engine_context.game_loop_listener.resume();
+            context.game_loop_listener.resume();
         }
     }
 }
 
-fn move_gray_racket(engine_context: &mut EngineContext, input: &Input) {
-    let mut query: Query = Query::new(&engine_context.world).with_components::<GrayRacket>();
+fn spawn_border(context: &mut Context, position: Vector2<f32>) {
+    let border: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::BLACK);
+
+    context.world.spawn(
+        &mut context.render_state,
+        &mut vec![
+            RefCell::new(Box::new(border)),
+            RefCell::new(Box::new(Border())),
+            RefCell::new(Box::new(Transform::new(position, 0.0, Vector2::new(context.window_configuration.width as f32, 0.01)))),
+            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle))))
+        ]
+    );
+}
+
+fn move_gray_racket(context: &mut Context, input: &Input) {
+    let mut query: Query = Query::new(&context.world).with_components::<GrayRacket>();
     let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
     let gray_racket_entity: &Entity = entities.first().unwrap();
 
-    let mut transform: RefMut<'_, Transform> = engine_context.world.get_entity_component_mut::<Transform>(gray_racket_entity).unwrap();
-    let velocity: RefMut<'_, Velocity> = engine_context.world.get_entity_component_mut::<Velocity>(gray_racket_entity).unwrap();
-    let position: Vector2<f32> = transform.get_position();
+    let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(gray_racket_entity).unwrap();
+    let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(gray_racket_entity).unwrap();
 
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyW)) {
-        let new_y: f32 = position.y + velocity.value.y * engine_context.delta;
-        transform.set_position(&engine_context, Vector2::new(position.x, new_y));
+        transform.position.y += velocity.value.y * context.delta;
+        let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
+        transform.set_position(&context, new_position);
     } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyS)) {
-        let new_y: f32 = position.y - velocity.value.y * engine_context.delta;
-        transform.set_position(&engine_context, Vector2::new(position.x, new_y));
+        transform.position.y -= velocity.value.y * context.delta;
+        let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
+        transform.set_position(&context, new_position);
     }
 }
 
-fn move_pink_racket(engine_context: &mut EngineContext, input: &Input) {
-    let mut query: Query = Query::new(&engine_context.world).with_components::<PinkRacket>();
-    let results: Vec<(Entity, Vec<std::cell::RefMut<'_, Box<dyn Component>>>)> = query.get_entities_by_components_mut_flex().unwrap();
+fn move_pink_racket(context: &mut Context, input: &Input) {
+    let mut query: Query = Query::new(&context.world).with_components::<PinkRacket>();
+    let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+    let pink_racket_entity: &Entity = entities.first().unwrap();
 
-    for result in results {
-        let (_, mut components) = result;
+    let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pink_racket_entity).unwrap();
+    let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(pink_racket_entity).unwrap();
+    
+    if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowUp)) {
+        transform.position.y += velocity.value.y * context.delta;
+        let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
+        transform.set_position(&context, new_position);
+    } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowDown)) {
+        transform.position.y -= velocity.value.y * context.delta;
+        let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
+        transform.set_position(&context, new_position);
+    }
+}
 
-        for component in &mut components {
-            if let Some(transform) = component.as_any_mut().downcast_mut::<Transform>() {
-                if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowUp)) {
-                    let y: f32 = transform.position.y + 0.35 * engine_context.delta;
-                    transform.set_position(&engine_context, Vector2::new(transform.position.x, y));
-                } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowDown)) {
-                    let y: f32 = transform.position.y - 0.35 * engine_context.delta;
-                    transform.set_position(&engine_context, Vector2::new(transform.position.x, y));
-                }
+fn move_pong_ball(context: &mut Context, pong_ball: &Entity) {
+    let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
+    let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(&pong_ball).unwrap();
+
+    let new_position: Vector2<f32> = transform.position + velocity.value * context.delta;
+    transform.set_position(context, new_position);
+}
+
+fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, random_factor: f32) {
+    let mut racket_query: Query = Query::new(&context.world).with_components::<Racket>();
+    let rackets: Vec<Entity> = racket_query.get_entities_ids_flex().unwrap();
+
+    for racket in &rackets {
+        let racket_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(racket).unwrap();
+        let racket_transform: Ref<'_, Transform> = context.world.get_entity_component::<Transform>(racket).unwrap();
+
+        let pong_ball_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&pong_ball).unwrap();
+        let mut pong_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
+        let mut pong_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&pong_ball).unwrap();
+
+        if Collision::check(CollisionAlgorithm::Aabb, &racket_collision, &pong_ball_collision) {
+            let relative_collision_point: f32 = pong_ball_transform.position.y - racket_transform.position.y;
+            let rebound_angle: f32 = relative_collision_point * 1.0 + random_factor;
+
+            if racket_transform.position.x > 0.0 {
+                pong_ball_velocity.value = Vector2::new(-1.0, rebound_angle).normalize() * pong_ball_velocity.value.magnitude();
+                pong_ball_transform.position.x -= 0.1;
+            } else if racket_transform.position.x < 0.0 {
+                pong_ball_velocity.value = Vector2::new(1.0, rebound_angle).normalize() * pong_ball_velocity.value.magnitude();
+                pong_ball_transform.position.x += 0.1;
             }
+            let new_position: Vector2<f32> = Vector2::new(pong_ball_transform.position.x, pong_ball_transform.position.y);
+            pong_ball_transform.set_position(context, new_position);
         }
     }
 }
 
-fn apply_velocity(engine_context: &mut EngineContext) {
-    let mut query: Query = Query::new(&engine_context.world).with_components::<PongBall>();
-    let results: Vec<(Entity, Vec<std::cell::RefMut<'_, Box<dyn Component>>>)> = query.get_entities_by_components_mut_flex().unwrap();
+fn check_borders_ball_collision(context: &mut Context, pong_ball: &Entity, random_factor: f32) {
+    let mut border_query: Query = Query::new(&context.world).with_components::<Border>();
+    let borders: Vec<Entity> = border_query.get_entities_ids_flex().unwrap();
 
-    for result in results {
-        let (_, mut components) = result;
+    for border in &borders {
+        let border_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();
+        let border_transform: Ref<'_, Transform> = context.world.get_entity_component::<Transform>(border).unwrap();
 
-        let mut transform_index = None;
-        let mut velocity_index = None;
+        let pong_ball_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&pong_ball).unwrap();
+        let mut pong_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&pong_ball).unwrap();
+        let mut pong_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
 
-        // Encontrar índices dos componentes na lista
-        for (i, component) in components.iter().enumerate() {
-            if component.as_any().is::<Transform>() {
-                transform_index = Some(i);
+        if Collision::check(CollisionAlgorithm::Aabb, &border_collision, &pong_ball_collision) {
+            if border_transform.position.y > 0.0 {
+                pong_ball_velocity.value = Vector2::new(pong_ball_velocity.value.x.signum(), -1.0 + random_factor).normalize() * pong_ball_velocity.value.magnitude();
+                pong_ball_transform.position.y -= 0.1;
+            } else if border_transform.position.y < 0.0 {
+                pong_ball_velocity.value = Vector2::new(pong_ball_velocity.value.x.signum(), 1.0 + random_factor).normalize() * pong_ball_velocity.value.magnitude();
+                pong_ball_transform.position.y += 0.1;
             }
-            if component.as_any().is::<Velocity>() {
-                velocity_index = Some(i);
-            }
-        }
-
-        if let (Some(t_idx), Some(v_idx)) = (transform_index, velocity_index) {
-            let mut transform = components.swap_remove(t_idx);
-            let mut velocity = components.swap_remove(v_idx - (t_idx < v_idx) as usize); // Ajustar índice se removermos antes
-
-            let transform = transform.as_any_mut().downcast_mut::<Transform>().unwrap();
-            let velocity = velocity.as_any_mut().downcast_mut::<Velocity>().unwrap();
-
-            // Aplicar gravidade na velocidade Y
-            velocity.value.y -= 100. * engine_context.delta.clamp(0.0, 0.016);
-
-            // Atualizar posição da bola com base na velocidade
-            let new_pos = transform.position + velocity.value * engine_context.delta.clamp(0.0, 0.016);
-            transform.set_position(&engine_context, new_pos);
+            let new_position: Vector2<f32> = Vector2::new(pong_ball_transform.position.x, pong_ball_transform.position.y);
+            pong_ball_transform.set_position(context, new_position);
         }
     }
 }
 
-fn check_for_collision(engine_context: &mut EngineContext) {
-    let mut query: Query = Query::new(&engine_context.world).with_components::<Collision>();
-    let results: Vec<(Entity, Vec<std::cell::RefMut<'_, Box<dyn Component>>>)> = query.get_all_entities_by_componenets_mut_flex().unwrap();
-    let mut collisions: Vec<Collision> = vec![];
+fn respawn_pong_ball_after_outbounds(context: &mut Context, pong_ball: &Entity) {
+    let mut pong_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pong_ball).unwrap();
+    let position_default: Vector2<f32> = Vector2::new(0.0, 0.0);
 
-    for result in results {
-        let (_, components) = result;
-
-        for component in &components {
-            if let Some(collision) = component.as_any().downcast_ref::<Collision>() {
-                collisions.push(collision.clone());
-            }
-        }
-    }
-
-    if Collision::check(CollisionAlgorithm::Aabb, &collisions[0], &collisions[1]) {
-        //if let Some(velocity) = engine_context.world.get_entity_component_mut::<Velocity>(collisions)
+    if pong_ball_transform.position.x > 2.0 || pong_ball_transform.position.x < -2.0 {
+        pong_ball_transform.set_position(context, position_default);
     }
 }

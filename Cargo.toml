@@ -10,7 +10,7 @@ edition = "2021"
 winit = { version = "0.30", features = ["rwh_05"] }
 env_logger = "0.11.7"
 log = "0.4.26"
-wgpu = "24.0"
+wgpu = "24.0.3"
 pollster = "0.4"
 bytemuck = { version = "1.22.0", features = [ "derive" ] }
 image = { version = "0.25.5", features = ["png", "jpeg"] }

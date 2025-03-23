@@ -90,7 +90,20 @@ use std::{
     sync::Arc
 };
 
-use super::super::{color, shape::{Orientation, Shape}, physics::transform::Transform, sprite::Sprite, texture, ecs::{entitiy::Entity, world::World, component::Component}};
+use super::super::{
+    color,
+    shape::{
+        Orientation,
+        Shape
+    },
+    physics::transform::Transform,
+    sprite::Sprite, texture,
+    ecs::{
+        entitiy::Entity,
+        world::World,
+        component::Component
+    }
+};
 use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER, BACKGROUND_SHADER};
 
 #[repr(C)]

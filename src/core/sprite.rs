@@ -1,6 +1,12 @@
 use lotus_proc_macros::Component;
 
-use super::{managers::rendering_manager::Vertex, shape::{GeometryType, Orientation}};
+use super::{
+    managers::rendering_manager::Vertex,
+    shape::{
+        GeometryType,
+        Orientation
+    }
+};
 
 #[derive(Clone, Debug, Component)]
 pub struct Sprite {

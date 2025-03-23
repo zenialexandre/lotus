@@ -1,6 +1,5 @@
 use std::{any::TypeId, cell::RefMut};
-use crate::{Archetype, World};
-use super::{component::Component, entitiy::Entity};
+use super::{world::{Archetype, World}, component::Component, entitiy::Entity};
 
 pub struct Query<'a> {
     pub parameters: Vec<TypeId>,
@@ -31,17 +30,16 @@ impl<'a> Query<'a> {
     }
 
     pub fn get_entities_ids_flex(&'a mut self) -> Option<Vec<Entity>> {
+        let mut results: Vec<Entity> = Vec::new();
+
         for (_, archetype) in &self.world.archetypes {
             if self.parameters.iter().all(|param| archetype.components.contains_key(param)) {
-                let mut results: Vec<Entity> = Vec::new();
-
                 for entity in &archetype.entities {
                     results.push(*entity);
                 }
-                return Some(results);
             }
         }
-        return None;
+        return Some(results);
     }
 
     pub fn get_entities_by_components_mut_flex(&'a mut self) -> Option<Vec<(Entity, Vec<RefMut<'a, Box<dyn Component>>>)>> {

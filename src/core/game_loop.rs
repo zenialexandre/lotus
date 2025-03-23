@@ -3,7 +3,11 @@ use lotus_proc_macros::Resource;
 use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
 
-use super::{engine::EngineContext, managers::rendering_manager::RenderState, ecs::world::World};
+use super::{
+    engine::Context,
+    managers::rendering_manager::RenderState,
+    ecs::world::World
+};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum GameLoopState {
@@ -15,8 +19,8 @@ pub enum GameLoopState {
 pub struct GameLoop {
     delta: Duration,
     previous_time_of_last_run: Instant,
-    pub setup: fn(engine_context: &mut EngineContext),
-    pub update: fn(engine_context: &mut EngineContext),
+    pub setup: fn(context: &mut Context),
+    pub update: fn(context: &mut Context),
 }
 
 #[derive(Clone, Debug, Resource)]
@@ -25,27 +29,30 @@ pub struct GameLoopListener {
 }
 
 impl GameLoop {
-    pub fn new(setup: fn(engine_context: &mut EngineContext), update: fn(engine_context: &mut EngineContext)) -> Self {
+    pub fn new(setup: fn(context: &mut Context), update: fn(context: &mut Context)) -> Self {
         return Self {
-            delta: Duration::from_secs_f32(1.0 / 60.0), // 60 FPS
+            delta: Duration::from_secs_f32(1.0 / 60.0),
             previous_time_of_last_run: Instant::now(),
             setup,
             update
         };
     }
 
-    // Running without lagging between frames.
-    pub(crate) fn run(&mut self, engine_context: &mut EngineContext, event_loop: &ActiveEventLoop) {
+    pub(crate) fn run(&mut self, context: &mut Context, event_loop: &ActiveEventLoop) {
         let now: Instant = Instant::now();
         let elapsed_time_from_last_run: Duration = now - self.previous_time_of_last_run;
         self.previous_time_of_last_run = now;
-        engine_context.delta = elapsed_time_from_last_run.as_secs_f32();
+        let mut accumulator: f32 = elapsed_time_from_last_run.as_secs_f32();
 
-        (self.update)(engine_context);
-        engine_context.world.sync_transformations_with_collisions();
+        while accumulator >= self.get_delta_as_seconds() {
+            context.delta = self.get_delta_as_seconds();
+            (self.update)(context);
+            context.world.sync_transformations_with_collisions();
+            accumulator -= context.delta;
+        }
 
-        if GameLoopState::Running == engine_context.game_loop_listener.state {
-            self.render(&mut engine_context.render_state, &engine_context.world, event_loop);
+        if GameLoopState::Running == context.game_loop_listener.state {
+            self.render(&mut context.render_state, &context.world, event_loop);
         }
     }
 

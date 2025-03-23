@@ -14,8 +14,12 @@ impl Input {
         return Self {
             pressed_keys: HashSet::new(),
             pressed_mouse_buttons: HashSet::new(),
-            mouse_position: (0., 0.)
+            mouse_position: (0.0, 0.0)
         };
+    }
+
+    pub fn is_some_key_pressed(&self) -> bool {
+        return self.pressed_keys.len() > 0;
     }
 
     pub fn is_key_pressed(&self, key: PhysicalKey) -> bool {

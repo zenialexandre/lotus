@@ -9,7 +9,7 @@ mod ecs_test {
     fn entity_creation_test() {
         let world: World = World::new();
         let mut components: Vec<RefCell<Box<dyn Component>>> = Vec::new();
-        let transform: Transform = Transform::new(Vector2::new(0.10, 0.25), 0., Vector2::new(1., 1.));
+        let transform: Transform = Transform::new(Vector2::new(0.10, 0.25), 0.0, Vector2::new(1., 1.));
 
         components.push(RefCell::new(Box::new(transform)));
 

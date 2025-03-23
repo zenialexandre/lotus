@@ -13,8 +13,17 @@ use std::{
 };
 use uuid::Uuid;
 
-use crate::{Collision, Input, RenderState, Transform};
-use super::{component::Component, entitiy::Entity, resource::Resource};
+use super::{
+    super::{
+        physics::collision::Collision,
+        input::Input,
+        managers::rendering_manager::RenderState,
+        physics::transform::Transform
+    },
+    component::Component,
+    entitiy::Entity,
+    resource::Resource
+};
 
 pub struct Archetype {
     pub entities: Vec<Entity>,
