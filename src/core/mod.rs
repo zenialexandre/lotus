@@ -13,7 +13,7 @@ pub mod color;
 /// Shapes/Geometric forms related features.
 pub mod shape;
 
-/// Sprites related features;
+/// Sprites related features.
 pub mod sprite;
 
 /// Macros of the engine.
@@ -30,3 +30,6 @@ pub mod input;
 
 /// Physics related features.
 pub mod physics;
+
+/// Time related features.
+pub mod time;

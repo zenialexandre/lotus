@@ -1,5 +1,5 @@
 use lotus_engine::*;
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{Ref, RefMut};
 use cgmath::Vector2;
 
 your_game!(
@@ -13,10 +13,10 @@ fn setup(context: &mut Context) {
 
     context.world.spawn(
         &mut context.render_state,
-        &mut vec![
-            RefCell::new(Box::new(sprite)),
-            RefCell::new(Box::new(Transform::new(Vector2::new(-0.50, -0.50), 0.0, Vector2::new(0.25, 0.25)))),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(0.25, 0.25))))
+        vec![
+            Box::new(sprite),
+            Box::new(Transform::new(Vector2::new(-0.50, -0.50), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(Velocity::new(Vector2::new(0.50, 0.50)))
         ]
     );
 }

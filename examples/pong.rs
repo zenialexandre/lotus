@@ -2,7 +2,7 @@ use lotus_engine::*;
 use cgmath::{InnerSpace, Vector2};
 use rand::{rngs::ThreadRng, Rng};
 use winit::keyboard::{KeyCode, PhysicalKey};
-use std::cell::{Ref, RefCell, RefMut};
+use std::{cell::{Ref, RefMut}, time::Duration};
 
 #[derive(Component)]
 struct Border();
@@ -18,6 +18,15 @@ struct PinkRacket();
 
 #[derive(Component)]
 struct PongBall();
+
+#[derive(Clone, Resource)]
+pub struct PongBallRespawnTimer(pub Timer);
+
+impl Default for PongBallRespawnTimer {
+    fn default() -> Self {
+        return Self(Timer::new(TimerType::Repeat, Duration::new(2, 0)))
+    }
+}
 
 your_game!(
     WindowConfiguration {
@@ -45,63 +54,67 @@ fn setup(context: &mut Context) {
     let pink_racket_sprite: Sprite = Sprite::new("assets/textures/pong/pink_racket_256x256.png".to_string());
     let pong_ball_sprite: Sprite = Sprite::new("assets/textures/pong/pong_ball_left_256x256.png".to_string());
 
+    context.world.add_resource(Box::new(PongBallRespawnTimer::default()));
+
     spawn_border(context, Vector2::new(0.0, -1.0));
     spawn_border(context, Vector2::new(0.0, 1.0));
 
     context.world.spawn(
         &mut context.render_state,
-        &mut vec![
-            RefCell::new(Box::new(gray_racket_sprite)),
-            RefCell::new(Box::new(Transform::new(Vector2::new(-1.0, 0.23), 0.0, Vector2::new(0.25, 0.25)))),
-            RefCell::new(Box::new(Racket())),
-            RefCell::new(Box::new(GrayRacket())),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(1.0, 1.0)))),
-            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Square))))
+        vec![
+            Box::new(gray_racket_sprite),
+            Box::new(Transform::new(Vector2::new(-1.0, 0.23), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(Racket()),
+            Box::new(GrayRacket()),
+            Box::new(Velocity::new(Vector2::new(1.0, 1.0))),
+            Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
 
     context.world.spawn(
         &mut context.render_state,
-        &mut vec![
-            RefCell::new(Box::new(pink_racket_sprite)),
-            RefCell::new(Box::new(Transform::new(Vector2::new(1.0, 0.25), 0.0, Vector2::new(0.25, 0.25)))),
-            RefCell::new(Box::new(Racket())),
-            RefCell::new(Box::new(PinkRacket())),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(1.0, 1.0)))),
-            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Square))))
+        vec![
+            Box::new(pink_racket_sprite),
+            Box::new(Transform::new(Vector2::new(1.0, 0.25), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(Racket()),
+            Box::new(PinkRacket()),
+            Box::new(Velocity::new(Vector2::new(1.0, 1.0))),
+            Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
 
     context.world.spawn(
         &mut context.render_state,
-        &mut vec![
-            RefCell::new(Box::new(pong_ball_sprite)),
-            RefCell::new(Box::new(Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25)))),
-            RefCell::new(Box::new(PongBall())),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(0.85, 0.85)))),
-            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Square))))
+        vec![
+            Box::new(pong_ball_sprite),
+            Box::new(Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(PongBall()),
+            Box::new(Velocity::new(Vector2::new(0.85, 0.85))),
+            Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
 }
 
 fn update(context: &mut Context) {
     let input: Input = {
-        let resources: &Vec<Box<dyn Resource>> = &context.world.resources;
-        resources.iter().filter_map(|resource| resource.as_any().downcast_ref::<Input>()).next().cloned().unwrap()
+        let input_ref: Ref<'_, Input> = context.world.get_resource::<Input>().unwrap();
+        input_ref.clone()
     };
+
     let mut pong_ball_query: Query = Query::new(&context.world).with_components::<PongBall>();
     let pong_ball_entities: Vec<Entity> = pong_ball_query.get_entities_ids_flex().unwrap();
     let pong_ball: &Entity = pong_ball_entities.first().unwrap();
     let mut thread_rng: ThreadRng = rand::rng();
     let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
 
-    move_gray_racket(context, &input);
-    move_pink_racket(context, &input);
+    move_gray_racket(context, input.clone());
+    move_pink_racket(context, input.clone());
     move_pong_ball(context, pong_ball);
     check_rackets_ball_collision(context, pong_ball, random_factor);
     check_borders_ball_collision(context, pong_ball, random_factor);
     respawn_pong_ball_after_outbounds(context, pong_ball);
 
+    // Review this part
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::Escape)) {
         if GameLoopState::Running == context.game_loop_listener.state {
             context.game_loop_listener.pause();
@@ -116,16 +129,16 @@ fn spawn_border(context: &mut Context, position: Vector2<f32>) {
 
     context.world.spawn(
         &mut context.render_state,
-        &mut vec![
-            RefCell::new(Box::new(border)),
-            RefCell::new(Box::new(Border())),
-            RefCell::new(Box::new(Transform::new(position, 0.0, Vector2::new(context.window_configuration.width as f32, 0.01)))),
-            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle))))
+        vec![
+            Box::new(border),
+            Box::new(Border()),
+            Box::new(Transform::new(position, 0.0, Vector2::new(context.window_configuration.width as f32, 0.01))),
+            Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
         ]
     );
 }
 
-fn move_gray_racket(context: &mut Context, input: &Input) {
+fn move_gray_racket(context: &mut Context, input: Input) {
     let mut query: Query = Query::new(&context.world).with_components::<GrayRacket>();
     let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
     let gray_racket_entity: &Entity = entities.first().unwrap();
@@ -144,7 +157,7 @@ fn move_gray_racket(context: &mut Context, input: &Input) {
     }
 }
 
-fn move_pink_racket(context: &mut Context, input: &Input) {
+fn move_pink_racket(context: &mut Context, input: Input) {
     let mut query: Query = Query::new(&context.world).with_components::<PinkRacket>();
     let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
     let pink_racket_entity: &Entity = entities.first().unwrap();
@@ -231,6 +244,11 @@ fn respawn_pong_ball_after_outbounds(context: &mut Context, pong_ball: &Entity) 
     let position_default: Vector2<f32> = Vector2::new(0.0, 0.0);
 
     if pong_ball_transform.position.x > 2.0 || pong_ball_transform.position.x < -2.0 {
-        pong_ball_transform.set_position(context, position_default);
+        let mut pong_ball_respawn_timer: RefMut<'_, PongBallRespawnTimer> = context.world.get_resource_mut::<PongBallRespawnTimer>().unwrap();
+        pong_ball_respawn_timer.0.tick(context.delta);
+
+        if pong_ball_respawn_timer.0.is_finished() {
+            pong_ball_transform.set_position(context, position_default);
+        }
     }
 }

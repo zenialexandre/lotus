@@ -1,7 +1,9 @@
 use std::{
     any::TypeId,
     cell::{
-        Ref, RefCell, RefMut
+        Ref,
+        RefCell,
+        RefMut
     },
     collections::HashMap,
     hash::{
@@ -56,7 +58,7 @@ impl Archetype {
 /// Struct to represent the World of the Entity-Component-System architecture.
 pub struct World {
     pub archetypes: HashMap<u64, Archetype>,
-    pub resources: Vec<Box<dyn Resource>>
+    pub resources: Vec<RefCell<Box<dyn Resource>>>
 }
 
 impl World {
@@ -64,31 +66,41 @@ impl World {
     pub fn new() -> Self {
         return Self {
             archetypes: HashMap::new(),
-            resources: vec![Box::new(Input::default())]
+            resources: vec![RefCell::new(Box::new(Input::default()))]
         };
+    }
+
+    /// Add a new resource to the world.
+    pub fn add_resource(&mut self, resource: Box<dyn Resource>) {
+        self.resources.push(RefCell::new(resource));
     }
 
     /// # Spawn a new entity on the world.
     /// The entity can be rendered on the fly, if its a shape or a sprite.
-    pub fn spawn(&mut self, render_state: &mut RenderState, components: &mut Vec<RefCell<Box<dyn Component>>>) -> Entity {
+    pub fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
-        let has_transform: bool = components.iter().any(|c| c.borrow().as_any().is::<Transform>());
 
-        if !has_transform {
-            components.push(RefCell::new(Box::new(Transform::default())));
+        let mut components_refs: Vec<RefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
+        for component in components {
+            components_refs.push(RefCell::new(component));
         }
-        let mut components_types_ids: Vec<TypeId> = components.iter().map(|c| c.borrow().type_id()).collect();
+
+        let has_transform: bool = components_refs.iter().any(|c| c.borrow().as_any().is::<Transform>());
+        if !has_transform {
+            components_refs.push(RefCell::new(Box::new(Transform::default())));
+        }
+        let mut components_types_ids: Vec<TypeId> = components_refs.iter().map(|c| c.borrow().type_id()).collect();
         let archetype_unique_key: u64 = self.get_archetype_unique_key(&mut components_types_ids);
         let archetype: &mut Archetype = self.archetypes.entry(archetype_unique_key).or_insert_with(Archetype::new);
 
-        let moved_components: Vec<RefCell<Box<dyn Component>>> = take(components);
+        let moved_components: Vec<RefCell<Box<dyn Component>>> = take(&mut components_refs);
         archetype.add_entity(entity, moved_components);
         render_state.add_entity_to_render(entity);
 
         return entity;
     }
 
-    /// # Despawn a specific entity from the world.\
+    /// # Despawn a specific entity from the world.
     /// The entity can be removed from the rendering flow on the fly, if its necessary. 
     pub fn despawn(&mut self, render_state: &mut RenderState, entity: &Entity) {
         if let Some((_, archetype)) = self.archetypes.iter_mut().find(|(_, arch)| arch.entities.contains(&entity)) {
@@ -136,6 +148,32 @@ impl World {
         return default_hasher.finish();
     }
 
+    /// Return the specified resource.
+    pub fn get_resource<T: Resource + 'static>(&self) -> Option<Ref<'_, T>> {
+        for resource in &self.resources {
+            if resource.borrow().as_any().is::<T>() {
+                return Some(Ref::map(
+                    resource.borrow(),
+                    |resource| resource.as_any().downcast_ref::<T>().unwrap()
+                ));
+            }
+        }
+        return None;
+    }
+
+    /// Return the specified resource as mutable.
+    pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<RefMut<'_, T>> {
+        for resource in &self.resources {
+            if resource.borrow().as_any().is::<T>() {
+                return Some(RefMut::map(
+                    resource.borrow_mut(),
+                    |resource| resource.as_any_mut().downcast_mut::<T>().unwrap()
+                ));
+            }
+        }
+        return None;
+    }
+
     /// Return a specific component from a entity.
     pub fn get_entity_component<T: Component + 'static>(&self, entity: &Entity) -> Option<Ref<'_, T>> {
         for archetype in self.archetypes.values() {
@@ -144,8 +182,8 @@ impl World {
 
                 if let Some(components) = archetype.components.get(&type_id) {
                     if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
-                        return Some(
-                            Ref::map(components[index].borrow(),
+                        return Some(Ref::map(
+                            components[index].borrow(),
                             |component| component.as_any().downcast_ref::<T>().unwrap()
                         ));
                     }
@@ -163,8 +201,8 @@ impl World {
 
                 if let Some(components) = archetype.components.get(&type_id) {
                     if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
-                        return Some(
-                            RefMut::map(components[index].borrow_mut(),
+                        return Some(RefMut::map(
+                            components[index].borrow_mut(),
                             |component| component.as_any_mut().downcast_mut::<T>().unwrap()
                         ));
                     }

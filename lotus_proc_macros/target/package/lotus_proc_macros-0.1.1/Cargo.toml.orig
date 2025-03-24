@@ -1,0 +1,16 @@
+[package]
+name = "lotus_proc_macros"
+version = "0.1.1"
+authors = ["Alexandre Zeni <zenialexandre123@gmail.com>"]
+description = "Lotus Proc Macros is a crate designed to store the 'Derive Macros' used in the Lotus project."
+license = "MPL-2.0"
+edition = "2021"
+publish = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "2.0.100"
+quote = "1.0.39"
+proc-macro2 = "1.0.94"

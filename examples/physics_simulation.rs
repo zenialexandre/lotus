@@ -1,5 +1,5 @@
 use lotus_engine::*;
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{Ref, RefMut};
 use cgmath::Vector2;
 use rand::{rng, rngs::ThreadRng, Rng};
 
@@ -22,23 +22,23 @@ fn setup(context: &mut Context) {
 
     context.world.spawn(
         &mut context.render_state,
-        &mut vec![
-            RefCell::new(Box::new(red_object)),
-            RefCell::new(Box::new(Object())),
-            RefCell::new(Box::new(Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.30, 0.30)))),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(0.45, 0.45)))),
-            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Square))))
+        vec![
+            Box::new(red_object),
+            Box::new(Object()),
+            Box::new(Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.30, 0.30))),
+            Box::new(Velocity::new(Vector2::new(0.45, 0.45))),
+            Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
 
     context.world.spawn(
         &mut context.render_state,
-        &mut vec![
-            RefCell::new(Box::new(blue_object)),
-            RefCell::new(Box::new(Object())),
-            RefCell::new(Box::new(Transform::new(Vector2::new(-0.45, 0.), 0.0, Vector2::new(0.30, 0.30)))),
-            RefCell::new(Box::new(Velocity::new(Vector2::new(0.45, 0.45)))),
-            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Square))))
+        vec![
+            Box::new(blue_object),
+            Box::new(Object()),
+            Box::new(Transform::new(Vector2::new(-0.45, 0.), 0.0, Vector2::new(0.30, 0.30))),
+            Box::new(Velocity::new(Vector2::new(0.45, 0.45))),
+            Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
 
@@ -62,11 +62,11 @@ fn spawn_border(context: &mut Context, orientation: Orientation, position: Vecto
     
     context.world.spawn(
         &mut context.render_state,
-        &mut vec![
-            RefCell::new(Box::new(border)),
-            RefCell::new(Box::new(Border())),
-            RefCell::new(Box::new(Transform::new(position, 0.0, scale))),
-            RefCell::new(Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle))))
+        vec![
+            Box::new(border),
+            Box::new(Border()),
+            Box::new(Transform::new(position, 0.0, scale)),
+            Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
         ]
     );
 }

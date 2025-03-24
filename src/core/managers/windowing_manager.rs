@@ -24,6 +24,7 @@ use winit::{
     }
 };
 use std::{
+    cell::RefMut,
     path::Path,
     sync::Arc
 };
@@ -155,14 +156,11 @@ impl ApplicationHandler for Application {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
         let context: &mut Context = &mut self.context.as_mut().unwrap();
         let render_state: &mut RenderState = &mut context.render_state;
-        let input_resource: &mut Input = &mut context.world.resources.iter_mut().filter_map(
-            |resource| resource.as_any_mut().downcast_mut::<Input>()
-        ).next().unwrap();
+        let mut input: RefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
 
         if !render_state.input(&window_event) {
             match window_event {
                 WindowEvent::CloseRequested => {
-                    println!("Close button pressed.");
                     event_loop.exit();
                 },
                 WindowEvent::Resized(new_size) => {
@@ -170,24 +168,25 @@ impl ApplicationHandler for Application {
                 },
                 WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
                     if ElementState::Pressed == event.state {
-                        input_resource.pressed_keys.insert(event.physical_key);
+                        input.pressed_keys.insert(event.physical_key);
                     } else if ElementState::Released == event.state {
-                        input_resource.pressed_keys.remove(&event.physical_key);
+                        input.pressed_keys.remove(&event.physical_key);
                     }
                 },
                 WindowEvent::MouseInput { device_id: _, state, button } => {
                     if ElementState::Pressed == state {
-                        input_resource.pressed_mouse_buttons.insert(button);
+                        input.pressed_mouse_buttons.insert(button);
                     } else if ElementState::Released == state {
-                        input_resource.pressed_mouse_buttons.remove(&button);
+                        input.pressed_mouse_buttons.remove(&button);
                     }
                 },
                 WindowEvent::CursorMoved { device_id: _, position } => {
-                    input_resource.mouse_position.0 = position.x as f32;
-                    input_resource.mouse_position.1 = position.y as f32;
+                    input.mouse_position.0 = position.x as f32;
+                    input.mouse_position.1 = position.y as f32;
                 },
                 WindowEvent::RedrawRequested => {
                     render_state.window().request_redraw();
+                    self.game_loop.render(&mut context.render_state, &context.world, event_loop);
                 }
                 _ => ()
             }

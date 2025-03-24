@@ -27,6 +27,7 @@ use wgpu::{
     InstanceDescriptor,
     Limits,
     LoadOp,
+    PresentMode,
     Operations,
     PowerPreference,
     Queue,
@@ -186,7 +187,7 @@ impl RenderState {
             format: surface_format,
             width: physical_size.width,
             height: physical_size.height,
-            present_mode: surface_capabilities.present_modes[0],
+            present_mode: PresentMode::Fifo,
             alpha_mode: surface_capabilities.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2

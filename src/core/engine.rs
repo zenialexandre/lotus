@@ -5,7 +5,7 @@ use super::{
     managers::rendering_manager::RenderState
 };
 
-/// A struct created to provide the main features of the engine for the end-user.
+/// Struct created to provide the main features of the engine for the end-user.
 pub struct Context {
     pub render_state: RenderState,
     pub world: World,

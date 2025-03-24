@@ -10,7 +10,7 @@ use super::{
 };
 
 /// Enumerator to store the engine current state.
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Clone, Default, Debug, PartialEq)]
 pub enum GameLoopState {
     #[default]
     Running,
@@ -55,10 +55,7 @@ impl GameLoop {
             context.world.sync_transformations_with_collisions();
             accumulator -= context.delta;
         }
-
-        if GameLoopState::Running == context.game_loop_listener.state {
-            self.render(&mut context.render_state, &context.world, event_loop);
-        }
+        self.render(&mut context.render_state, &context.world, event_loop);
     }
 
     /// Call the rendering process.
