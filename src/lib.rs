@@ -17,13 +17,13 @@ Here are some initial examples to demonstrate the engine's potential:
 - **A example of a simple arcade game, the Pong:** [`examples/pong.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/pong.rs)
 "#]
 
-/// Módulo principal do motor de jogo.
+/// Module with the main features of the engine.
 pub mod core;
 
-/// Utilitários do motor.
+/// Module with utilities of the engine.
 pub mod utils;
 
-/// Módulo para testes do motor.
+/// Module with tests of the engine.
 pub mod test;
 
 pub use core::managers::rendering_manager::*;
