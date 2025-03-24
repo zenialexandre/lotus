@@ -106,6 +106,7 @@ use super::super::{
 };
 use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER, BACKGROUND_SHADER};
 
+/// Struct to represent the vertices that will be sent to the shader.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
@@ -113,24 +114,25 @@ pub struct Vertex {
     pub texture_coordinates: [f32; 2]
 }
 
+/// Struct to represent the current rendering state of the engine.
 pub struct RenderState {
-    surface: Surface<'static>,
-    device: Device,
+    pub surface: Surface<'static>,
+    pub device: Device,
     pub queue: Queue,
-    surface_configuration: SurfaceConfiguration,
-    pub(crate) physical_size: PhysicalSize<u32>,
-    pub(crate) color: Option<color::Color>,
-    pub(crate) background_image_path: Option<String>,
-    window: Arc<Window>,
-    render_pipeline: Option<RenderPipeline>,
-    vertex_buffer: Option<Buffer>,
-    index_buffer: Option<Buffer>,
-    number_of_indices: Option<u32>,
-    diffuse_bind_group: Option<BindGroup>,
-    color_bind_group: Option<BindGroup>,
-    projection_buffer: Option<Buffer>,
+    pub surface_configuration: SurfaceConfiguration,
+    pub physical_size: PhysicalSize<u32>,
+    pub color: Option<color::Color>,
+    pub background_image_path: Option<String>,
+    pub window: Arc<Window>,
+    pub render_pipeline: Option<RenderPipeline>,
+    pub vertex_buffer: Option<Buffer>,
+    pub index_buffer: Option<Buffer>,
+    pub number_of_indices: Option<u32>,
+    pub diffuse_bind_group: Option<BindGroup>,
+    pub color_bind_group: Option<BindGroup>,
+    pub projection_buffer: Option<Buffer>,
     pub transform_buffer: Option<Buffer>,
-    transform_bind_group: Option<BindGroup>,
+    pub transform_bind_group: Option<BindGroup>,
     pub entities_to_render: Vec<Entity>
 }
 
@@ -147,7 +149,8 @@ impl Vertex {
 }
 
 impl RenderState {
-    pub(crate) async fn new(window: Arc<Window>) -> Self {
+    /// Create a new asynchronous rendering state for the window.
+    pub async fn new(window: Arc<Window>) -> Self {
         let physical_size: PhysicalSize<u32> = window.inner_size();
         let instance: Instance = Instance::new(&InstanceDescriptor{
             backends: Backends::PRIMARY,
@@ -211,11 +214,13 @@ impl RenderState {
         };
     }
 
-    pub(crate) fn window(&self) -> &Window {
+    /// Returns the window reference.
+    pub fn window(&self) -> &Window {
         return &self.window;
     }
 
-    pub(crate) fn resize(&mut self, new_size: PhysicalSize<u32>) {
+    /// Resize the rendering projection.
+    pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.physical_size = new_size;
             self.surface_configuration.width = new_size.width;
@@ -251,17 +256,20 @@ impl RenderState {
         }
     }
 
-    pub(crate) fn add_entity_to_render(&mut self, entity: Entity) {
+    /// Add an entity to be rendered.
+    pub fn add_entity_to_render(&mut self, entity: Entity) {
         self.entities_to_render.push(entity);
     }
 
-    pub(crate) fn remove_entity_to_render(&mut self, entity: &Entity) {
+    /// Remove an entity from the rendering list.
+    pub fn remove_entity_to_render(&mut self, entity: &Entity) {
         if let Some(index) = self.entities_to_render.iter().position(|e| e == entity) {
             self.entities_to_render.remove(index);
         }
     }
 
-    pub(crate) fn render(&mut self, world: &World) -> Result<(), SurfaceError> {
+    /// Execute the rendering process.
+    pub fn render(&mut self, world: &World) -> Result<(), SurfaceError> {
         let surface_texture: SurfaceTexture = self.surface.get_current_texture()?;
         let texture_view: TextureView = surface_texture.texture.create_view(&TextureViewDescriptor::default());
         let mut command_encoder: CommandEncoder = self.device.create_command_encoder(&CommandEncoderDescriptor {
@@ -275,7 +283,7 @@ impl RenderState {
                     view: &texture_view,
                     resolve_target: None,
                     ops: Operations {
-                        load: LoadOp::Clear(color::to_wgpu(self.color.unwrap_or_else(|| color::Color::WHITE))),
+                        load: LoadOp::Clear(color::Color::to_wgpu(self.color.unwrap_or_else(|| color::Color::WHITE))),
                         store: StoreOp::Store
                     },
                 })],
@@ -408,7 +416,7 @@ impl RenderState {
     pub(crate) fn setup_shape_rendering(&mut self, shape: &Shape, transform: Option<&Transform>) {
         let color_buffer: Buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Color Buffer"),
-            contents:bytemuck::cast_slice(&color::to_array(color::to_wgpu(shape.color))),
+            contents:bytemuck::cast_slice(&color::Color::to_array(color::Color::to_wgpu(shape.color))),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
         });
         let color_bind_group_layout: BindGroupLayout = self.device.create_bind_group_layout(&BindGroupLayoutDescriptor {

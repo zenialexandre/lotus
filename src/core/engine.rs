@@ -5,6 +5,7 @@ use super::{
     managers::rendering_manager::RenderState
 };
 
+/// A struct created to provide the main features of the engine for the end-user.
 pub struct Context {
     pub render_state: RenderState,
     pub world: World,
@@ -14,6 +15,7 @@ pub struct Context {
 }
 
 impl Context {
+    /// Create a new context with parameters.
     pub fn new(render_state: RenderState, world: World, window_configuration: WindowConfiguration, delta: f32) -> Self {
         return Self {
             render_state,

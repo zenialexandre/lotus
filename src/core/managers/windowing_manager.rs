@@ -39,6 +39,7 @@ use super::{
     }
 };
 
+/// Struct to facilitate the window configuration by the end-user.
 #[derive(Clone)]
 pub struct WindowConfiguration {
     pub icon_path: String,
@@ -58,6 +59,7 @@ pub struct WindowConfiguration {
 }
 
 impl Default for WindowConfiguration {
+    /// Returns a default configuration.
     fn default() -> Self {
         return Self {
             icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
@@ -79,6 +81,7 @@ impl Default for WindowConfiguration {
 }
 
 impl WindowConfiguration {
+    /// Returns a icon by its relative file path.
     pub fn get_icon_by_path(icon_path: String) -> Option<Icon> {
         if let Ok(image) = image::open(Path::new(icon_path.as_str())) {
             let icon_image = image.into_rgba8();
@@ -196,6 +199,7 @@ impl ApplicationHandler for Application {
     }
 }
 
+/// Initialize the engine/application asynchronously.
 pub async fn initialize_application(
     window_configuration: Option<WindowConfiguration>,
     setup: fn(context: &mut Context),

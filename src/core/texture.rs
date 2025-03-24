@@ -23,15 +23,17 @@ use image::{
 };
 use anyhow::*;
 
-pub(crate) struct Texture {
+/// Struct to represent a texture to be used on the rendering process.
+pub struct Texture {
     #[allow(unused)]
-    pub(crate) texture: wgpu::Texture,
-    pub(crate) texture_view: TextureView,
-    pub(crate) sampler: Sampler
+    pub texture: wgpu::Texture,
+    pub texture_view: TextureView,
+    pub sampler: Sampler
 }
 
 impl Texture {
-    pub(crate) fn _from_bytes(
+    /// Returns a texture struct from the bytes of a real image.
+    pub fn from_bytes(
         device: &Device,
         queue: &Queue,
         bytes: &[u8],
@@ -41,7 +43,8 @@ impl Texture {
         return Self::from_image(device, queue, &image, Some(label));
     }
 
-    pub(crate) fn from_image(
+    /// Returns a texture struct from a real image.
+    pub fn from_image(
         device: &Device,
         queue: &Queue,
         image: &DynamicImage,

@@ -25,12 +25,14 @@ use super::{
     resource::Resource
 };
 
+/// Struct to represent the different archetypes and/or clusters of data.
 pub struct Archetype {
     pub entities: Vec<Entity>,
     pub components: HashMap<TypeId, Vec<RefCell<Box<dyn Component>>>>
 }
 
 impl Archetype {
+    /// Create a new archetype.
     pub fn new() -> Self {
         return Self {
             entities: Vec::new(),
@@ -38,6 +40,7 @@ impl Archetype {
         };
     }
 
+    /// Add a new entity to a archetype by its components.
     pub fn add_entity(&mut self, entity: Entity, components: Vec<RefCell<Box<dyn Component>>>) {
         self.entities.push(entity);
 
@@ -50,12 +53,14 @@ impl Archetype {
     }
 }
 
+/// Struct to represent the World of the Entity-Component-System architecture.
 pub struct World {
     pub archetypes: HashMap<u64, Archetype>,
     pub resources: Vec<Box<dyn Resource>>
 }
 
 impl World {
+    /// Create a new world.
     pub fn new() -> Self {
         return Self {
             archetypes: HashMap::new(),
@@ -63,6 +68,8 @@ impl World {
         };
     }
 
+    /// # Spawn a new entity on the world.
+    /// The entity can be rendered on the fly, if its a shape or a sprite.
     pub fn spawn(&mut self, render_state: &mut RenderState, components: &mut Vec<RefCell<Box<dyn Component>>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
         let has_transform: bool = components.iter().any(|c| c.borrow().as_any().is::<Transform>());
@@ -81,6 +88,8 @@ impl World {
         return entity;
     }
 
+    /// # Despawn a specific entity from the world.\
+    /// The entity can be removed from the rendering flow on the fly, if its necessary. 
     pub fn despawn(&mut self, render_state: &mut RenderState, entity: &Entity) {
         if let Some((_, archetype)) = self.archetypes.iter_mut().find(|(_, arch)| arch.entities.contains(&entity)) {
             if let Some(index) = archetype.entities.iter().position(|e| e.0 == entity.0) {
@@ -90,6 +99,7 @@ impl World {
         }
     }
 
+    /// Synchronize the transformation matrices with the collision objects.
     pub fn sync_transformations_with_collisions(&mut self) {
         for archetype in self.archetypes.values_mut() {
             if let (Some(transforms), Some(collisions)) = (
@@ -110,12 +120,14 @@ impl World {
         }
     }
 
+    /// Returns the unique key of a archetype.
     pub fn get_archetype_unique_key(&self, components_types_ids: &mut Vec<TypeId>) -> u64 {
         components_types_ids.sort();
         return self.get_hash_from_ids(&components_types_ids);
     }
 
-    fn get_hash_from_ids(&self, type_ids: &[TypeId]) -> u64 {
+    /// Returns a hash based on the components ids that make up the archetype.
+    pub fn get_hash_from_ids(&self, type_ids: &[TypeId]) -> u64 {
         let mut default_hasher: DefaultHasher = DefaultHasher::new();
 
         for type_id in type_ids {
@@ -124,6 +136,7 @@ impl World {
         return default_hasher.finish();
     }
 
+    /// Return a specific component from a entity.
     pub fn get_entity_component<T: Component + 'static>(&self, entity: &Entity) -> Option<Ref<'_, T>> {
         for archetype in self.archetypes.values() {
             if archetype.entities.contains(entity) {
@@ -142,6 +155,7 @@ impl World {
         return None;
     }
 
+    /// Return a specific component from a entity as mutable.
     pub fn get_entity_component_mut<T: Component + 'static>(&self, entity: &Entity) -> Option<RefMut<'_, T>> {
         for archetype in self.archetypes.values() {
             if archetype.entities.contains(entity) {
@@ -160,6 +174,7 @@ impl World {
         return None;
     }
 
+    /// Return all the components from a specific entity as mutables.
     pub fn get_entity_components_mut<'a>(&'a self, entity: &'a Entity) -> Option<Vec<RefMut<'a, Box<dyn Component>>>> {
         if let Some((_, archetype)) = self.archetypes.iter().find(|(_, arch)| arch.entities.contains(entity)) {
             if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
@@ -177,6 +192,7 @@ impl World {
         return None;
     }
 
+    /// Returns if an entity still is in the world.
     pub fn is_entity_alive(&self, entity: Entity) -> bool {
         return self.archetypes.values().any(|archetype| archetype.entities.iter().any(|e| e.0 == entity.0));    
     }

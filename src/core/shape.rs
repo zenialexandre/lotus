@@ -2,6 +2,7 @@ use lotus_proc_macros::Component;
 
 use super::{color::Color, managers::rendering_manager::Vertex};
 
+/// Struct that represents every solid geometric form on the engine.
 #[derive(Clone, Debug, Component)]
 pub struct Shape {
     pub orientation: Orientation,
@@ -10,6 +11,7 @@ pub struct Shape {
 }
 
 impl Shape {
+    /// Create a new shape with parameters.
     pub fn new(orientation: Orientation, geometry_type: GeometryType, color: Color) -> Self {
         let shape: Shape = Self {
             orientation,
@@ -20,6 +22,7 @@ impl Shape {
     }
 }
 
+/// Struct to represent the specific characteristics of a circle.
 #[derive(Clone, Debug)]
 pub struct Circle {
     pub number_of_segments: u16,
@@ -27,6 +30,7 @@ pub struct Circle {
 }
 
 impl Circle {
+    /// Create a new circle with parameters.
     pub fn new(number_of_segments: u16, radius: f32) -> Self {
         return Self {
             number_of_segments,
@@ -35,12 +39,14 @@ impl Circle {
     }
 }
 
+/// Enumerator that represent the orientation of the geometric form.
 #[derive(Clone, Debug)]
 pub enum Orientation {
     Horizontal,
     Vertical
 }
 
+/// Enumerator that represent the actual shape of the geometric form.
 #[derive(Clone, Debug)]
 pub enum GeometryType {
     Triangle,
@@ -50,6 +56,7 @@ pub enum GeometryType {
 }
 
 impl GeometryType {
+    /// Returns the current array of vertices of a shape by its orientation and geometric type.
     pub fn to_vertex_array(&self, orientation: Orientation) -> Vec<Vertex> {
         match self {
             GeometryType::Triangle => {
@@ -102,6 +109,7 @@ impl GeometryType {
         }
     }
 
+    /// Returns the current array of indices of a shape by its geometric type.
     pub fn to_index_array(&self) -> Vec<u16> {
         match self {
             GeometryType::Triangle => vec![0, 1, 2],

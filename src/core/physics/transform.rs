@@ -3,6 +3,7 @@ use lotus_proc_macros::Component;
 
 use super::super::engine::Context;
 
+/// Struct to represent the transform matrix of every object rendered.
 #[derive(Clone, Debug, Component)]
 pub struct Transform {
     pub position: Vector2<f32>,
@@ -11,6 +12,7 @@ pub struct Transform {
 }
 
 impl Default for Transform {
+    /// Returns a default transform struct.
     fn default() -> Self {
         return Self {
             position: Vector2::new(0.0, 0.0),
@@ -21,6 +23,7 @@ impl Default for Transform {
 }
 
 impl Transform {
+    /// Create a new transform with parameters.
     pub fn new(position: Vector2<f32>, rotation: f32, scale: Vector2<f32>) -> Self {
         return Self {
             position,
@@ -29,12 +32,14 @@ impl Transform {
         };
     }
 
+    /// Returns the current transform struct as a matrix of f32s.
     pub fn to_matrix(&self) -> Matrix4<f32> {
         return Matrix4::from_translation(Vector3::new(self.position.x, self.position.y, 0.)) *
             Matrix4::from_angle_z(Deg(self.rotation)) *
             Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, 1.);
     }
 
+    /// Write the transform matrix updates to its related buffer on rendering surface.
     pub fn write_update_to_buffer(&self, context: &Context) {
         let transform_matrix: Matrix4<f32> = self.to_matrix();
         let transform_matrix_as_ref: &[[f32; 4]; 4] = transform_matrix.as_ref();
@@ -53,29 +58,35 @@ impl Transform {
         self.set_position(context, interpolated_position);
     }
 
+    /// Set the current position and sends it to the buffer.
     pub fn set_position(&mut self, context: &Context, position: Vector2<f32>) {
         self.position = position;
         self.write_update_to_buffer(context);
     }
 
+    /// Get the current position.
     pub fn get_position(&self) -> Vector2<f32> {
         return self.position;
     }
 
+    /// Set the current rotation and sends it to the buffer.
     pub fn set_rotation(&mut self, context: &Context, rotation: f32) {
         self.rotation = rotation;
         self.write_update_to_buffer(context);
     }
 
+    /// Get the current rotation.
     pub fn get_rotation(&self) -> f32 {
         return self.rotation;
     }
 
+    /// Set the current scale and sends it to the buffer.
     pub fn set_scale(&mut self, context: &Context, scale: Vector2<f32>) {
         self.scale = scale;
         self.write_update_to_buffer(context);
     }
 
+    /// Get the current scale.
     pub fn get_scale(&self) -> Vector2<f32> {
         return self.scale;
     }
