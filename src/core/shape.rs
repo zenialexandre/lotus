@@ -1,6 +1,6 @@
+use strum_macros::EnumIter;
 use lotus_proc_macros::Component;
-
-use super::{color::Color, managers::rendering_manager::Vertex};
+use super::{color::Color, managers::rendering_manager::{Vertex, RenderBatchType}};
 
 /// Struct that represents every solid geometric form on the engine.
 #[derive(Clone, Debug, Component)]
@@ -29,6 +29,15 @@ pub struct Circle {
     pub radius: f32
 }
 
+impl Default for Circle {
+    fn default() -> Self {
+        return Self {
+            number_of_segments: 32,
+            radius: 0.5
+        };
+    }
+}
+
 impl Circle {
     /// Create a new circle with parameters.
     pub fn new(number_of_segments: u16, radius: f32) -> Self {
@@ -47,7 +56,7 @@ pub enum Orientation {
 }
 
 /// Enumerator that represent the actual shape of the geometric form.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnumIter)]
 pub enum GeometryType {
     Triangle,
     Square,
@@ -135,6 +144,15 @@ impl GeometryType {
                 }
                 indices
             }
+        }
+    }
+
+    pub fn to_batch_type(&self) -> RenderBatchType {
+        match self {
+            GeometryType::Triangle => RenderBatchType::Triangle,
+            GeometryType::Square => RenderBatchType::Square,
+            GeometryType::Rectangle => RenderBatchType::Rectangle,
+            GeometryType::Circle(circle) => RenderBatchType::Circle(circle.number_of_segments),
         }
     }
 }

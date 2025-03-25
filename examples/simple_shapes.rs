@@ -66,6 +66,6 @@ fn update(context: &mut Context) {
     for entity in &entities {
         let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
         let rotation: f32 = transform.get_rotation() + 100.0 * context.delta;
-        transform.set_rotation(&context, rotation);
+        transform.set_rotation(rotation);
     }
 }
