@@ -1,6 +1,5 @@
 use lotus_engine::*;
 use std::cell::{Ref, RefMut};
-use cgmath::Vector2;
 
 your_game!(
     WindowConfiguration::default(),

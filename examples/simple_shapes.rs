@@ -1,6 +1,5 @@
 use lotus_engine::*;
 use std::cell::RefMut;
-use cgmath::Vector2;
 
 #[derive(Component)]
 struct MySquare();

@@ -1,7 +1,5 @@
 use lotus_engine::*;
-use cgmath::{InnerSpace, Vector2};
 use rand::{rngs::ThreadRng, Rng};
-use winit::keyboard::{KeyCode, PhysicalKey};
 use std::{cell::{Ref, RefMut}, time::Duration};
 
 #[derive(Component)]
