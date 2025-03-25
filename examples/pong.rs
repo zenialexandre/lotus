@@ -31,7 +31,7 @@ your_game!(
         icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
         title: "Pong Game :)".to_string(),
         background_color: None,
-        background_image_path: Some("assets/textures/pong/pong_background_960x600.png".to_string()), // Background Image with resolution similar to the window
+        background_image_path: Some("assets/textures/pong/pong_background_960x600.png".to_string()),
         width: 960.0,
         height: 600.0,
         position_x: 200.0,
@@ -64,7 +64,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(Vector2::new(-1.0, 0.23), 0.0, Vector2::new(0.25, 0.25))),
             Box::new(Racket()),
             Box::new(GrayRacket()),
-            Box::new(Velocity::new(Vector2::new(1.0, 1.0))),
+            Box::new(Velocity::new(Vector2::new(1.5, 1.5))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
@@ -76,7 +76,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(Vector2::new(1.0, 0.25), 0.0, Vector2::new(0.25, 0.25))),
             Box::new(Racket()),
             Box::new(PinkRacket()),
-            Box::new(Velocity::new(Vector2::new(1.0, 1.0))),
+            Box::new(Velocity::new(Vector2::new(1.5, 1.5))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
@@ -87,7 +87,7 @@ fn setup(context: &mut Context) {
             Box::new(pong_ball_sprite),
             Box::new(Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25))),
             Box::new(PongBall()),
-            Box::new(Velocity::new(Vector2::new(0.85, 0.85))),
+            Box::new(Velocity::new(Vector2::new(1.0, 1.0))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );

@@ -1,3 +1,5 @@
+use std::{collections::HashMap, path::Path, sync::Arc};
+
 use wgpu::{
     TextureView,
     TextureDescriptor,
@@ -51,7 +53,7 @@ impl Texture {
         label: Option<&str>
     ) -> Result<Self> {
         let rgba = image.to_rgba8();
-        let dimensions = image.dimensions();
+        let dimensions: (u32, u32) = image.dimensions();
         let size: Extent3d = Extent3d {
             width: dimensions.0,
             height: dimensions.1,
@@ -96,5 +98,36 @@ impl Texture {
         });
 
         return Ok(Self { texture, texture_view, sampler });
+    }
+}
+
+/// Struct to represent the textures current on the application cache.
+pub struct TextureCache {
+    textures: HashMap<String, Arc<Texture>>
+}
+
+impl TextureCache {
+    /// Create a new texture cache cleaned.
+    pub fn new() -> Self {
+        return Self {
+            textures: HashMap::new()
+        };
+    }
+
+    /// Returns a texture from the cache based on the file path.
+    pub fn get_texture(&self, key: String) -> Option<Arc<Texture>> {
+        return self.textures.get(&key).cloned();
+    }
+
+    /// Add a texture to the cache and returns it afterwards.
+    pub fn load_texture(&mut self, key: String, device: &Device, queue: &Queue) -> Option<Arc<Texture>> {
+        if !self.textures.contains_key(&key) {
+            let image: DynamicImage = image::open(Path::new(&key)).unwrap();
+            let texture: Texture = Texture::from_image(device, queue, &image, Some(&key)).unwrap();
+            let texture_arc: Arc<Texture> = Arc::new(texture);
+            self.textures.insert(key.clone(), Arc::clone(&texture_arc));
+            return Some(texture_arc);
+        }
+        return Some(self.get_texture(key).expect("Texture should be on cache."));
     }
 }

@@ -44,17 +44,10 @@ impl GameLoop {
 
     /// Run the engine loop to start the logic and rendering processes.
     pub fn run(&mut self, context: &mut Context, event_loop: &ActiveEventLoop) {
-        let now: Instant = Instant::now();
-        let elapsed_time_from_last_run: Duration = now - self.previous_time_of_last_run;
-        self.previous_time_of_last_run = now;
-        let mut accumulator: f32 = elapsed_time_from_last_run.as_secs_f32();
+        context.delta = self.get_delta_as_seconds();
+        (self.update)(context);
+        context.world.sync_transformations_with_collisions();
 
-        while accumulator >= self.get_delta_as_seconds() {
-            context.delta = self.get_delta_as_seconds();
-            (self.update)(context);
-            context.world.sync_transformations_with_collisions();
-            accumulator -= context.delta;
-        }
         self.render(&mut context.render_state, &context.world, event_loop);
     }
 

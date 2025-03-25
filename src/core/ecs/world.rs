@@ -212,6 +212,24 @@ impl World {
         return None;
     }
 
+    /// Return all the components from a specific entity.
+    pub fn get_entity_components<'a>(&'a self, entity: &'a Entity) -> Option<Vec<Ref<'a, Box<dyn Component>>>> {
+        if let Some((_, archetype)) = self.archetypes.iter().find(|(_, arch)| arch.entities.contains(entity)) {
+            if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
+                let mut entity_components: Vec<Ref<'a, Box<dyn Component>>> = Vec::new();
+    
+                for component_vec in archetype.components.values() {
+                    if let Some(component) = component_vec.get(index) {
+                        let borrowed: Ref<'_, Box<dyn Component>> = component.borrow();
+                        entity_components.push(borrowed);
+                    }
+                }
+                return Some(entity_components);
+            }
+        }
+        return None;
+    }
+
     /// Return all the components from a specific entity as mutables.
     pub fn get_entity_components_mut<'a>(&'a self, entity: &'a Entity) -> Option<Vec<RefMut<'a, Box<dyn Component>>>> {
         if let Some((_, archetype)) = self.archetypes.iter().find(|(_, arch)| arch.entities.contains(entity)) {

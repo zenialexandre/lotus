@@ -9,77 +9,7 @@ use winit::{
     window::Window
 };
 use wgpu::{
-    vertex_attr_array,
-    Adapter,
-    Backends,
-    ColorTargetState,
-    ColorWrites,
-    BlendState,
-    BlendComponent,
-    BlendFactor,
-    BlendOperation,
-    CommandEncoder,
-    CommandEncoderDescriptor,
-    Device,
-    DeviceDescriptor,
-    Features,
-    Instance,
-    InstanceDescriptor,
-    Limits,
-    LoadOp,
-    PresentMode,
-    Operations,
-    PowerPreference,
-    Queue,
-    RenderPassColorAttachment,
-    RenderPassDescriptor,
-    RequestAdapterOptions,
-    StoreOp,
-    Surface,
-    RenderPass,
-    SurfaceCapabilities,
-    SurfaceConfiguration,
-    SurfaceError,
-    SurfaceTexture,
-    TextureFormat,
-    TextureUsages,
-    TextureView,
-    TextureViewDescriptor,
-    RenderPipeline,
-    RenderPipelineDescriptor,
-    ShaderModule,
-    ShaderModuleDescriptor,
-    ShaderSource,
-    PipelineLayoutDescriptor,
-    PipelineLayout,
-    PipelineCompilationOptions,
-    VertexState,
-    VertexStepMode,
-    VertexBufferLayout,
-    VertexAttribute,
-    BufferAddress,
-    FragmentState,
-    PrimitiveState,
-    PrimitiveTopology,
-    FrontFace,
-    Face,
-    PolygonMode,
-    MultisampleState,
-    Buffer,
-    BufferUsages,
-    BufferBindingType,
-    IndexFormat,
-    TextureSampleType,
-    SamplerBindingType,
-    BindGroup,
-    BindGroupDescriptor,
-    BindGroupEntry,
-    BindingType,
-    BindGroupLayoutDescriptor,
-    BindGroupLayout,
-    BindGroupLayoutEntry,
-    BindingResource,
-    ShaderStages,
+    *,
     util::{
         BufferInitDescriptor,
         DeviceExt
@@ -87,7 +17,6 @@ use wgpu::{
 };
 use std::{
     cell::RefMut,
-    path::Path,
     sync::Arc
 };
 
@@ -98,14 +27,16 @@ use super::super::{
         Shape
     },
     physics::transform::Transform,
-    sprite::Sprite, texture,
+    sprite::Sprite,
+    texture,
+    texture::TextureCache,
     ecs::{
         entitiy::Entity,
         world::World,
         component::Component
     }
 };
-use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER, BACKGROUND_SHADER};
+use crate::utils::constants::shader::{BACKGROUND_SHADER, COLOR_SHADER, TEXTURE_SHADER};
 
 /// Struct to represent the vertices that will be sent to the shader.
 #[repr(C)]
@@ -129,12 +60,13 @@ pub struct RenderState {
     pub vertex_buffer: Option<Buffer>,
     pub index_buffer: Option<Buffer>,
     pub number_of_indices: Option<u32>,
-    pub diffuse_bind_group: Option<BindGroup>,
+    pub texture_bind_group: Option<BindGroup>,
     pub color_bind_group: Option<BindGroup>,
     pub projection_buffer: Option<Buffer>,
     pub transform_buffer: Option<Buffer>,
     pub transform_bind_group: Option<BindGroup>,
-    pub entities_to_render: Vec<Entity>
+    pub entities_to_render: Vec<Entity>,
+    pub texture_cache: TextureCache
 }
 
 impl Vertex {
@@ -209,9 +141,10 @@ impl RenderState {
             projection_buffer: None,
             number_of_indices: None,
             color_bind_group: None,
-            diffuse_bind_group: None,
+            texture_bind_group: None,
             transform_bind_group: None,
-            entities_to_render: Vec::new()
+            entities_to_render: Vec::new(),
+            texture_cache: TextureCache::new()
         };
     }
 
@@ -304,7 +237,7 @@ impl RenderState {
             if let Some(background_image_path) = &self.background_image_path {
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
                 self.setup_sprite_rendering(&background_sprite, None, BACKGROUND_SHADER);
-                self.apply_render_pass_with_values(&mut render_pass, self.diffuse_bind_group.as_ref().unwrap().clone());
+                self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
             }
 
             for entity in self.entities_to_render.clone() {
@@ -316,7 +249,7 @@ impl RenderState {
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
                         );
                         self.setup_sprite_rendering(sprite, transform, TEXTURE_SHADER);
-                        self.apply_render_pass_with_values(&mut render_pass, self.diffuse_bind_group.as_ref().unwrap().clone());
+                        self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
                         let transform: Option<&Transform> = components.iter()
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
@@ -342,76 +275,14 @@ impl RenderState {
     }
 
     pub(crate) fn setup_sprite_rendering(&mut self, sprite: &Sprite, transform: Option<&Transform>, shader_souce: &str) {
-        if let Ok(diffuse_dynamic_image) = image::open(Path::new(sprite.path.as_str())) {
-            let diffuse_texture: texture::Texture = texture::Texture::from_image(
-                &self.device,
-                &self.queue,
-                &diffuse_dynamic_image,
-                Some("Sprite")
-            ).unwrap();
-
-            let diffuse_bind_group_layout: BindGroupLayout = self.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label: Some("Diffuse Bind Group Layout"),
-                entries: &[
-                    BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: ShaderStages::FRAGMENT,
-                        ty: BindingType::Texture {
-                            multisampled: false,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            sample_type: TextureSampleType::Float {
-                                filterable: true
-                            }
-                        },
-                        count: None
-                    },
-                    BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: ShaderStages::FRAGMENT,
-                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
-                        count: None
-                    },
-                ]
-            });
-            let diffuse_bind_group: BindGroup = self.device.create_bind_group(&BindGroupDescriptor {
-                label: Some("Diffuse Bind Group"),
-                layout: &diffuse_bind_group_layout,
-                entries: &[
-                    BindGroupEntry {
-                        binding: 0,
-                        resource: BindingResource::TextureView(&diffuse_texture.texture_view)
-                    },
-                    BindGroupEntry {
-                        binding: 1,
-                        resource: BindingResource::Sampler(&diffuse_texture.sampler)
-                    }
-                ]
-            });
-
-            let (
-                transform_bind_group,
-                transform_bind_group_layout,
-                projection_buffer
-            ) = get_transform_bindings(self, transform);
-
-            let render_pipeline: RenderPipeline = get_render_pipeline(
-                self,
-                vec![&diffuse_bind_group_layout, &transform_bind_group_layout],
-                shader_souce
-            );
-            let vertex_buffer: Buffer = get_vertex_buffer(self, &sprite.vertices);
-            let (index_buffer, number_of_indices) = get_index_attributes(self, &sprite.indices);
-
-            self.render_pipeline = Some(render_pipeline);
-            self.diffuse_bind_group = Some(diffuse_bind_group);
-            self.transform_bind_group = Some(transform_bind_group);
-            self.projection_buffer = Some(projection_buffer);
-            self.vertex_buffer = Some(vertex_buffer);
-            self.index_buffer = Some(index_buffer);
-            self.number_of_indices = Some(number_of_indices);
-        } else {
-            panic!("Image not found on the render_sprite process!");
-        }
+        let texture: Arc<texture::Texture> = {
+            if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
+                texture_from_cache
+            } else {
+                self.texture_cache.load_texture(sprite.path.clone(), &self.device, &self.queue).unwrap()
+            }
+        };
+        create_layouts_on_sprite_rendering(self, sprite, texture.as_ref(), transform, shader_souce);
     }
 
     pub(crate) fn setup_shape_rendering(&mut self, shape: &Shape, transform: Option<&Transform>) {
@@ -468,6 +339,74 @@ impl RenderState {
         self.index_buffer = Some(index_buffer);
         self.number_of_indices = Some(number_of_indices);
     }
+}
+
+fn create_layouts_on_sprite_rendering(
+    render_state: &mut RenderState,
+    sprite: &Sprite,
+    texture: &texture::Texture,
+    transform: Option<&Transform>,
+    shader_souce: &str
+) {
+    let texture_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+        label: Some("Texture Bind Group Layout"),
+        entries: &[
+            BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages::FRAGMENT,
+                ty: BindingType::Texture {
+                    multisampled: false,
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    sample_type: TextureSampleType::Float {
+                        filterable: true
+                    }
+                },
+                count: None
+            },
+            BindGroupLayoutEntry {
+                binding: 1,
+                visibility: ShaderStages::FRAGMENT,
+                ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                count: None
+            },
+        ]
+    });
+    let texture_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
+        label: Some("Texture Bind Group"),
+        layout: &texture_bind_group_layout,
+        entries: &[
+            BindGroupEntry {
+                binding: 0,
+                resource: BindingResource::TextureView(&texture.texture_view)
+            },
+            BindGroupEntry {
+                binding: 1,
+                resource: BindingResource::Sampler(&texture.sampler)
+            }
+        ]
+    });
+
+    let (
+        transform_bind_group,
+        transform_bind_group_layout,
+        projection_buffer
+    ) = get_transform_bindings(render_state, transform);
+
+    let render_pipeline: RenderPipeline = get_render_pipeline(
+        &render_state,
+        vec![&texture_bind_group_layout, &transform_bind_group_layout],
+        shader_souce
+    );
+    let vertex_buffer: Buffer = get_vertex_buffer(render_state, &sprite.vertices);
+    let (index_buffer, number_of_indices) = get_index_attributes(render_state, &sprite.indices);
+
+    render_state.render_pipeline = Some(render_pipeline);
+    render_state.texture_bind_group = Some(texture_bind_group);
+    render_state.transform_bind_group = Some(transform_bind_group);
+    render_state.projection_buffer = Some(projection_buffer);
+    render_state.vertex_buffer = Some(vertex_buffer);
+    render_state.index_buffer = Some(index_buffer);
+    render_state.number_of_indices = Some(number_of_indices);
 }
 
 fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Transform>) -> (BindGroup, BindGroupLayout, Buffer) {
