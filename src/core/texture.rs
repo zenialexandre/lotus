@@ -1,5 +1,8 @@
-use std::{collections::HashMap, path::Path, sync::Arc};
-
+use std::{
+    collections::HashMap,
+    path::Path,
+    sync::Arc
+};
 use wgpu::{
     TextureView,
     TextureDescriptor,
@@ -34,6 +37,65 @@ pub struct Texture {
 }
 
 impl Texture {
+    /// Returns a dummy texture for batch rendering purposes.
+    pub fn get_dummy_texture(device: &Device, queue: &Queue) -> Self {
+        let size: u32 = 1;
+        let data: Vec<u8> = vec![255, 255, 255, 255];
+
+        let texture: wgpu::Texture = device.create_texture(&TextureDescriptor {
+            label: Some("Dummy Texture"),
+            size: Extent3d {
+                width: size,
+                height: size,
+                depth_or_array_layers: 1
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Rgba8UnormSrgb,
+            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+            view_formats: &[]
+        });
+
+        queue.write_texture(
+            TexelCopyTextureInfo {
+                texture: &texture,
+                mip_level: 0,
+                origin: Origin3d::ZERO,
+                aspect: TextureAspect::All,
+            },
+            &data,
+            TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(4 * size),
+                rows_per_image: Some(size),
+            },
+            Extent3d {
+                width: size,
+                height: size,
+                depth_or_array_layers: 1,
+            }
+        );
+
+        let texture_view: TextureView = texture.create_view(&TextureViewDescriptor::default());
+        let sampler: Sampler = device.create_sampler(&SamplerDescriptor {
+            label: Some("Dummy Sampler"),
+            address_mode_u: AddressMode::ClampToEdge,
+            address_mode_v: AddressMode::ClampToEdge,
+            address_mode_w: AddressMode::ClampToEdge,
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Nearest,
+            mipmap_filter: FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        return Self {
+            texture,
+            texture_view,
+            sampler,
+        };
+    }
+
     /// Returns a texture struct from the bytes of a real image.
     pub fn from_bytes(
         device: &Device,
@@ -103,7 +165,7 @@ impl Texture {
 
 /// Struct to represent the textures current on the application cache.
 pub struct TextureCache {
-    textures: HashMap<String, Arc<Texture>>
+    pub textures: HashMap<String, Arc<Texture>>
 }
 
 impl TextureCache {
