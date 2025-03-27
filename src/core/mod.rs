@@ -33,3 +33,6 @@ pub mod physics;
 
 /// Time related features.
 pub mod time;
+
+/// Audio related features.
+pub mod audio;

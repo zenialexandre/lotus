@@ -19,6 +19,7 @@ cgmath = "0.18"
 uuid = { version = "1.16.0", features = ["v4"] }
 lotus_proc_macros = { path = "lotus_proc_macros", version = "0.1.1" }
 rand = "0.9.0"
+kira = "0.10.4"
 
 [profile.dev]
 opt-level = 0

@@ -16,8 +16,7 @@ use wgpu::{
     }
 };
 use std::{
-    cell::RefMut,
-    sync::Arc
+    cell::RefMut, collections::HashMap, sync::Arc
 };
 
 use super::super::{
@@ -38,35 +37,28 @@ use super::super::{
 };
 use crate::utils::constants::shader::{BACKGROUND_SHADER, COLOR_SHADER, TEXTURE_SHADER};
 
+pub struct VertexIndexBufferCache {
+    pub cache: HashMap<String, (Buffer, Buffer)>
+}
+
+impl VertexIndexBufferCache {
+    pub fn new() -> Self {
+        return Self {
+            cache: HashMap::new()
+        };
+    }
+}
+
+struct _TextureBindGroupCache {}
+
+struct _ColorBindGroupCache {}
+
 /// Struct to represent the vertices that will be sent to the shader.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     pub position: [f32; 3],
     pub texture_coordinates: [f32; 2]
-}
-
-/// Struct to represent the current rendering state of the engine.
-pub struct RenderState {
-    pub surface: Surface<'static>,
-    pub device: Device,
-    pub queue: Queue,
-    pub surface_configuration: SurfaceConfiguration,
-    pub physical_size: PhysicalSize<u32>,
-    pub color: Option<color::Color>,
-    pub background_image_path: Option<String>,
-    pub window: Arc<Window>,
-    pub render_pipeline: Option<RenderPipeline>,
-    pub vertex_buffer: Option<Buffer>,
-    pub index_buffer: Option<Buffer>,
-    pub number_of_indices: Option<u32>,
-    pub texture_bind_group: Option<BindGroup>,
-    pub color_bind_group: Option<BindGroup>,
-    pub projection_buffer: Option<Buffer>,
-    pub transform_buffer: Option<Buffer>,
-    pub transform_bind_group: Option<BindGroup>,
-    pub entities_to_render: Vec<Entity>,
-    pub texture_cache: TextureCache
 }
 
 impl Vertex {
@@ -79,6 +71,35 @@ impl Vertex {
             attributes: &Self::VERTEX_ATTRIBUTES
         };
     }
+}
+
+/// Struct to represent the current rendering state of the engine.
+pub struct RenderState {
+    pub surface: Surface<'static>,
+    pub device: Device,
+    pub queue: Queue,
+    pub surface_configuration: SurfaceConfiguration,
+    pub physical_size: PhysicalSize<u32>,
+    pub color: Option<color::Color>,
+    pub background_image_path: Option<String>,
+    pub window: Arc<Window>,
+    pub texture_render_pipeline: Option<RenderPipeline>,
+    pub background_render_pipeline: Option<RenderPipeline>,
+    pub color_render_pipeline: Option<RenderPipeline>,
+    pub vertex_buffer: Option<Buffer>,
+    pub index_buffer: Option<Buffer>,
+    pub number_of_indices: Option<u32>,
+    pub texture_bind_group: Option<BindGroup>,
+    pub color_bind_group: Option<BindGroup>,
+    pub projection_buffer: Option<Buffer>,
+    pub transform_buffer: Option<Buffer>,
+    pub transform_bind_group: Option<BindGroup>,
+    pub transform_bind_group_layout: Option<BindGroupLayout>,
+    pub color_bind_group_layout: Option<BindGroupLayout>,
+    pub texture_bind_group_layout: Option<BindGroupLayout>,
+    pub entities_to_render: Vec<Entity>,
+    pub texture_cache: TextureCache,
+    pub vertex_index_buffer_cache: VertexIndexBufferCache
 }
 
 impl RenderState {
@@ -124,8 +145,7 @@ impl RenderState {
             view_formats: vec![],
             desired_maximum_frame_latency: 2
         };
-
-        return Self {
+        let mut render_state: RenderState = Self {
             surface,
             device,
             queue,
@@ -134,7 +154,9 @@ impl RenderState {
             color: None,
             background_image_path: None,
             window,
-            render_pipeline: None,
+            background_render_pipeline: None,
+            texture_render_pipeline: None,
+            color_render_pipeline: None,
             vertex_buffer: None,
             index_buffer: None,
             transform_buffer: None,
@@ -143,9 +165,88 @@ impl RenderState {
             color_bind_group: None,
             texture_bind_group: None,
             transform_bind_group: None,
+            transform_bind_group_layout: None,
+            texture_bind_group_layout: None,
+            color_bind_group_layout: None,
             entities_to_render: Vec::new(),
-            texture_cache: TextureCache::new()
+            texture_cache: TextureCache::new(),
+            vertex_index_buffer_cache: VertexIndexBufferCache::new()
         };
+
+        let transform_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("Transform Bind Group Layout"),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::VERTEX,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                },
+                BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: ShaderStages::VERTEX,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                }
+            ]
+        });
+        let color_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("Color Bind Group Layout"),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT | ShaderStages::VERTEX,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                }
+            ]
+        });
+        let texture_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("Texture Bind Group Layout"),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: TextureSampleType::Float {
+                            filterable: true
+                        }
+                    },
+                    count: None
+                },
+                BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                    count: None
+                },
+            ]
+        });
+        let texture_render_pipeline: RenderPipeline = get_render_pipeline(&render_state, vec![&texture_bind_group_layout, &transform_bind_group_layout], TEXTURE_SHADER);
+        let background_render_pipeline: RenderPipeline = get_render_pipeline(&render_state, vec![&texture_bind_group_layout, &transform_bind_group_layout], BACKGROUND_SHADER);
+        let color_render_pipeline: RenderPipeline = get_render_pipeline(&render_state, vec![&color_bind_group_layout, &transform_bind_group_layout], COLOR_SHADER);
+
+        render_state.texture_render_pipeline = Some(texture_render_pipeline);
+        render_state.background_render_pipeline = Some(background_render_pipeline);
+        render_state.color_render_pipeline = Some(color_render_pipeline);
+        render_state.transform_bind_group_layout = Some(transform_bind_group_layout);
+        render_state.texture_bind_group_layout = Some(texture_bind_group_layout);
+        render_state.color_bind_group_layout = Some(color_bind_group_layout);
+        return render_state;
     }
 
     /// Returns the window reference.
@@ -236,7 +337,8 @@ impl RenderState {
 
             if let Some(background_image_path) = &self.background_image_path {
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
-                self.setup_sprite_rendering(&background_sprite, None, BACKGROUND_SHADER);
+                render_pass.set_pipeline(self.background_render_pipeline.as_ref().unwrap());
+                self.setup_sprite_rendering(None, &background_sprite, None);
                 self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
             }
 
@@ -248,13 +350,15 @@ impl RenderState {
                         let transform: Option<&Transform> = components.iter()
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
                         );
-                        self.setup_sprite_rendering(sprite, transform, TEXTURE_SHADER);
+                        render_pass.set_pipeline(self.texture_render_pipeline.as_ref().unwrap());
+                        self.setup_sprite_rendering(Some(&entity), sprite, transform);
                         self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
                         let transform: Option<&Transform> = components.iter()
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
                         );
-                        self.setup_shape_rendering(shape, transform);
+                        render_pass.set_pipeline(self.color_render_pipeline.as_ref().unwrap());
+                        self.setup_shape_rendering(&entity, shape, transform);
                         self.apply_render_pass_with_values(&mut render_pass, self.color_bind_group.as_ref().unwrap().clone());
                     }
                 }
@@ -266,7 +370,6 @@ impl RenderState {
     }
 
     pub(crate) fn apply_render_pass_with_values(&mut self, render_pass: &mut RenderPass<'_>, generic_bind_group: BindGroup) {
-        render_pass.set_pipeline(&self.render_pipeline.as_mut().unwrap());
         render_pass.set_bind_group(0, &generic_bind_group, &[]);
         render_pass.set_bind_group(1, &self.transform_bind_group, &[]);
         render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
@@ -274,7 +377,7 @@ impl RenderState {
         render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
     }
 
-    pub(crate) fn setup_sprite_rendering(&mut self, sprite: &Sprite, transform: Option<&Transform>, shader_souce: &str) {
+    pub(crate) fn setup_sprite_rendering(&mut self, entity: Option<&Entity>, sprite: &Sprite, transform: Option<&Transform>) {
         let texture: Arc<texture::Texture> = {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
                 texture_from_cache
@@ -282,33 +385,18 @@ impl RenderState {
                 self.texture_cache.load_texture(sprite.path.clone(), &self.device, &self.queue).unwrap()
             }
         };
-        create_layouts_on_sprite_rendering(self, sprite, texture.as_ref(), transform, shader_souce);
+        create_layouts_on_sprite_rendering(self, entity, sprite, texture.as_ref(), transform);
     }
 
-    pub(crate) fn setup_shape_rendering(&mut self, shape: &Shape, transform: Option<&Transform>) {
+    pub(crate) fn setup_shape_rendering(&mut self, entity: &Entity, shape: &Shape, transform: Option<&Transform>) {
         let color_buffer: Buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("Color Buffer"),
             contents:bytemuck::cast_slice(&color::Color::to_array(color::Color::to_wgpu(shape.color))),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
         });
-        let color_bind_group_layout: BindGroupLayout = self.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("Color Bind Group Layout"),
-            entries: &[
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::FRAGMENT | ShaderStages::VERTEX,
-                    ty: BindingType::Buffer {
-                        ty: BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None
-                    },
-                    count: None
-                }
-            ]
-        });
         let color_bind_group: BindGroup = self.device.create_bind_group(&BindGroupDescriptor {
             label: Some("Color Bind Group"),
-            layout: &color_bind_group_layout,
+            layout: &self.color_bind_group_layout.as_ref().unwrap(),
             entries: &[
                 BindGroupEntry {
                     binding: 0,
@@ -317,63 +405,33 @@ impl RenderState {
             ]
         });
 
-        let (
-            transform_bind_group,
-            transform_bind_group_layout,
-            projection_buffer
-        ) = get_transform_bindings(self, transform);
-
-        let render_pipeline: RenderPipeline = get_render_pipeline(
+        let (transform_bind_group, projection_buffer) = get_transform_bindings(self, transform);
+        let (vertex_buffer, index_buffer) = get_vertex_and_index_buffers(
             self,
-            vec![&color_bind_group_layout, &transform_bind_group_layout],
-            COLOR_SHADER
+            Some(entity),
+            &shape.geometry_type.to_vertex_array(Orientation::Horizontal),
+            &shape.geometry_type.to_index_array()
         );
-        let vertex_buffer: Buffer = get_vertex_buffer(self, &shape.geometry_type.to_vertex_array(Orientation::Horizontal));
-        let (index_buffer, number_of_indices) = get_index_attributes(self, &shape.geometry_type.to_index_array());
 
-        self.render_pipeline = Some(render_pipeline);
         self.color_bind_group = Some(color_bind_group);
         self.transform_bind_group = Some(transform_bind_group);
         self.projection_buffer = Some(projection_buffer);
         self.vertex_buffer = Some(vertex_buffer);
         self.index_buffer = Some(index_buffer);
-        self.number_of_indices = Some(number_of_indices);
+        self.number_of_indices = Some(shape.geometry_type.to_index_array().len() as u32);
     }
 }
 
 fn create_layouts_on_sprite_rendering(
     render_state: &mut RenderState,
+    entity: Option<&Entity>,
     sprite: &Sprite,
     texture: &texture::Texture,
-    transform: Option<&Transform>,
-    shader_souce: &str
+    transform: Option<&Transform>
 ) {
-    let texture_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-        label: Some("Texture Bind Group Layout"),
-        entries: &[
-            BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::FRAGMENT,
-                ty: BindingType::Texture {
-                    multisampled: false,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    sample_type: TextureSampleType::Float {
-                        filterable: true
-                    }
-                },
-                count: None
-            },
-            BindGroupLayoutEntry {
-                binding: 1,
-                visibility: ShaderStages::FRAGMENT,
-                ty: BindingType::Sampler(SamplerBindingType::Filtering),
-                count: None
-            },
-        ]
-    });
     let texture_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
         label: Some("Texture Bind Group"),
-        layout: &texture_bind_group_layout,
+        layout: &render_state.texture_bind_group_layout.as_ref().unwrap(),
         entries: &[
             BindGroupEntry {
                 binding: 0,
@@ -386,56 +444,24 @@ fn create_layouts_on_sprite_rendering(
         ]
     });
 
-    let (
-        transform_bind_group,
-        transform_bind_group_layout,
-        projection_buffer
-    ) = get_transform_bindings(render_state, transform);
-
-    let render_pipeline: RenderPipeline = get_render_pipeline(
-        &render_state,
-        vec![&texture_bind_group_layout, &transform_bind_group_layout],
-        shader_souce
+    let (transform_bind_group, projection_buffer) = get_transform_bindings(render_state, transform);
+    let (vertex_buffer, index_buffer) = get_vertex_and_index_buffers(
+        render_state,
+        entity,
+        &sprite.vertices,
+        &sprite.indices
     );
-    let vertex_buffer: Buffer = get_vertex_buffer(render_state, &sprite.vertices);
-    let (index_buffer, number_of_indices) = get_index_attributes(render_state, &sprite.indices);
 
-    render_state.render_pipeline = Some(render_pipeline);
     render_state.texture_bind_group = Some(texture_bind_group);
     render_state.transform_bind_group = Some(transform_bind_group);
     render_state.projection_buffer = Some(projection_buffer);
     render_state.vertex_buffer = Some(vertex_buffer);
     render_state.index_buffer = Some(index_buffer);
-    render_state.number_of_indices = Some(number_of_indices);
+    render_state.number_of_indices = Some(sprite.indices.len() as u32);
 }
 
-fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Transform>) -> (BindGroup, BindGroupLayout, Buffer) {
+fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Transform>) -> (BindGroup, Buffer) {
     let projection_buffer: Buffer = get_projection_buffer(render_state);
-    let transform_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-        label: Some("Transform Bind Group Layout"),
-        entries: &[
-            BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::VERTEX,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None
-                },
-                count: None
-            },
-            BindGroupLayoutEntry {
-                binding: 1,
-                visibility: ShaderStages::VERTEX,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None
-                },
-                count: None
-            }
-        ]
-    });
 
     if let Some(transform_unwrapped) = transform {
         let transform_matrix_unwrapped: [[f32; 4]; 4] = *transform_unwrapped.to_matrix().as_ref();
@@ -458,7 +484,7 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
 
     let transform_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
         label: Some("Transform Bind Group"),
-        layout: &transform_bind_group_layout,
+        layout: &render_state.transform_bind_group_layout.as_ref().unwrap(),
         entries: &[
             BindGroupEntry {
                 binding: 0,
@@ -470,7 +496,7 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
             }
         ]
     });
-    return (transform_bind_group, transform_bind_group_layout, projection_buffer);
+    return (transform_bind_group, projection_buffer);
 }
 
 pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {
@@ -563,6 +589,37 @@ fn get_blend_state(shader_source: &str) -> Option<BlendState> {
     return Some(BlendState::REPLACE);
 }
 
+fn get_vertex_and_index_buffers(
+    render_state: &mut RenderState,
+    entity: Option<&Entity>,
+    vertex_array: &[Vertex],
+    index_array: &[u16]
+) -> (Buffer, Buffer) {
+    if let Some(entity) = entity {
+        if let Some((vertex_buffer_cache, index_buffer_cache)) = render_state.vertex_index_buffer_cache.cache.get(&entity.0.to_string()) {
+            return (vertex_buffer_cache.clone(), index_buffer_cache.clone());
+        } else {
+            let vertex_buffer: Buffer = get_vertex_buffer(render_state, vertex_array).clone();
+            let index_buffer: Buffer = get_index_buffer(render_state, index_array).clone();
+
+            render_state.vertex_index_buffer_cache.cache.insert(entity.0.to_string(), (vertex_buffer.clone(), index_buffer.clone()));
+            return (vertex_buffer.clone(), index_buffer.clone());
+        }
+    } else {
+        let fixed_uuid: String = "fixed_uuid".to_string();
+
+        if let Some((vertex_buffer_cache, index_buffer_cache)) = render_state.vertex_index_buffer_cache.cache.get(&fixed_uuid) {
+            return (vertex_buffer_cache.clone(), index_buffer_cache.clone());
+        } else {
+            let vertex_buffer: Buffer = get_vertex_buffer(render_state, vertex_array).clone();
+            let index_buffer: Buffer = get_index_buffer(render_state, index_array).clone();
+
+            render_state.vertex_index_buffer_cache.cache.insert(fixed_uuid, (vertex_buffer.clone(), index_buffer.clone()));
+            return (vertex_buffer, index_buffer);
+        }
+    }
+}
+
 fn get_vertex_buffer(render_state: &RenderState, vertex_array: &[Vertex]) -> Buffer {
     return render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Vertex Buffer"),
@@ -571,12 +628,10 @@ fn get_vertex_buffer(render_state: &RenderState, vertex_array: &[Vertex]) -> Buf
     });
 }
 
-fn get_index_attributes(render_state: &RenderState, index_array: &[u16]) -> (Buffer, u32) {
-    let number_of_indices: u32 = index_array.len() as u32;
-    let index_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
+fn get_index_buffer(render_state: &RenderState, index_array: &[u16]) -> Buffer {
+    return render_state.device.create_buffer_init(&BufferInitDescriptor {
         label: Some("Index Buffer"),
         contents: bytemuck::cast_slice(index_array),
         usage: BufferUsages::INDEX
     });
-    return (index_buffer, number_of_indices);
 }
