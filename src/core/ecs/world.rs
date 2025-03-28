@@ -75,6 +75,13 @@ impl World {
         self.resources.push(RefCell::new(resource));
     }
 
+    /// Add a list of resources to the world.
+    pub fn add_resources(&mut self, resources: Vec<Box<dyn Resource>>) {
+        for resource in resources {
+            self.resources.push(RefCell::new(resource));
+        }
+    }
+
     /// # Spawn a new entity on the world.
     /// The entity can be rendered on the fly, if its a shape or a sprite.
     pub fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {

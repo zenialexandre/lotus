@@ -46,8 +46,8 @@ And here are some more complex initial examples to demonstrate the engine's pote
 
 - **Rendering basic geometric forms:** [`examples/simple_shapes.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/simple_shapes.rs)
 - **Rendering sprites:** [`examples/simple_sprite.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/simple_sprite.rs)
-- **A simple physics simulation:** [`examples/physics_simulation.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/physics_simulation.rs)
-- **A example of a simple arcade game, the Pong:** [`examples/pong.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/pong.rs)
+- **Simple physics simulation:** [`examples/physics_simulation.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/physics_simulation.rs)
+- **Simple Pong game, this is the MAIN example for the engine usage:** [`examples/pong.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/pong.rs)
 "#]
 
 /// Module with the main features of the engine.
@@ -72,6 +72,8 @@ pub use core::physics::acceleration::*;
 pub use core::physics::collision::*;
 pub use core::physics::velocity::*;
 pub use core::time::timer::*;
+pub use core::audio::audio_source::*;
+pub use core::audio::audio_error::*;
 pub use core::ecs::world::*;
 pub use core::ecs::entitiy::*;
 pub use core::ecs::component::*;
@@ -80,4 +82,5 @@ pub use core::ecs::query::*;
 pub use lotus_proc_macros::Component;
 pub use lotus_proc_macros::Resource;
 pub use cgmath::*;
+pub use kira::*;
 pub use winit::keyboard::{KeyCode, PhysicalKey};

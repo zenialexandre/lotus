@@ -26,6 +26,15 @@ impl Default for PongBallRespawnTimer {
     }
 }
 
+#[derive(Resource)]
+pub struct GameAudio(pub AudioSource);
+
+impl Default for GameAudio {
+    fn default() -> Self {
+        return Self(AudioSource::new().expect("Should create a audio source."));
+    }
+}
+
 your_game!(
     WindowConfiguration {
         icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
@@ -52,7 +61,26 @@ fn setup(context: &mut Context) {
     let pink_racket_sprite: Sprite = Sprite::new("assets/textures/pong/pink_racket_256x256.png".to_string());
     let pong_ball_sprite: Sprite = Sprite::new("assets/textures/pong/pong_ball_left_256x256.png".to_string());
 
-    context.world.add_resource(Box::new(PongBallRespawnTimer::default()));
+    let mut game_audio: GameAudio = GameAudio::default();
+    let mut audio_settings: AudioSettings = AudioSettings::default();
+    audio_settings.volume = Value::Fixed(Decibels(-10.0));
+    game_audio.0.load_streaming_sound(
+        "game_music",
+        "assets/audio/pong/soundtrack/arcade_music.ogg",
+        audio_settings
+    ).ok();
+    game_audio.0.play_streaming_sound("game_music".to_string()).ok();
+
+    game_audio.0.load_static_sound(
+        "racket_hit",
+        "assets/audio/pong/effect/pong_hit.wav",
+        AudioSettings::default()
+    ).ok();
+
+    context.world.add_resources(vec![
+        Box::new(PongBallRespawnTimer::default()),
+        Box::new(game_audio),
+    ]);
 
     spawn_border(context, Vector2::new(0.0, -1.0));
     spawn_border(context, Vector2::new(0.0, 1.0));
@@ -185,6 +213,7 @@ fn move_pong_ball(context: &mut Context, pong_ball: &Entity) {
 fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, random_factor: f32) {
     let mut racket_query: Query = Query::new(&context.world).with_components::<Racket>();
     let rackets: Vec<Entity> = racket_query.get_entities_ids_flex().unwrap();
+    let mut game_audio: RefMut<'_, GameAudio> = context.world.get_resource_mut::<GameAudio>().unwrap();
 
     for racket in &rackets {
         let racket_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(racket).unwrap();
@@ -195,6 +224,8 @@ fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, rando
         let mut pong_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&pong_ball).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &racket_collision, &pong_ball_collision) {
+            game_audio.0.play_static_sound("racket_hit".to_string()).ok();
+
             let relative_collision_point: f32 = pong_ball_transform.position.y - racket_transform.position.y;
             let rebound_angle: f32 = relative_collision_point * 1.0 + random_factor;
 

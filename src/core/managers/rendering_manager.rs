@@ -16,7 +16,9 @@ use wgpu::{
     }
 };
 use std::{
-    cell::RefMut, collections::HashMap, sync::Arc
+    cell::RefMut,
+    collections::HashMap,
+    sync::Arc
 };
 
 use super::super::{
@@ -37,11 +39,13 @@ use super::super::{
 };
 use crate::utils::constants::shader::{BACKGROUND_SHADER, COLOR_SHADER, TEXTURE_SHADER};
 
+/// Struct for caching Vertices and Indices.
 pub struct VertexIndexBufferCache {
     pub cache: HashMap<String, (Buffer, Buffer)>
 }
 
 impl VertexIndexBufferCache {
+    /// Create a new caching for Vertices and Indices.
     pub fn new() -> Self {
         return Self {
             cache: HashMap::new()
@@ -95,8 +99,8 @@ pub struct RenderState {
     pub transform_buffer: Option<Buffer>,
     pub transform_bind_group: Option<BindGroup>,
     pub transform_bind_group_layout: Option<BindGroupLayout>,
-    pub color_bind_group_layout: Option<BindGroupLayout>,
     pub texture_bind_group_layout: Option<BindGroupLayout>,
+    pub color_bind_group_layout: Option<BindGroupLayout>,
     pub entities_to_render: Vec<Entity>,
     pub texture_cache: TextureCache,
     pub vertex_index_buffer_cache: VertexIndexBufferCache
