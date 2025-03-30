@@ -163,10 +163,17 @@ impl World {
     /// # Despawn a specific entity from the world.
     /// The entity can be removed from the rendering flow on the fly, if its necessary. 
     pub(crate) fn despawn(&mut self, render_state: &mut RenderState, entity: &Entity) {
-        if let Some((_, archetype)) = self.archetypes.iter_mut().find(|(_, arch)| arch.entities.contains(&entity)) {
+        render_state.remove_entity_to_render(entity);
+
+        for archetype in self.archetypes.values_mut() {
             if let Some(index) = archetype.entities.iter().position(|e| e.0 == entity.0) {
+                for components in archetype.components.values_mut() {
+                    if index < components.len() {
+                        components.remove(index);
+                    }
+                }
                 archetype.entities.remove(index);
-                render_state.remove_entity_to_render(entity);
+                break;
             }
         }
     }

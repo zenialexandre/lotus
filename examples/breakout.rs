@@ -46,7 +46,7 @@ your_game!(
 
 fn setup(context: &mut Context) {
     let player: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::PURPLE);
-    let little_ball: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.5)), Color::BLACK);
+    let little_ball: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.2)), Color::BLACK);
 
     let mut thread_rng: ThreadRng = rand::rng();
     let random_x_direction: f32 = thread_rng.random_range(-0.8..0.8);
@@ -121,7 +121,7 @@ fn spawn_targets(context: &mut Context) {
     let rows: i32 = 8;
     let columns: i32 = 10;
     let spacing_x: f32 = 0.09;
-    let spacing_y: f32 = 0.000001;
+    let spacing_y: f32 = 0.02;
 
     let start_x: f32 = -(columns as f32 * (width + spacing_x)) / 2.0;
     let start_y: f32 = 1.0 - 0.1;
@@ -191,7 +191,7 @@ fn check_player_little_ball_collision(context: &mut Context, player_entity: Enti
         };
         let rebound_vector: Vector2<f32> = (rebound_direction + Vector2::new(random_factor, 0.0)).normalize();
         little_ball_velocity.value = rebound_vector * little_ball_velocity.value.magnitude();
-        little_ball_transform.position.y += rebound_direction.y * 0.05;
+        little_ball_transform.position.y += rebound_direction.y * 0.02;
     }
 }
 
@@ -222,10 +222,6 @@ fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity:
     let mut targets_query: Query = Query::new(&context.world).with_components::<Target>();
     let targets_entities: Vec<Entity> = targets_query.get_entities_ids_flex().unwrap();
 
-    for (index, entiy) in targets_entities.iter().enumerate() {
-        eprintln!("index: {:?}, uuid: {:?}", index, entiy.0);
-    }
-
     let mut little_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
     let mut little_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
     let little_ball_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&little_ball_entity).unwrap();
@@ -243,7 +239,7 @@ fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity:
 
 fn respawn_little_ball_after_outbounds(context: &mut Context, little_ball_entity: Entity) {
     let mut litte_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
-    let position_default: Vector2<f32> = Vector2::new(0.0, 0.0);
+    let position_default: Vector2<f32> = Vector2::new(0.0, -0.25);
 
     if litte_ball_transform.position.y < -1.0 {
         let mut little_ball_respawn_timer: RefMut<'_, LittleBallRespawnTimer> = context.world.get_resource_mut::<LittleBallRespawnTimer>().unwrap();
