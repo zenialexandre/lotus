@@ -23,6 +23,9 @@ pub struct GameLoop {
     pub previous_time_of_last_run: Instant,
     pub setup: fn(context: &mut Context),
     pub update: fn(context: &mut Context),
+    pub frame_count: u32,
+    pub last_fps_update: Instant,
+    pub current_fps: u32
 }
 
 /// Struct to update the current engine state as the end-user.
@@ -38,17 +41,42 @@ impl GameLoop {
             delta: Duration::from_secs_f32(1.0 / 60.0),
             previous_time_of_last_run: Instant::now(),
             setup,
-            update
+            update,
+            frame_count: 0,
+            last_fps_update: Instant::now(),
+            current_fps: 0
         };
     }
 
     /// Run the engine loop to start the logic and rendering processes.
     pub fn run(&mut self, context: &mut Context, event_loop: &ActiveEventLoop) {
-        context.delta = self.get_delta_as_seconds();
-        (self.update)(context);
-        context.world.sync_transformations_with_collisions();
+        // Calculating the Delta
+        let now: Instant = Instant::now();
+        self.delta = now - self.previous_time_of_last_run;
+        self.previous_time_of_last_run = now;
 
+        context.delta = self.get_delta_as_seconds();
+        context.world.synchronize_transformations_with_collisions();
+        context.commands.flush_commands(&mut context.world, &mut context.render_state);
+        (self.update)(context);
         self.render(&mut context.render_state, &context.world, event_loop);
+
+        // FPS calculus.
+        self.frame_count += 1;
+        let elapsed: Duration = self.last_fps_update.elapsed();
+        if elapsed >= Duration::from_secs(1) {
+            self.current_fps = self.frame_count;
+            self.frame_count = 0;
+            self.last_fps_update = Instant::now();
+            //println!("FPS: {}", self.current_fps);
+        }
+
+        // Frame Pacing - 60 FPS
+        let target_delta: Duration = Duration::from_secs_f32(1.0 / 60.0);
+        let frame_time: Duration = Instant::now() - now;
+        if frame_time < target_delta {
+            std::thread::sleep(target_delta - frame_time);
+        }
     }
 
     /// Call the rendering process.

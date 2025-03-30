@@ -64,6 +64,16 @@ impl Transform {
         self.write_update_to_buffer(context);
     }
 
+    pub fn set_position_x(&mut self, context: &Context, x: f32) {
+        self.position.x = x;
+        self.write_update_to_buffer(context);
+    }
+
+    pub fn set_position_y(&mut self, context: &Context, y: f32) {
+        self.position.y = y;
+        self.write_update_to_buffer(context);
+    }
+
     /// Get the current position.
     pub fn get_position(&self) -> Vector2<f32> {
         return self.position;

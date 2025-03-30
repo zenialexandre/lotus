@@ -55,6 +55,59 @@ impl Archetype {
     }
 }
 
+/// Struct to represent the mutable commands to be made on the world.
+pub struct Commands {
+    pub commands: Vec<Command>
+}
+
+impl Commands {
+    /// Create a new command struct.
+    pub fn new() -> Self {
+        return Self {
+            commands: Vec::new()
+        };
+    }
+
+    /// # Spawn a new entity on the world.
+    /// The entity can be rendered on the fly, if its a shape or a sprite.
+    pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) {
+        self.commands.push(Command::Spawn(components));
+    }
+
+    /// # Despawn a specific entity from the world.
+    /// The entity can be removed from the rendering flow on the fly, if its necessary. 
+    pub fn despawn(&mut self, entity: Entity) {
+        self.commands.push(Command::Despawn(entity));
+    }
+
+    /// Take the commands memory reference.
+    pub(crate) fn _take_commands(&mut self) -> Vec<Command> {
+        return std::mem::take(&mut self.commands);
+    }
+
+    /// Flush the commands inside the buffer.
+    pub(crate) fn flush_commands(&mut self, world: &mut World, render_state: &mut RenderState) {
+        for command in self.commands.drain(..) {
+            match command {
+                Command::Spawn(components) => {
+                    world.spawn(render_state, components);
+                },
+                Command::Despawn(entity) => {
+                    if world.is_entity_alive(entity) {
+                        world.despawn(render_state, &entity);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Enumerator that store the mutable commands allowed in the world.
+pub enum Command {
+    Spawn(Vec<Box<dyn Component>>),
+    Despawn(Entity)
+}
+
 /// Struct to represent the World of the Entity-Component-System architecture.
 pub struct World {
     pub archetypes: HashMap<u64, Archetype>,
@@ -84,7 +137,7 @@ impl World {
 
     /// # Spawn a new entity on the world.
     /// The entity can be rendered on the fly, if its a shape or a sprite.
-    pub fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
+    pub(crate) fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
 
         let mut components_refs: Vec<RefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
@@ -109,7 +162,7 @@ impl World {
 
     /// # Despawn a specific entity from the world.
     /// The entity can be removed from the rendering flow on the fly, if its necessary. 
-    pub fn despawn(&mut self, render_state: &mut RenderState, entity: &Entity) {
+    pub(crate) fn despawn(&mut self, render_state: &mut RenderState, entity: &Entity) {
         if let Some((_, archetype)) = self.archetypes.iter_mut().find(|(_, arch)| arch.entities.contains(&entity)) {
             if let Some(index) = archetype.entities.iter().position(|e| e.0 == entity.0) {
                 archetype.entities.remove(index);
@@ -119,7 +172,7 @@ impl World {
     }
 
     /// Synchronize the transformation matrices with the collision objects.
-    pub fn sync_transformations_with_collisions(&mut self) {
+    pub fn synchronize_transformations_with_collisions(&mut self) {
         for archetype in self.archetypes.values_mut() {
             if let (Some(transforms), Some(collisions)) = (
                 archetype.components.get(&TypeId::of::<Transform>()),

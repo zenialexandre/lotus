@@ -10,8 +10,7 @@ your_game!(
 fn setup(context: &mut Context) {
     let sprite: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
 
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(sprite),
             Box::new(Transform::new(Vector2::new(-0.50, -0.50), 0.0, Vector2::new(0.25, 0.25))),

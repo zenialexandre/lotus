@@ -85,8 +85,7 @@ fn setup(context: &mut Context) {
     spawn_border(context, Vector2::new(0.0, -1.0));
     spawn_border(context, Vector2::new(0.0, 1.0));
 
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(gray_racket_sprite),
             Box::new(Transform::new(Vector2::new(-1.0, 0.23), 0.0, Vector2::new(0.25, 0.25))),
@@ -97,8 +96,7 @@ fn setup(context: &mut Context) {
         ]
     );
 
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(pink_racket_sprite),
             Box::new(Transform::new(Vector2::new(1.0, 0.25), 0.0, Vector2::new(0.25, 0.25))),
@@ -109,8 +107,7 @@ fn setup(context: &mut Context) {
         ]
     );
 
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(pong_ball_sprite),
             Box::new(Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25))),
@@ -139,22 +136,12 @@ fn update(context: &mut Context) {
     check_rackets_ball_collision(context, pong_ball, random_factor);
     check_borders_ball_collision(context, pong_ball, random_factor);
     respawn_pong_ball_after_outbounds(context, pong_ball);
-
-    // Review this part
-    if input.is_key_pressed(PhysicalKey::Code(KeyCode::Escape)) {
-        if GameLoopState::Running == context.game_loop_listener.state {
-            context.game_loop_listener.pause();
-        } else {
-            context.game_loop_listener.resume();
-        }
-    }
 }
 
 fn spawn_border(context: &mut Context, position: Vector2<f32>) {
     let border: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::BLACK);
 
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(border),
             Box::new(Border()),

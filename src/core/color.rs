@@ -5,7 +5,28 @@ pub enum Color {
     WHITE,
     RED,
     GREEN,
-    BLUE
+    BLUE,
+    YELLOW,
+    CYAN,
+    MAGENTA,
+    ORANGE,
+    PURPLE,
+    PINK,
+    BROWN,
+    LIGHTGRAY,
+    GRAY,
+    DARKGRAY,
+    GOLD,
+    SILVER,
+    TURQUOISE,
+    VIOLET,
+    LIMEGREEN,
+    LAVENDER,
+    SALMON,
+    PEACH,
+    MOSSGREEN,
+    NAVYBLUE,
+    BURGUNDY
 }
 
 impl Color {
@@ -16,7 +37,28 @@ impl Color {
             Color::WHITE => [1.0, 1.0, 1.0, 1.0],
             Color::RED => [1.0, 0.0, 0.0, 1.0],
             Color::GREEN => [0.0, 1.0, 0.0, 1.0],
-            Color::BLUE => [0.0, 0.0, 1.0, 1.0]
+            Color::BLUE => [0.0, 0.0, 1.0, 1.0],
+            Color::YELLOW => [1.0, 1.0, 0.0, 1.0],
+            Color::CYAN => [0.0, 1.0, 1.0, 1.0],
+            Color::MAGENTA => [1.0, 0.0, 1.0, 1.0],
+            Color::ORANGE => [1.0, 0.65, 0.0, 1.0],
+            Color::PURPLE => [0.5, 0.0, 0.5, 1.0],
+            Color::PINK => [1.0, 0.75, 0.8, 1.0],
+            Color::BROWN => [0.65, 0.16, 0.16, 1.0],
+            Color::LIGHTGRAY => [0.75, 0.75, 0.75, 1.0],
+            Color::GRAY => [0.5, 0.5, 0.5, 1.0],
+            Color::DARKGRAY => [0.25, 0.25, 0.25, 1.0],
+            Color::GOLD => [1.0, 0.84, 0.0, 1.0],
+            Color::SILVER => [0.75, 0.75, 0.75, 1.0],
+            Color::TURQUOISE => [0.25, 0.88, 0.82, 1.0],
+            Color::VIOLET => [0.56, 0.0, 1.0, 1.0],
+            Color::LIMEGREEN => [0.75, 1.0, 0.0, 1.0],
+            Color::LAVENDER => [0.9, 0.9, 0.98, 1.0],
+            Color::SALMON => [0.98, 0.5, 0.45, 1.0],
+            Color::PEACH => [1.0, 0.8, 0.6, 1.0],
+            Color::MOSSGREEN => [0.6, 0.8, 0.2, 1.0],
+            Color::NAVYBLUE => [0.0, 0.0, 0.5, 1.0],
+            Color::BURGUNDY => [0.5, 0.0, 0.13, 1.0]
         }
     }
 

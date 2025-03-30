@@ -25,32 +25,28 @@ fn setup(context: &mut Context) {
     let my_triangle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Triangle, Color::RED);
     let my_circle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.5)), Color::BLACK);
 
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(my_square),
             Box::new(Transform::new(Vector2::new(-0.60, -0.25), 0.0, Vector2::new(0.10, 0.10))),
             Box::new(MySquare())
         ]
     );
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(my_rectangle),
             Box::new(Transform::new(Vector2::new(-0.35, 0.20), 0.0, Vector2::new(0.50, 0.50))),
             Box::new(MyRectangle())
         ]
     );
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(my_triangle),
             Box::new(Transform::new(Vector2::new(0.50, 0.50), 0.0, Vector2::new(0.25, 0.25))),
             Box::new(MyTriangle())
         ]
     );
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(my_circle),
             Box::new(Transform::new(Vector2::new(0.80, 0.50), 0.0, Vector2::new(0.25, 0.25))),

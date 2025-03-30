@@ -36,3 +36,6 @@ pub mod time;
 
 /// Audio related features.
 pub mod audio;
+
+/// Camera related features.
+pub mod camera;

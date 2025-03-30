@@ -19,8 +19,7 @@ fn setup(context: &mut Context) {
     let red_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::RED);
     let blue_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::BLUE);
 
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(red_object),
             Box::new(Object()),
@@ -30,8 +29,7 @@ fn setup(context: &mut Context) {
         ]
     );
 
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(blue_object),
             Box::new(Object()),
@@ -59,8 +57,7 @@ fn update(context: &mut Context) {
 fn spawn_border(context: &mut Context, orientation: Orientation, position: Vector2<f32>, scale: Vector2<f32>) {
     let border: Shape = Shape::new(orientation, GeometryType::Rectangle, Color::WHITE);
     
-    context.world.spawn(
-        &mut context.render_state,
+    context.commands.spawn(
         vec![
             Box::new(border),
             Box::new(Border()),
