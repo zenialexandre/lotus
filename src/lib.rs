@@ -57,9 +57,6 @@ pub mod core;
 /// Module with utilities of the engine.
 pub mod utils;
 
-/// Module with tests of the engine.
-pub mod test;
-
 pub use core::managers::rendering_manager::*;
 pub use core::managers::windowing_manager::*;
 pub use core::game_loop::*;

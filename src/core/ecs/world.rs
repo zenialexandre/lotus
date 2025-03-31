@@ -86,7 +86,7 @@ impl Commands {
     }
 
     /// Flush the commands inside the buffer.
-    pub(crate) fn flush_commands(&mut self, world: &mut World, render_state: &mut RenderState) {
+    pub fn flush_commands(&mut self, world: &mut World, render_state: &mut RenderState) {
         for command in self.commands.drain(..) {
             match command {
                 Command::Spawn(components) => {

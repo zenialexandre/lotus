@@ -86,7 +86,7 @@ impl GameLoop {
 
             Err(
                 SurfaceError::Lost | SurfaceError::Outdated
-            ) => render_state.resize(render_state.physical_size),
+            ) => render_state.resize(render_state.physical_size.as_ref().unwrap().clone()),
 
             Err(
                 SurfaceError::OutOfMemory | SurfaceError::Other

@@ -45,7 +45,7 @@ impl Transform {
         let transform_matrix_as_ref: &[[f32; 4]; 4] = transform_matrix.as_ref();
 
         if let Some(transform_buffer) = context.render_state.transform_buffer.as_ref() {
-            context.render_state.queue.write_buffer(
+            context.render_state.queue.as_ref().unwrap().write_buffer(
                 transform_buffer,
                 0,
                 bytemuck::cast_slice(&[*transform_matrix_as_ref])

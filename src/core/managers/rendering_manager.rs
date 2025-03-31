@@ -79,14 +79,14 @@ impl Vertex {
 
 /// Struct to represent the current rendering state of the engine.
 pub struct RenderState {
-    pub surface: Surface<'static>,
-    pub device: Device,
-    pub queue: Queue,
-    pub surface_configuration: SurfaceConfiguration,
-    pub physical_size: PhysicalSize<u32>,
+    pub surface: Option<Surface<'static>>,
+    pub device: Option<Device>,
+    pub queue: Option<Queue>,
+    pub surface_configuration: Option<SurfaceConfiguration>,
+    pub physical_size: Option<PhysicalSize<u32>>,
     pub color: Option<color::Color>,
     pub background_image_path: Option<String>,
-    pub window: Arc<Window>,
+    pub window: Option<Arc<Window>>,
     pub texture_render_pipeline: Option<RenderPipeline>,
     pub background_render_pipeline: Option<RenderPipeline>,
     pub color_render_pipeline: Option<RenderPipeline>,
@@ -107,6 +107,38 @@ pub struct RenderState {
 }
 
 impl RenderState {
+    /// Create a dummy rendering state.
+    /// Mainly for testing purposes.
+    pub fn dummy() -> Self {
+        return Self {
+            surface: None,
+            device: None,
+            queue: None,
+            surface_configuration: None,
+            physical_size: None,
+            color: None,
+            background_image_path: None,
+            window: None,
+            background_render_pipeline: None,
+            texture_render_pipeline: None,
+            color_render_pipeline: None,
+            vertex_buffer: None,
+            index_buffer: None,
+            transform_buffer: None,
+            projection_buffer: None,
+            number_of_indices: None,
+            color_bind_group: None,
+            texture_bind_group: None,
+            transform_bind_group: None,
+            transform_bind_group_layout: None,
+            texture_bind_group_layout: None,
+            color_bind_group_layout: None,
+            entities_to_render: Vec::new(),
+            texture_cache: TextureCache::new(),
+            vertex_index_buffer_cache: VertexIndexBufferCache::new()
+        };
+    }
+
     /// Create a new asynchronous rendering state for the window.
     pub async fn new(window: Arc<Window>) -> Self {
         let physical_size: PhysicalSize<u32> = window.inner_size();
@@ -150,14 +182,14 @@ impl RenderState {
             desired_maximum_frame_latency: 2
         };
         let mut render_state: RenderState = Self {
-            surface,
-            device,
-            queue,
-            surface_configuration,
-            physical_size,
+            surface: Some(surface),
+            device: Some(device),
+            queue: Some(queue),
+            surface_configuration: Some(surface_configuration),
+            physical_size: Some(physical_size),
             color: None,
             background_image_path: None,
-            window,
+            window: Some(window),
             background_render_pipeline: None,
             texture_render_pipeline: None,
             color_render_pipeline: None,
@@ -177,7 +209,7 @@ impl RenderState {
             vertex_index_buffer_cache: VertexIndexBufferCache::new()
         };
 
-        let transform_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+        let transform_bind_group_layout: BindGroupLayout = render_state.device.as_ref().unwrap().create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("Transform Bind Group Layout"),
             entries: &[
                 BindGroupLayoutEntry {
@@ -202,7 +234,7 @@ impl RenderState {
                 }
             ]
         });
-        let color_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+        let color_bind_group_layout: BindGroupLayout = render_state.device.as_ref().unwrap().create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("Color Bind Group Layout"),
             entries: &[
                 BindGroupLayoutEntry {
@@ -217,7 +249,7 @@ impl RenderState {
                 }
             ]
         });
-        let texture_bind_group_layout: BindGroupLayout = render_state.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+        let texture_bind_group_layout: BindGroupLayout = render_state.device.as_ref().unwrap().create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("Texture Bind Group Layout"),
             entries: &[
                 BindGroupLayoutEntry {
@@ -255,22 +287,22 @@ impl RenderState {
 
     /// Returns the window reference.
     pub fn window(&self) -> &Window {
-        return &self.window;
+        return &self.window.as_ref().unwrap();
     }
 
     /// Resize the rendering projection.
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
-            self.physical_size = new_size;
-            self.surface_configuration.width = new_size.width;
-            self.surface_configuration.height = new_size.height;
-            self.surface.configure(&self.device, &self.surface_configuration);
+            self.physical_size = Some(new_size);
+            self.surface_configuration.as_mut().unwrap().width = new_size.width;
+            self.surface_configuration.as_mut().unwrap().height = new_size.height;
+            self.surface.as_ref().unwrap().configure(&self.device.as_ref().unwrap(), &self.surface_configuration.as_ref().unwrap());
 
             let projection_matrix: Matrix4<f32> = get_projection_matrix(&self);
             let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
 
             if let Some(projection_buffer) = self.projection_buffer.as_ref() {
-                self.queue.write_buffer(
+                self.queue.as_mut().unwrap().write_buffer(
                     projection_buffer,
                     0,
                     bytemuck::cast_slice(&[projection_matrix_unwrapped])
@@ -309,9 +341,9 @@ impl RenderState {
 
     /// Execute the rendering process.
     pub fn render(&mut self, world: &World) -> Result<(), SurfaceError> {
-        let surface_texture: SurfaceTexture = self.surface.get_current_texture()?;
+        let surface_texture: SurfaceTexture = self.surface.as_ref().unwrap().get_current_texture()?;
         let texture_view: TextureView = surface_texture.texture.create_view(&TextureViewDescriptor::default());
-        let mut command_encoder: CommandEncoder = self.device.create_command_encoder(&CommandEncoderDescriptor {
+        let mut command_encoder: CommandEncoder = self.device.as_ref().unwrap().create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Render Encoder")
         });
 
@@ -333,8 +365,8 @@ impl RenderState {
             render_pass.set_viewport(
                 0.0,
                 0.0, 
-                self.physical_size.width as f32, 
-                self.physical_size.height as f32, 
+                self.physical_size.as_ref().unwrap().width as f32, 
+                self.physical_size.as_ref().unwrap().height as f32, 
                 0.0,
                 1.0
             );
@@ -368,7 +400,7 @@ impl RenderState {
                 }
             }
         }
-        self.queue.submit(std::iter::once(command_encoder.finish()));
+        self.queue.as_ref().unwrap().submit(std::iter::once(command_encoder.finish()));
         surface_texture.present();
         return Ok(());
     }
@@ -386,19 +418,19 @@ impl RenderState {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
                 texture_from_cache
             } else {
-                self.texture_cache.load_texture(sprite.path.clone(), &self.device, &self.queue).unwrap()
+                self.texture_cache.load_texture(sprite.path.clone(), &self.device.as_ref().unwrap(), &self.queue.as_ref().unwrap()).unwrap()
             }
         };
         create_layouts_on_sprite_rendering(self, entity, sprite, texture.as_ref(), transform);
     }
 
     pub(crate) fn setup_shape_rendering(&mut self, entity: &Entity, shape: &Shape, transform: Option<&Transform>) {
-        let color_buffer: Buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+        let color_buffer: Buffer = self.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
             label: Some("Color Buffer"),
             contents:bytemuck::cast_slice(&color::Color::to_array(color::Color::to_wgpu(shape.color))),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
         });
-        let color_bind_group: BindGroup = self.device.create_bind_group(&BindGroupDescriptor {
+        let color_bind_group: BindGroup = self.device.as_ref().unwrap().create_bind_group(&BindGroupDescriptor {
             label: Some("Color Bind Group"),
             layout: &self.color_bind_group_layout.as_ref().unwrap(),
             entries: &[
@@ -433,7 +465,7 @@ fn create_layouts_on_sprite_rendering(
     texture: &texture::Texture,
     transform: Option<&Transform>
 ) {
-    let texture_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
+    let texture_bind_group: BindGroup = render_state.device.as_ref().unwrap().create_bind_group(&BindGroupDescriptor {
         label: Some("Texture Bind Group"),
         layout: &render_state.texture_bind_group_layout.as_ref().unwrap(),
         entries: &[
@@ -469,7 +501,7 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
 
     if let Some(transform_unwrapped) = transform {
         let transform_matrix_unwrapped: [[f32; 4]; 4] = *transform_unwrapped.to_matrix().as_ref();
-        let transform_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
+        let transform_buffer: Buffer = render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
             label: Some("Transform Buffer"),
             contents: bytemuck::cast_slice(&[transform_matrix_unwrapped]),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
@@ -478,7 +510,7 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
     } else {
         let identity_matrix: Matrix4<f32> = Matrix4::identity();
         let identity_matrix_unwrapped: [[f32; 4]; 4] = *identity_matrix.as_ref();
-        let transform_buffer: Buffer = render_state.device.create_buffer_init(&BufferInitDescriptor {
+        let transform_buffer: Buffer = render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
             label: Some("Transform Buffer"),
             contents: bytemuck::cast_slice(&[identity_matrix_unwrapped]),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
@@ -486,7 +518,7 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
         render_state.transform_buffer = Some(transform_buffer);
     }
 
-    let transform_bind_group: BindGroup = render_state.device.create_bind_group(&BindGroupDescriptor {
+    let transform_bind_group: BindGroup = render_state.device.as_ref().unwrap().create_bind_group(&BindGroupDescriptor {
         label: Some("Transform Bind Group"),
         layout: &render_state.transform_bind_group_layout.as_ref().unwrap(),
         entries: &[
@@ -506,7 +538,7 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
 pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {
     let projection_matrix: Matrix4<f32> = get_projection_matrix(render_state);
     let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
-    return render_state.device.create_buffer_init(&BufferInitDescriptor {
+    return render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
         label: Some("Projection Buffer"),
         contents: bytemuck::cast_slice(&[projection_matrix_unwrapped]),
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
@@ -514,7 +546,7 @@ pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {
 }
 
 fn get_projection_matrix(render_state: &RenderState) -> Matrix4<f32> {
-    let aspect_ratio: f32 = render_state.physical_size.width as f32 / render_state.physical_size.height as f32;
+    let aspect_ratio: f32 = render_state.physical_size.as_ref().unwrap().width as f32 / render_state.physical_size.as_ref().unwrap().height as f32;
     return ortho(
         -aspect_ratio,
         aspect_ratio as f32,
@@ -526,16 +558,16 @@ fn get_projection_matrix(render_state: &RenderState) -> Matrix4<f32> {
 }
 
 fn get_render_pipeline(render_state: &RenderState, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
-    let shader_module: ShaderModule = render_state.device.create_shader_module(ShaderModuleDescriptor {
+    let shader_module: ShaderModule = render_state.device.as_ref().unwrap().create_shader_module(ShaderModuleDescriptor {
         label: Some("Shader Module"),
         source: ShaderSource::Wgsl(shader_source.into())
     });
-    let render_pipeline_layout: PipelineLayout = render_state.device.create_pipeline_layout(&PipelineLayoutDescriptor {
+    let render_pipeline_layout: PipelineLayout = render_state.device.as_ref().unwrap().create_pipeline_layout(&PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
         bind_group_layouts: &bind_group_layouts[..],
         push_constant_ranges: &[]
     });
-    let render_pipeline: RenderPipeline = render_state.device.create_render_pipeline(&RenderPipelineDescriptor {
+    let render_pipeline: RenderPipeline = render_state.device.as_ref().unwrap().create_render_pipeline(&RenderPipelineDescriptor {
         label: Some("Render Pipeline"),
         layout: Some(&render_pipeline_layout),
         vertex: VertexState {
@@ -548,7 +580,7 @@ fn get_render_pipeline(render_state: &RenderState, bind_group_layouts: Vec<&Bind
             module: &shader_module,
             entry_point: Some("fs_main"),
             targets: &[Some(ColorTargetState {
-                format: render_state.surface_configuration.format,
+                format: render_state.surface_configuration.as_ref().unwrap().format,
                 blend: get_blend_state(shader_source),
                 write_mask: ColorWrites::ALL
             })],
@@ -625,7 +657,7 @@ fn get_vertex_and_index_buffers(
 }
 
 fn get_vertex_buffer(render_state: &RenderState, vertex_array: &[Vertex]) -> Buffer {
-    return render_state.device.create_buffer_init(&BufferInitDescriptor {
+    return render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
         label: Some("Vertex Buffer"),
         contents: bytemuck::cast_slice(vertex_array),
         usage: BufferUsages::VERTEX
@@ -633,7 +665,7 @@ fn get_vertex_buffer(render_state: &RenderState, vertex_array: &[Vertex]) -> Buf
 }
 
 fn get_index_buffer(render_state: &RenderState, index_array: &[u16]) -> Buffer {
-    return render_state.device.create_buffer_init(&BufferInitDescriptor {
+    return render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
         label: Some("Index Buffer"),
         contents: bytemuck::cast_slice(index_array),
         usage: BufferUsages::INDEX
