@@ -37,7 +37,7 @@ use super::super::{
         component::Component
     }
 };
-use crate::utils::constants::shader::{BACKGROUND_SHADER, COLOR_SHADER, TEXTURE_SHADER};
+use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER};
 
 /// Struct for caching Vertices and Indices.
 pub struct VertexIndexBufferCache {
@@ -88,7 +88,6 @@ pub struct RenderState {
     pub background_image_path: Option<String>,
     pub window: Option<Arc<Window>>,
     pub texture_render_pipeline: Option<RenderPipeline>,
-    pub background_render_pipeline: Option<RenderPipeline>,
     pub color_render_pipeline: Option<RenderPipeline>,
     pub vertex_buffer: Option<Buffer>,
     pub index_buffer: Option<Buffer>,
@@ -119,7 +118,6 @@ impl RenderState {
             color: None,
             background_image_path: None,
             window: None,
-            background_render_pipeline: None,
             texture_render_pipeline: None,
             color_render_pipeline: None,
             vertex_buffer: None,
@@ -190,7 +188,6 @@ impl RenderState {
             color: None,
             background_image_path: None,
             window: Some(window),
-            background_render_pipeline: None,
             texture_render_pipeline: None,
             color_render_pipeline: None,
             vertex_buffer: None,
@@ -270,14 +267,22 @@ impl RenderState {
                     ty: BindingType::Sampler(SamplerBindingType::Filtering),
                     count: None
                 },
+                BindGroupLayoutEntry{
+                    binding: 2,
+                    visibility: ShaderStages::VERTEX,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                }
             ]
         });
         let texture_render_pipeline: RenderPipeline = get_render_pipeline(&render_state, vec![&texture_bind_group_layout, &transform_bind_group_layout], TEXTURE_SHADER);
-        let background_render_pipeline: RenderPipeline = get_render_pipeline(&render_state, vec![&texture_bind_group_layout, &transform_bind_group_layout], BACKGROUND_SHADER);
         let color_render_pipeline: RenderPipeline = get_render_pipeline(&render_state, vec![&color_bind_group_layout, &transform_bind_group_layout], COLOR_SHADER);
 
         render_state.texture_render_pipeline = Some(texture_render_pipeline);
-        render_state.background_render_pipeline = Some(background_render_pipeline);
         render_state.color_render_pipeline = Some(color_render_pipeline);
         render_state.transform_bind_group_layout = Some(transform_bind_group_layout);
         render_state.texture_bind_group_layout = Some(texture_bind_group_layout);
@@ -373,8 +378,8 @@ impl RenderState {
 
             if let Some(background_image_path) = &self.background_image_path {
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
-                render_pass.set_pipeline(self.background_render_pipeline.as_ref().unwrap());
-                self.setup_sprite_rendering(None, &background_sprite, None);
+                render_pass.set_pipeline(self.texture_render_pipeline.as_ref().unwrap());
+                self.setup_sprite_rendering(None, &background_sprite, None, true);
                 self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
             }
 
@@ -387,7 +392,7 @@ impl RenderState {
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
                         );
                         render_pass.set_pipeline(self.texture_render_pipeline.as_ref().unwrap());
-                        self.setup_sprite_rendering(Some(&entity), sprite, transform);
+                        self.setup_sprite_rendering(Some(&entity), sprite, transform, false);
                         self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
                         let transform: Option<&Transform> = components.iter()
@@ -413,7 +418,7 @@ impl RenderState {
         render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
     }
 
-    pub(crate) fn setup_sprite_rendering(&mut self, entity: Option<&Entity>, sprite: &Sprite, transform: Option<&Transform>) {
+    pub(crate) fn setup_sprite_rendering(&mut self, entity: Option<&Entity>, sprite: &Sprite, transform: Option<&Transform>, is_background: bool) {
         let texture: Arc<texture::Texture> = {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
                 texture_from_cache
@@ -421,7 +426,7 @@ impl RenderState {
                 self.texture_cache.load_texture(sprite.path.clone(), &self.device.as_ref().unwrap(), &self.queue.as_ref().unwrap()).unwrap()
             }
         };
-        create_layouts_on_sprite_rendering(self, entity, sprite, texture.as_ref(), transform);
+        create_layouts_on_sprite_rendering(self, entity, sprite, texture.as_ref(), transform, is_background);
     }
 
     pub(crate) fn setup_shape_rendering(&mut self, entity: &Entity, shape: &Shape, transform: Option<&Transform>) {
@@ -463,8 +468,16 @@ fn create_layouts_on_sprite_rendering(
     entity: Option<&Entity>,
     sprite: &Sprite,
     texture: &texture::Texture,
-    transform: Option<&Transform>
+    transform: Option<&Transform>,
+    is_background: bool
 ) {
+    let is_background_value: u32 = if is_background { 1 } else { 0 };
+    let is_background_buffer: Buffer = render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
+        label: Some("Is Background Buffer"),
+        contents: bytemuck::cast_slice(&[is_background_value]),
+        usage: BufferUsages::UNIFORM
+    });
+
     let texture_bind_group: BindGroup = render_state.device.as_ref().unwrap().create_bind_group(&BindGroupDescriptor {
         label: Some("Texture Bind Group"),
         layout: &render_state.texture_bind_group_layout.as_ref().unwrap(),
@@ -476,6 +489,10 @@ fn create_layouts_on_sprite_rendering(
             BindGroupEntry {
                 binding: 1,
                 resource: BindingResource::Sampler(&texture.sampler)
+            },
+            BindGroupEntry {
+                binding: 2,
+                resource: BindingResource::Buffer(is_background_buffer.as_entire_buffer_binding())
             }
         ]
     });

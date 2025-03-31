@@ -24,10 +24,11 @@ pub mod tests {
         let mut render_state: RenderState = RenderState::dummy();
         let mut query: Query = Query::new(&world).with_components::<Velocity>();
 
-        commands.spawn(vec![Box::new(Velocity::new(Vector2::new(0.0, 0.0)))]);
+        //world.spawn(vec![Box::new(Velocity::new(Vector2::new(0.0, 0.0)))]);
 
-        let mut entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
-        commands.despawn(entities.remove(0));
+        let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+
+        commands.despawn(entities.first().unwrap().clone());
 
         commands.flush_commands(&mut world, &mut render_state);
 

@@ -1,3 +1,4 @@
+// DEPRECATED
 // Reduced version of the texture_shader to render background images!
 
 struct VertexInput {
