@@ -471,10 +471,9 @@ fn create_layouts_on_sprite_rendering(
     transform: Option<&Transform>,
     is_background: bool
 ) {
-    let is_background_value: u32 = if is_background { 1 } else { 0 };
     let is_background_buffer: Buffer = render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
         label: Some("Is Background Buffer"),
-        contents: bytemuck::cast_slice(&[is_background_value]),
+        contents: bytemuck::cast_slice(&[if is_background { 1 } else { 0 }]),
         usage: BufferUsages::UNIFORM
     });
 
