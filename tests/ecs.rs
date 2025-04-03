@@ -26,7 +26,7 @@ pub mod tests {
 
         //world.spawn(vec![Box::new(Velocity::new(Vector2::new(0.0, 0.0)))]);
 
-        let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+        let entities: Vec<Entity> = query.get_entities_flex().unwrap();
 
         commands.despawn(entities.first().unwrap().clone());
 

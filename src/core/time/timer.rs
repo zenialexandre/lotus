@@ -1,5 +1,4 @@
 use std::time::Duration;
-
 use lotus_proc_macros::Resource;
 
 /// Enumerator to define the type of the timer.

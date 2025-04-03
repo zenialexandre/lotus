@@ -1,7 +1,7 @@
 use cgmath::{Deg, Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
 
-use super::super::engine::Context;
+use super::super::{engine::Context, managers::rendering_manager::RenderState};
 
 /// Struct to represent the transform matrix of every object rendered.
 #[derive(Clone, Debug, Component)]
@@ -40,12 +40,12 @@ impl Transform {
     }
 
     /// Write the transform matrix updates to its related buffer on rendering surface.
-    pub fn write_update_to_buffer(&self, context: &Context) {
+    pub fn write_update_to_buffer(&self, render_state: &RenderState) {
         let transform_matrix: Matrix4<f32> = self.to_matrix();
         let transform_matrix_as_ref: &[[f32; 4]; 4] = transform_matrix.as_ref();
 
-        if let Some(transform_buffer) = context.render_state.transform_buffer.as_ref() {
-            context.render_state.queue.as_ref().unwrap().write_buffer(
+        if let Some(transform_buffer) = render_state.transform_buffer.as_ref() {
+            render_state.queue.as_ref().unwrap().write_buffer(
                 transform_buffer,
                 0,
                 bytemuck::cast_slice(&[*transform_matrix_as_ref])
@@ -55,23 +55,23 @@ impl Transform {
 
     fn _interpolate(&mut self, context: &Context, alpha: f32) {
         let interpolated_position: Vector2<f32> = self.position * (1.0 - alpha) + self.position * alpha;
-        self.set_position(context, interpolated_position);
+        self.set_position(&context.render_state, interpolated_position);
     }
 
     /// Set the current position and sends it to the buffer.
-    pub fn set_position(&mut self, context: &Context, position: Vector2<f32>) {
+    pub fn set_position(&mut self, render_state: &RenderState, position: Vector2<f32>) {
         self.position = position;
-        self.write_update_to_buffer(context);
+        self.write_update_to_buffer(render_state);
     }
 
-    pub fn set_position_x(&mut self, context: &Context, x: f32) {
+    pub fn set_position_x(&mut self, render_state: &RenderState, x: f32) {
         self.position.x = x;
-        self.write_update_to_buffer(context);
+        self.write_update_to_buffer(render_state);
     }
 
-    pub fn set_position_y(&mut self, context: &Context, y: f32) {
+    pub fn set_position_y(&mut self, render_state: &RenderState, y: f32) {
         self.position.y = y;
-        self.write_update_to_buffer(context);
+        self.write_update_to_buffer(render_state);
     }
 
     /// Get the current position.
@@ -80,9 +80,9 @@ impl Transform {
     }
 
     /// Set the current rotation and sends it to the buffer.
-    pub fn set_rotation(&mut self, context: &Context, rotation: f32) {
+    pub fn set_rotation(&mut self, render_state: &RenderState, rotation: f32) {
         self.rotation = rotation;
-        self.write_update_to_buffer(context);
+        self.write_update_to_buffer(render_state);
     }
 
     /// Get the current rotation.
@@ -91,9 +91,9 @@ impl Transform {
     }
 
     /// Set the current scale and sends it to the buffer.
-    pub fn set_scale(&mut self, context: &Context, scale: Vector2<f32>) {
+    pub fn set_scale(&mut self, render_state: &RenderState, scale: Vector2<f32>) {
         self.scale = scale;
-        self.write_update_to_buffer(context);
+        self.write_update_to_buffer(render_state);
     }
 
     /// Get the current scale.

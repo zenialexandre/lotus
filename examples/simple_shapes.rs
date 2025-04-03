@@ -57,11 +57,11 @@ fn setup(context: &mut Context) {
 
 fn update(context: &mut Context) {
     let mut query: Query = Query::new(&context.world).with_components::<Shape>();
-    let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+    let entities: Vec<Entity> = query.get_entities_flex().unwrap();
 
     for entity in &entities {
         let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
         let rotation: f32 = transform.get_rotation() + 100.0 * context.delta;
-        transform.set_rotation(&context, rotation);
+        transform.set_rotation(&context.render_state, rotation);
     }
 }

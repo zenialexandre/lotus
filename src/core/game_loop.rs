@@ -5,8 +5,9 @@ use winit::event_loop::ActiveEventLoop;
 
 use super::{
     engine::Context,
+    camera::camera2d::Camera2d,
     managers::rendering_manager::RenderState,
-    ecs::world::World
+    ecs::{world::World, resource::ResourceRef}
 };
 
 /// Enumerator to store the engine current state.
@@ -56,8 +57,9 @@ impl GameLoop {
         self.previous_time_of_last_run = now;
 
         context.delta = self.get_delta_as_seconds();
-        context.world.synchronize_transformations_with_collisions();
         context.commands.flush_commands(&mut context.world, &mut context.render_state);
+        context.world.synchronize_transformations_with_collisions();
+        context.world.synchronize_camera_with_target(&mut context.render_state);
         (self.update)(context);
         self.render(&mut context.render_state, &context.world, event_loop);
 
@@ -86,8 +88,10 @@ impl GameLoop {
 
             Err(
                 SurfaceError::Lost | SurfaceError::Outdated
-            ) => render_state.resize(render_state.physical_size.as_ref().unwrap().clone()),
-
+            ) => {
+                let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
+                render_state.resize(render_state.physical_size.as_ref().unwrap().clone(), &camera2d);
+            },
             Err(
                 SurfaceError::OutOfMemory | SurfaceError::Other
             ) => {

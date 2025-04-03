@@ -1,30 +1,26 @@
 use std::{
     any::TypeId,
-    cell::{
-        Ref,
-        RefCell,
-        RefMut
-    },
-    collections::HashMap,
-    hash::{
-        DefaultHasher,
-        Hash,
-        Hasher
-    },
-    mem::take
+    cell::{Ref, RefCell, RefMut},
+    collections::{HashMap, HashSet},
+    hash::{DefaultHasher, Hash, Hasher},
+    marker::PhantomData,
+    mem::take,
+    sync::Arc
 };
+use atomic_refcell::{AtomicRefCell, AtomicRefMut};
+use cgmath::{Matrix4, Vector3};
 use uuid::Uuid;
 
 use super::{
     super::{
-        physics::collision::Collision,
+        camera::camera2d::Camera2d,
         input::Input,
         managers::rendering_manager::RenderState,
-        physics::transform::Transform
+        physics::{collision::Collision, transform::Transform}
     },
     component::Component,
-    entitiy::Entity,
-    resource::Resource
+    entity::Entity,
+    resource::{Resource, ResourceRefMut, ResourceRef}
 };
 
 /// Struct to represent the different archetypes and/or clusters of data.
@@ -55,83 +51,83 @@ impl Archetype {
     }
 }
 
-/// Struct to represent the mutable commands to be made on the world.
-pub struct Commands {
-    pub commands: Vec<Command>
+/// Struct to represent the actual borrowing state of the world resources.
+pub struct BorrowState {
+    immutable_borrows: HashSet<TypeId>,
+    mutable_borrows: HashSet<TypeId>
 }
 
-impl Commands {
-    /// Create a new command struct.
-    pub fn new() -> Self {
+impl BorrowState {
+    fn new() -> Self {
         return Self {
-            commands: Vec::new()
+            immutable_borrows: HashSet::new(),
+            mutable_borrows: HashSet::new()
         };
     }
 
-    /// # Spawn a new entity on the world.
-    /// The entity can be rendered on the fly, if its a shape or a sprite.
-    pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) {
-        self.commands.push(Command::Spawn(components));
-    }
-
-    /// # Despawn a specific entity from the world.
-    /// The entity can be removed from the rendering flow on the fly, if its necessary. 
-    pub fn despawn(&mut self, entity: Entity) {
-        self.commands.push(Command::Despawn(entity));
-    }
-
-    /// Take the commands memory reference.
-    pub(crate) fn _take_commands(&mut self) -> Vec<Command> {
-        return std::mem::take(&mut self.commands);
-    }
-
-    /// Flush the commands inside the buffer.
-    pub fn flush_commands(&mut self, world: &mut World, render_state: &mut RenderState) {
-        for command in self.commands.drain(..) {
-            match command {
-                Command::Spawn(components) => {
-                    world.spawn(render_state, components);
-                },
-                Command::Despawn(entity) => {
-                    if world.is_entity_alive(entity) {
-                        world.despawn(render_state, &entity);
-                    }
-                }
-            }
+    fn try_borrow_immutable(&mut self, type_id: TypeId) -> bool {
+        if self.mutable_borrows.contains(&type_id) {
+            return false;
+        } else {
+            self.immutable_borrows.insert(type_id);
+            return true;
         }
     }
-}
 
-/// Enumerator that store the mutable commands allowed in the world.
-pub enum Command {
-    Spawn(Vec<Box<dyn Component>>),
-    Despawn(Entity)
+    fn try_borrow_mutable(&mut self, type_id: TypeId) -> bool {
+        if self.immutable_borrows.contains(&type_id) || self.mutable_borrows.contains(&type_id) {
+            return false;
+        } else {
+            self.mutable_borrows.insert(type_id);
+            return true;
+        }
+    }
+
+    pub(crate) fn release_immutable(&mut self, type_id: TypeId) {
+        self.immutable_borrows.remove(&type_id);
+    }
+
+    pub(crate) fn release_mutable(&mut self, type_id: TypeId) {
+        self.mutable_borrows.remove(&type_id);
+    }
 }
 
 /// Struct to represent the World of the Entity-Component-System architecture.
 pub struct World {
     pub archetypes: HashMap<u64, Archetype>,
-    pub resources: Vec<RefCell<Box<dyn Resource>>>
+    pub resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>>,
+    borrow_state: AtomicRefCell<BorrowState>
 }
 
 impl World {
     /// Create a new world.
     pub fn new() -> Self {
+        let mut resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>> = HashMap::new();
+        resources.insert(TypeId::of::<Input>(), Arc::new(AtomicRefCell::new(Box::new(Input::default()))));
+        resources.insert(TypeId::of::<Camera2d>(), Arc::new(AtomicRefCell::new(Box::new(Camera2d::default()))));
+
         return Self {
             archetypes: HashMap::new(),
-            resources: vec![RefCell::new(Box::new(Input::default()))]
+            resources,
+            borrow_state: BorrowState::new().into()
         };
     }
 
     /// Add a new resource to the world.
-    pub fn add_resource(&mut self, resource: Box<dyn Resource>) {
-        self.resources.push(RefCell::new(resource));
+    pub fn add_resource<T: Resource + 'static>(&mut self, resource: T) {
+        self.resources.insert(
+            TypeId::of::<T>(),
+            Arc::new(AtomicRefCell::new(Box::new(resource)))
+        );
     }
 
     /// Add a list of resources to the world.
     pub fn add_resources(&mut self, resources: Vec<Box<dyn Resource>>) {
         for resource in resources {
-            self.resources.push(RefCell::new(resource));
+            self.resources.insert(
+                resource.type_id(),
+                Arc::new(AtomicRefCell::new(resource))
+            );
         }
     }
 
@@ -178,7 +174,7 @@ impl World {
         }
     }
 
-    /// Synchronize the transformation matrices with the collision objects.
+    /// Synchronizes the transformation matrices with the collision objects.
     pub fn synchronize_transformations_with_collisions(&mut self) {
         for archetype in self.archetypes.values_mut() {
             if let (Some(transforms), Some(collisions)) = (
@@ -199,6 +195,52 @@ impl World {
         }
     }
 
+    /// Synchronizes the camera with its target.
+    pub fn synchronize_camera_with_target(&mut self, render_state: &mut RenderState) {
+        let (target_entity, target_position) = {
+            let camera2d: ResourceRefMut<'_, Camera2d> = self.get_resource_mut::<Camera2d>().unwrap();
+
+            if let Some(entity) = camera2d.target {
+                if let Some(transform) = self.get_entity_component::<Transform>(&entity) {
+                    (Some(entity), Some(transform.position))
+                } else {
+                    (None, None)
+                }
+            } else {
+                (None, None)
+            }
+        };
+
+        if let (Some(_), Some(position)) = (target_entity, target_position) {
+            let mut camera2d: ResourceRefMut<'_, Camera2d> = self.get_resource_mut::<Camera2d>().unwrap();
+            camera2d.transform.position = position;
+            camera2d.view_matrix = Matrix4::from_translation(Vector3::new(
+                -position.x,
+                -position.y,
+                0.0
+            ));
+            let view_matrix_unwrapped: [[f32; 4]; 4] = *camera2d.view_matrix.as_ref();
+            let projection_matrix: Matrix4<f32> = render_state.get_projection_matrix(&camera2d);
+            let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
+    
+            if let Some(projection_buffer) = render_state.projection_buffer.as_ref() {
+                render_state.queue.as_mut().unwrap().write_buffer(
+                    projection_buffer,
+                    0,
+                    bytemuck::cast_slice(&[projection_matrix_unwrapped])
+                );
+            }
+
+            if let Some(view_buffer) = render_state.view_buffer.as_ref() {
+                render_state.queue.as_mut().unwrap().write_buffer(
+                    view_buffer,
+                    0,
+                    bytemuck::cast_slice(&[view_matrix_unwrapped])
+                );
+            }
+        }
+    }
+
     /// Returns the unique key of a archetype.
     pub fn get_archetype_unique_key(&self, components_types_ids: &mut Vec<TypeId>) -> u64 {
         components_types_ids.sort();
@@ -215,30 +257,50 @@ impl World {
         return default_hasher.finish();
     }
 
-    /// Return the specified resource.
-    pub fn get_resource<T: Resource + 'static>(&self) -> Option<Ref<'_, T>> {
-        for resource in &self.resources {
-            if resource.borrow().as_any().is::<T>() {
-                return Some(Ref::map(
-                    resource.borrow(),
-                    |resource| resource.as_any().downcast_ref::<T>().unwrap()
-                ));
+    /// Return an immutable reference to the specified resource
+    pub fn get_resource<T: Resource + 'static>(&self) -> Option<ResourceRef<T>> {
+        let type_id: TypeId = TypeId::of::<T>();
+        let mut borrow_state: AtomicRefMut<'_, BorrowState> = self.borrow_state.borrow_mut();
+
+        if borrow_state.try_borrow_immutable(type_id) {
+            if let Some(resource) = self.resources.get(&type_id) {
+                return Some(ResourceRef {
+                    inner: resource.borrow(),
+                    type_id,
+                    borrow_state: &self.borrow_state,
+                    phantom_data: PhantomData
+                });
+            } else {
+                borrow_state.release_immutable(type_id);
+                return None;
             }
+        } else {
+            return None;
         }
-        return None;
     }
 
-    /// Return the specified resource as mutable.
-    pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<RefMut<'_, T>> {
-        for resource in &self.resources {
-            if resource.borrow().as_any().is::<T>() {
-                return Some(RefMut::map(
-                    resource.borrow_mut(),
-                    |resource| resource.as_any_mut().downcast_mut::<T>().unwrap()
-                ));
+    /// Return a mutable reference to the specified resource
+    pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<ResourceRefMut<T>> {
+        let type_id: TypeId = TypeId::of::<T>();
+        let mut borrow_state: AtomicRefMut<'_, BorrowState> = self.borrow_state.borrow_mut();
+
+        if borrow_state.try_borrow_mutable(type_id) {
+            if let Some(resource) = self.resources.get(&type_id) {
+                return Some(
+                    ResourceRefMut {
+                        inner: resource.borrow_mut(),
+                        type_id,
+                        borrow_state: &self.borrow_state,
+                        phantom_data: PhantomData
+                    }  
+                );
+            } else {
+                borrow_state.release_mutable(type_id);
+                return None;
             }
+        } else {
+            return None;
         }
-        return None;
     }
 
     /// Return a specific component from a entity.
@@ -319,4 +381,57 @@ impl World {
     pub fn is_entity_alive(&self, entity: Entity) -> bool {
         return self.archetypes.values().any(|archetype| archetype.entities.iter().any(|e| e.0 == entity.0));    
     }
+}
+
+/// Struct to represent the mutable commands to be made on the world.
+pub struct Commands {
+    pub commands: Vec<Command>
+}
+
+impl Commands {
+    /// Create a new command struct.
+    pub fn new() -> Self {
+        return Self {
+            commands: Vec::new()
+        };
+    }
+
+    /// # Spawn a new entity on the world.
+    /// The entity can be rendered on the fly, if its a shape or a sprite.
+    pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) {
+        self.commands.push(Command::Spawn(components));
+    }
+
+    /// # Despawn a specific entity from the world.
+    /// The entity can be removed from the rendering flow on the fly, if its necessary. 
+    pub fn despawn(&mut self, entity: Entity) {
+        self.commands.push(Command::Despawn(entity));
+    }
+
+    /// Take the commands memory reference.
+    pub(crate) fn _take_commands(&mut self) -> Vec<Command> {
+        return std::mem::take(&mut self.commands);
+    }
+
+    /// Flush the commands inside the buffer.
+    pub fn flush_commands(&mut self, world: &mut World, render_state: &mut RenderState) {
+        for command in self.commands.drain(..) {
+            match command {
+                Command::Spawn(components) => {
+                    world.spawn(render_state, components);
+                },
+                Command::Despawn(entity) => {
+                    if world.is_entity_alive(entity) {
+                        world.despawn(render_state, &entity);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Enumerator that store the mutable commands allowed in the world.
+pub enum Command {
+    Spawn(Vec<Box<dyn Component>>),
+    Despawn(Entity)
 }

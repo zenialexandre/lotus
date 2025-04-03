@@ -1,38 +1,17 @@
 use winit::{
     application::ApplicationHandler,
-    event::{
-        WindowEvent,
-        ElementState
-    },
-    event_loop::{
-        ActiveEventLoop,
-        ControlFlow,
-        EventLoop,
-    },
-    window::{
-        Window,
-        WindowAttributes,
-        WindowId,
-        WindowButtons,
-        Icon
-    },
-    dpi::{
-        Size,
-        Position,
-        LogicalSize,
-        LogicalPosition
-    }
+    event::{WindowEvent, ElementState},
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+    window::{Window, WindowAttributes, WindowId, WindowButtons, Icon},
+    dpi::{Size, Position, LogicalSize, LogicalPosition}
 };
-use std::{
-    cell::RefMut,
-    path::Path,
-    sync::Arc
-};
+use std::{path::Path, sync::Arc};
 
 use super::{
     rendering_manager::RenderState,
     super::{
-        ecs::world::World,
+        camera::camera2d::Camera2d,
+        ecs::{world::World, resource::{ResourceRef, ResourceRefMut}},
         color::Color,
         game_loop::GameLoop,
         engine::Context,
@@ -139,11 +118,11 @@ impl ApplicationHandler for Application {
         };
         self.window = Some(window.clone());
 
+        let world: World = World::new();
         let mut render_state: RenderState = pollster::block_on(RenderState::new(window));
         render_state.color = color;
         render_state.background_image_path = background_image_path;
 
-        let world: World = World::new();
         self.context = Some(Context::new(
             render_state,
             world,
@@ -156,7 +135,8 @@ impl ApplicationHandler for Application {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
         let context: &mut Context = &mut self.context.as_mut().unwrap();
         let render_state: &mut RenderState = &mut context.render_state;
-        let mut input: RefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+        let camera2d: ResourceRef<'_, Camera2d> = context.world.get_resource::<Camera2d>().unwrap();
+        let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
 
         if !render_state.input(&window_event) {
             match window_event {
@@ -164,7 +144,7 @@ impl ApplicationHandler for Application {
                     event_loop.exit();
                 },
                 WindowEvent::Resized(new_size) => {
-                    render_state.resize(new_size);
+                    render_state.resize(new_size, &camera2d);
                 },
                 WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
                     if ElementState::Pressed == event.state {
@@ -205,7 +185,7 @@ pub async fn initialize_application(
     update: fn(context: &mut Context)
 ) {
     env_logger::init();
-    let event_loop = EventLoop::new().unwrap();
+    let event_loop: EventLoop<()> = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
 
     let mut application: Application = if let Some(window_configuration_unwrapped) = window_configuration {

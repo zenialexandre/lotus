@@ -19,6 +19,7 @@ struct VertexOutput {
 
 @group(1) @binding(0) var<uniform> transform: mat4x4<f32>;
 @group(1) @binding(1) var<uniform> projection: mat4x4<f32>;
+@group(1) @binding(2) var<uniform> view: mat4x4<f32>;
 
 @vertex
 fn vs_main(model: VertexInput) -> VertexOutput {
@@ -27,7 +28,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     if (is_background == 1) {
         out.clip_position = vec4<f32>(model.position, 1.0);
     } else {
-        out.clip_position = projection * transform * vec4<f32>(model.position, 1.0);
+        out.clip_position = projection * view * transform * vec4<f32>(model.position, 1.0);
     }
     out.texture_coordinates = model.texture_coordinates;
     return out;
