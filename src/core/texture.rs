@@ -1,5 +1,4 @@
 use std::{collections::HashMap, path::Path, sync::Arc};
-
 use wgpu::{
     TextureView,
     TextureDescriptor,

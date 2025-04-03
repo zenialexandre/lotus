@@ -51,7 +51,7 @@ fn setup(context: &mut Context) {
     let mut thread_rng: ThreadRng = rand::rng();
     let random_x_direction: f32 = thread_rng.random_range(-0.8..0.8);
 
-    context.world.add_resource(Box::new(LittleBallRespawnTimer::new()));
+    context.world.add_resource(LittleBallRespawnTimer::new());
 
     context.commands.spawn(
         vec![
@@ -79,6 +79,11 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
+    let input: Input = {
+        let input_ref: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+        input_ref.clone()
+    };
+
     let mut player_query: Query = Query::new(&context.world).with_components::<Player>();
     let player_entity: Entity = player_query.get_entities_flex().unwrap().first().unwrap().clone();
 
@@ -88,7 +93,7 @@ fn update(context: &mut Context) {
     let mut thread_rng: ThreadRng = rand::rng();
     let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
 
-    move_player(context, player_entity);
+    move_player(context, input, player_entity);
     move_little_ball(context, little_ball_entity);
     check_player_little_ball_collision(context, player_entity, little_ball_entity, random_factor);
     check_little_ball_borders_collision(context, little_ball_entity, random_factor);
@@ -148,8 +153,7 @@ fn spawn_targets(context: &mut Context) {
     }
 }
 
-fn move_player(context: &mut Context, player_entity: Entity) {
-    let input: Ref<'_, Input> = context.world.get_resource::<Input>().unwrap();
+fn move_player(context: &mut Context, input: Input, player_entity: Entity) {
     let mut player_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut(&player_entity).unwrap();
     let player_velocity: Ref<'_, Velocity> = context.world.get_entity_component(&player_entity).unwrap();
 
@@ -238,7 +242,7 @@ fn respawn_little_ball_after_outbounds(context: &mut Context, little_ball_entity
     let position_default: Vector2<f32> = Vector2::new(0.0, -0.25);
 
     if litte_ball_transform.position.y < -1.0 {
-        let mut little_ball_respawn_timer = context.world.get_resource_mut::<LittleBallRespawnTimer>().unwrap();
+        let mut little_ball_respawn_timer: ResourceRefMut<'_, LittleBallRespawnTimer> = context.world.get_resource_mut::<LittleBallRespawnTimer>().unwrap();
         little_ball_respawn_timer.0.tick(context.delta);
 
         if little_ball_respawn_timer.0.is_finished() {

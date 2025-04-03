@@ -1,42 +1,17 @@
-use cgmath::{
-    ortho,
-    Matrix4,
-    SquareMatrix
-};
-use winit::{
-    dpi::PhysicalSize,
-    event::WindowEvent,
-    window::Window
-};
-use wgpu::{
-    *,
-    util::{
-        BufferInitDescriptor,
-        DeviceExt
-    }
-};
-use std::{
-    cell::RefMut,
-    collections::HashMap,
-    sync::Arc
-};
+use cgmath::{ortho, Matrix4, SquareMatrix};
+use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
+use wgpu::{*, util::{BufferInitDescriptor, DeviceExt}};
+use std::{cell::RefMut, collections::HashMap, sync::Arc};
 
 use super::super::{
     color,
-    shape::{
-        Orientation,
-        Shape
-    },
+    shape::{Orientation, Shape},
     physics::transform::Transform,
     sprite::Sprite,
     texture,
     texture::TextureCache,
     camera::camera2d::Camera2d,
-    ecs::{
-        entity::Entity,
-        world::World,
-        component::Component
-    }
+    ecs::{entity::Entity, world::World, component::Component}
 };
 use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER};
 
@@ -310,14 +285,14 @@ impl RenderState {
     }
 
     /// Resize the rendering projection.
-    pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
+    pub fn resize(&mut self, new_size: PhysicalSize<u32>, camera2d: &Camera2d) {
         if new_size.width > 0 && new_size.height > 0 {
             self.physical_size = Some(new_size);
             self.surface_configuration.as_mut().unwrap().width = new_size.width;
             self.surface_configuration.as_mut().unwrap().height = new_size.height;
             self.surface.as_ref().unwrap().configure(&self.device.as_ref().unwrap(), &self.surface_configuration.as_ref().unwrap());
 
-            let projection_matrix: Matrix4<f32> = self.get_projection_matrix();
+            let projection_matrix: Matrix4<f32> = self.get_projection_matrix(camera2d);
             let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
 
             if let Some(projection_buffer) = self.projection_buffer.as_ref() {
@@ -390,10 +365,12 @@ impl RenderState {
                 1.0
             );
 
+            let camera2d = world.get_resource::<Camera2d>().unwrap();
+
             if let Some(background_image_path) = &self.background_image_path {
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
                 render_pass.set_pipeline(self.texture_render_pipeline.as_ref().unwrap());
-                self.setup_sprite_rendering(None, &background_sprite, None, true);
+                self.setup_sprite_rendering(None, &background_sprite, None, &camera2d, true);
                 self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
             }
 
@@ -406,14 +383,14 @@ impl RenderState {
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
                         );
                         render_pass.set_pipeline(self.texture_render_pipeline.as_ref().unwrap());
-                        self.setup_sprite_rendering(Some(&entity), sprite, transform, false);
+                        self.setup_sprite_rendering(Some(&entity), sprite, transform, &camera2d, false);
                         self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
                         let transform: Option<&Transform> = components.iter()
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
                         );
                         render_pass.set_pipeline(self.color_render_pipeline.as_ref().unwrap());
-                        self.setup_shape_rendering(&entity, shape, transform);
+                        self.setup_shape_rendering(&entity, shape, transform, &camera2d);
                         self.apply_render_pass_with_values(&mut render_pass, self.color_bind_group.as_ref().unwrap().clone());
                     }
                 }
@@ -432,7 +409,7 @@ impl RenderState {
         render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
     }
 
-    pub(crate) fn setup_sprite_rendering(&mut self, entity: Option<&Entity>, sprite: &Sprite, transform: Option<&Transform>, is_background: bool) {
+    pub(crate) fn setup_sprite_rendering(&mut self, entity: Option<&Entity>, sprite: &Sprite, transform: Option<&Transform>, camera2d: &Camera2d, is_background: bool) {
         let texture: Arc<texture::Texture> = {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
                 texture_from_cache
@@ -440,10 +417,10 @@ impl RenderState {
                 self.texture_cache.load_texture(sprite.path.clone(), &self.device.as_ref().unwrap(), &self.queue.as_ref().unwrap()).unwrap()
             }
         };
-        create_layouts_on_sprite_rendering(self, entity, sprite, texture.as_ref(), transform, is_background);
+        create_layouts_on_sprite_rendering(self, entity, sprite, texture.as_ref(), transform, camera2d, is_background);
     }
 
-    pub(crate) fn setup_shape_rendering(&mut self, entity: &Entity, shape: &Shape, transform: Option<&Transform>) {
+    pub(crate) fn setup_shape_rendering(&mut self, entity: &Entity, shape: &Shape, transform: Option<&Transform>, camera2d: &Camera2d) {
         let color_buffer: Buffer = self.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
             label: Some("Color Buffer"),
             contents:bytemuck::cast_slice(&color::Color::to_array(color::Color::to_wgpu(shape.color))),
@@ -460,7 +437,7 @@ impl RenderState {
             ]
         });
 
-        let (transform_bind_group, projection_buffer) = get_transform_bindings(self, transform);
+        let (transform_bind_group, projection_buffer, view_buffer) = get_transform_bindings(self, transform, camera2d);
         let (vertex_buffer, index_buffer) = get_vertex_and_index_buffers(
             self,
             Some(entity),
@@ -471,20 +448,20 @@ impl RenderState {
         self.color_bind_group = Some(color_bind_group);
         self.transform_bind_group = Some(transform_bind_group);
         self.projection_buffer = Some(projection_buffer);
-        //self.view_buffer = Some(view_buffer);
+        self.view_buffer = Some(view_buffer);
         self.vertex_buffer = Some(vertex_buffer);
         self.index_buffer = Some(index_buffer);
         self.number_of_indices = Some(shape.geometry_type.to_index_array().len() as u32);
     }
 
-    pub(crate) fn get_projection_matrix(&self) -> Matrix4<f32> {
+    pub(crate) fn get_projection_matrix(&self, camera2d: &Camera2d) -> Matrix4<f32> {
         let aspect_ratio: f32 = self.physical_size.as_ref().unwrap().width as f32 / self.physical_size.as_ref().unwrap().height as f32;
 
         return  ortho(
-            -aspect_ratio,
-            aspect_ratio,
-            -1.0,
-            1.0,
+            -aspect_ratio * camera2d.zoom,
+            aspect_ratio * camera2d.zoom,
+            -1.0 * camera2d.zoom,
+            1.0 * camera2d.zoom,
             -1.0,
             1.0
         );
@@ -497,6 +474,7 @@ fn create_layouts_on_sprite_rendering(
     sprite: &Sprite,
     texture: &texture::Texture,
     transform: Option<&Transform>,
+    camera2d: &Camera2d,
     is_background: bool
 ) {
     let is_background_buffer: Buffer = render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
@@ -524,7 +502,7 @@ fn create_layouts_on_sprite_rendering(
         ]
     });
 
-    let (transform_bind_group, projection_buffer) = get_transform_bindings(render_state, transform);
+    let (transform_bind_group, projection_buffer, view_buffer) = get_transform_bindings(render_state, transform, camera2d);
     let (vertex_buffer, index_buffer) = get_vertex_and_index_buffers(
         render_state,
         entity,
@@ -535,15 +513,15 @@ fn create_layouts_on_sprite_rendering(
     render_state.texture_bind_group = Some(texture_bind_group);
     render_state.transform_bind_group = Some(transform_bind_group);
     render_state.projection_buffer = Some(projection_buffer);
-    //render_state.view_buffer = Some(view_buffer);
+    render_state.view_buffer = Some(view_buffer);
     render_state.vertex_buffer = Some(vertex_buffer);
     render_state.index_buffer = Some(index_buffer);
     render_state.number_of_indices = Some(sprite.indices.len() as u32);
 }
 
-fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Transform>) -> (BindGroup, Buffer) {
-    let projection_buffer: Buffer = get_projection_buffer(render_state);
-    //let view_buffer: Buffer = get_view_buffer(render_state, camera2d);
+fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Transform>, camera2d: &Camera2d) -> (BindGroup, Buffer, Buffer) {
+    let projection_buffer: Buffer = get_projection_buffer(render_state, camera2d);
+    let view_buffer: Buffer = get_view_buffer(render_state, camera2d);
 
     if let Some(transform_unwrapped) = transform {
         let transform_matrix_unwrapped: [[f32; 4]; 4] = *transform_unwrapped.to_matrix().as_ref();
@@ -578,15 +556,15 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
             },
             BindGroupEntry {
                 binding: 2,
-                resource: projection_buffer.as_entire_binding()
+                resource: view_buffer.as_entire_binding()
             }
         ]
     });
-    return (transform_bind_group, projection_buffer);
+    return (transform_bind_group, projection_buffer, view_buffer);
 }
 
-pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {
-    let projection_matrix: Matrix4<f32> = render_state.get_projection_matrix();
+pub(crate) fn get_projection_buffer(render_state: &RenderState, camera2d: &Camera2d) -> Buffer {
+    let projection_matrix: Matrix4<f32> = render_state.get_projection_matrix(camera2d);
     let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
     return render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
         label: Some("Projection Buffer"),
@@ -595,7 +573,6 @@ pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {
     });
 }
 
-/*
 pub(crate) fn get_view_buffer(render_state: &RenderState, camera2d: &Camera2d) -> Buffer {
     let view_matrix: Matrix4<f32> = camera2d.view_matrix;
     let view_matrix_unwrapped: [[f32; 4]; 4] = *view_matrix.as_ref();
@@ -604,7 +581,7 @@ pub(crate) fn get_view_buffer(render_state: &RenderState, camera2d: &Camera2d) -
         contents: bytemuck::cast_slice(&[view_matrix_unwrapped]),
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
     });
-}*/
+}
 
 fn get_render_pipeline(render_state: &RenderState, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
     let shader_module: ShaderModule = render_state.device.as_ref().unwrap().create_shader_module(ShaderModuleDescriptor {

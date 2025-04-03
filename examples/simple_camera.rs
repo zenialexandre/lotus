@@ -27,14 +27,13 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let input: Ref<'_, Input> = context.world.get_resource::<Input>().unwrap();
+    let input: ResourceRef<'_, Input> = context.world.get_resource::<Input>().unwrap();
 
     let mut query: Query = Query::new(&context.world).with_components::<Sprite>().with_components::<Velocity>();
     let player_entity: Entity = query.get_entities_flex().unwrap().first().unwrap().clone();
 
-    let mut camera2d: RefMut<'_, Camera2d> = context.world.get_resource_mut::<Camera2d>().unwrap();
+    let mut camera2d: ResourceRefMut<'_, Camera2d> = context.world.get_resource_mut::<Camera2d>().unwrap();
     camera2d.set_target(player_entity);
-    //context.render_state.camera2d.as_mut().unwrap().set_target(player_entity);
 
     let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(&player_entity).unwrap();
     let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&player_entity).unwrap();

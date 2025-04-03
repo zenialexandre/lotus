@@ -2,15 +2,8 @@ use std::{collections::HashMap, path::Path};
 use anyhow::Ok;
 use kira::{
     sound::{
-        static_sound::{
-            StaticSoundData,
-            StaticSoundSettings
-        },
-        streaming::{
-            StreamingSoundData,
-            StreamingSoundHandle,
-            StreamingSoundSettings
-        },
+        static_sound::{StaticSoundData, StaticSoundSettings},
+        streaming::{StreamingSoundData, StreamingSoundHandle, StreamingSoundSettings},
         FromFileError,
         PlaybackPosition,
         Region
@@ -25,7 +18,6 @@ use kira::{
     Value
 };
 use lotus_proc_macros::Resource;
-
 use super::audio_error::AudioError;
 
 /// Struct to abstract the configurations for all types of audio.

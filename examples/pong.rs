@@ -79,7 +79,7 @@ fn setup(context: &mut Context) {
 
     context.world.add_resources(vec![
         Box::new(PongBallRespawnTimer::default()),
-        Box::new(game_audio),
+        Box::new(game_audio)
     ]);
 
     spawn_border(context, Vector2::new(0.0, -1.0));
@@ -120,7 +120,7 @@ fn setup(context: &mut Context) {
 
 fn update(context: &mut Context) {
     let input: Input = {
-        let input_ref: Ref<'_, Input> = context.world.get_resource::<Input>().unwrap();
+        let input_ref: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
         input_ref.clone()
     };
 
@@ -260,7 +260,7 @@ fn respawn_pong_ball_after_outbounds(context: &mut Context, pong_ball: &Entity) 
     let position_default: Vector2<f32> = Vector2::new(0.0, 0.0);
 
     if pong_ball_transform.position.x > 2.0 || pong_ball_transform.position.x < -2.0 {
-        let mut pong_ball_respawn_timer = context.world.get_resource_mut::<PongBallRespawnTimer>().unwrap();
+        let mut pong_ball_respawn_timer: ResourceRefMut<'_, PongBallRespawnTimer> = context.world.get_resource_mut::<PongBallRespawnTimer>().unwrap();
         pong_ball_respawn_timer.0.tick(context.delta);
 
         if pong_ball_respawn_timer.0.is_finished() {
