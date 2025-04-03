@@ -8,7 +8,7 @@ pub mod component;
 pub mod resource;
 
 /// The Entity and its features on the ECS architecture.
-pub mod entitiy;
+pub mod entity;
 
 /// The Query and its features on the ECS architecture.
 pub mod query;

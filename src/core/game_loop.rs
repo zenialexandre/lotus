@@ -3,6 +3,8 @@ use lotus_proc_macros::Resource;
 use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
 
+use crate::Camera2d;
+
 use super::{
     engine::Context,
     managers::rendering_manager::RenderState,
@@ -56,8 +58,9 @@ impl GameLoop {
         self.previous_time_of_last_run = now;
 
         context.delta = self.get_delta_as_seconds();
-        context.world.synchronize_transformations_with_collisions();
         context.commands.flush_commands(&mut context.world, &mut context.render_state);
+        context.world.synchronize_transformations_with_collisions();
+        //context.world.synchronize_camera_with_target(&mut context.render_state);
         (self.update)(context);
         self.render(&mut context.render_state, &context.world, event_loop);
 
@@ -86,8 +89,9 @@ impl GameLoop {
 
             Err(
                 SurfaceError::Lost | SurfaceError::Outdated
-            ) => render_state.resize(render_state.physical_size.as_ref().unwrap().clone()),
-
+            ) => {
+                render_state.resize(render_state.physical_size.as_ref().unwrap().clone());
+            },
             Err(
                 SurfaceError::OutOfMemory | SurfaceError::Other
             ) => {

@@ -1,9 +1,7 @@
 use std::{
     any::TypeId,
     cell::{
-        Ref,
-        RefCell,
-        RefMut
+        BorrowError, BorrowMutError, Ref, RefCell, RefMut
     },
     collections::HashMap,
     hash::{
@@ -13,17 +11,19 @@ use std::{
     },
     mem::take
 };
+use cgmath::{Matrix4, Vector3};
 use uuid::Uuid;
 
 use super::{
     super::{
         physics::collision::Collision,
         input::Input,
+        camera::camera2d::Camera2d,
         managers::rendering_manager::RenderState,
         physics::transform::Transform
     },
     component::Component,
-    entitiy::Entity,
+    entity::Entity,
     resource::Resource
 };
 
@@ -119,7 +119,10 @@ impl World {
     pub fn new() -> Self {
         return Self {
             archetypes: HashMap::new(),
-            resources: vec![RefCell::new(Box::new(Input::default()))]
+            resources: vec![
+                RefCell::new(Box::new(Input::default())),
+                RefCell::new(Box::new(Camera2d::default()))
+            ]
         };
     }
 
@@ -178,7 +181,7 @@ impl World {
         }
     }
 
-    /// Synchronize the transformation matrices with the collision objects.
+    /// Synchronizes the transformation matrices with the collision objects.
     pub fn synchronize_transformations_with_collisions(&mut self) {
         for archetype in self.archetypes.values_mut() {
             if let (Some(transforms), Some(collisions)) = (
@@ -195,6 +198,52 @@ impl World {
                         collision.collider.scale = transform.get_scale();
                     }
                 }
+            }
+        }
+    }
+
+    /// Synchronizes the camera with its target.
+    pub fn synchronize_camera_with_target(&mut self, render_state: &mut RenderState) {
+        let (target_entity, target_position) = {
+            let camera2d: Ref<'_, Camera2d> = self.get_resource::<Camera2d>().unwrap();
+
+            if let Some(entity) = camera2d.target {
+                if let Some(transform) = self.get_entity_component::<Transform>(&entity) {
+                    (Some(entity), Some(transform.position))
+                } else {
+                    (None, None)
+                }
+            } else {
+                (None, None)
+            }
+        };
+
+        if let (Some(_), Some(position)) = (target_entity, target_position) {
+            let mut camera2d: RefMut<'_, Camera2d> = self.get_resource_mut::<Camera2d>().unwrap();
+            camera2d.transform.position = position;
+            camera2d.view_matrix = Matrix4::from_translation(Vector3::new(
+                -position.x,
+                -position.y,
+                0.0
+            ));
+            let view_matrix_unwrapped: [[f32; 4]; 4] = *camera2d.view_matrix.as_ref();
+            let projection_matrix: Matrix4<f32> = render_state.get_projection_matrix();
+            let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
+    
+            if let Some(projection_buffer) = render_state.projection_buffer.as_ref() {
+                render_state.queue.as_mut().unwrap().write_buffer(
+                    projection_buffer,
+                    0,
+                    bytemuck::cast_slice(&[projection_matrix_unwrapped])
+                );
+            }
+
+            if let Some(view_buffer) = render_state.view_buffer.as_ref() {
+                render_state.queue.as_mut().unwrap().write_buffer(
+                    view_buffer,
+                    0,
+                    bytemuck::cast_slice(&[view_matrix_unwrapped])
+                );
             }
         }
     }
@@ -218,9 +267,11 @@ impl World {
     /// Return the specified resource.
     pub fn get_resource<T: Resource + 'static>(&self) -> Option<Ref<'_, T>> {
         for resource in &self.resources {
-            if resource.borrow().as_any().is::<T>() {
+            let borrowed: Result<Ref<'_, Box<dyn Resource>>, BorrowError> = resource.try_borrow();
+
+            if borrowed.is_ok() && resource.borrow().as_any().is::<T>() {
                 return Some(Ref::map(
-                    resource.borrow(),
+                    borrowed.expect("Expects a borrowed resource."),
                     |resource| resource.as_any().downcast_ref::<T>().unwrap()
                 ));
             }
@@ -231,9 +282,11 @@ impl World {
     /// Return the specified resource as mutable.
     pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<RefMut<'_, T>> {
         for resource in &self.resources {
-            if resource.borrow().as_any().is::<T>() {
+            let borrowed: Result<RefMut<'_, Box<dyn Resource>>, BorrowMutError> = resource.try_borrow_mut();
+
+            if borrowed.is_ok() && resource.borrow().as_any().is::<T>() {
                 return Some(RefMut::map(
-                    resource.borrow_mut(),
+                    borrowed.expect("Expects a borrowed resource."),
                     |resource| resource.as_any_mut().downcast_mut::<T>().unwrap()
                 ));
             }

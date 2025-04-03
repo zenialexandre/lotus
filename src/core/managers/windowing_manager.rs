@@ -24,7 +24,7 @@ use winit::{
     }
 };
 use std::{
-    cell::RefMut,
+    cell::{Ref, RefMut},
     path::Path,
     sync::Arc
 };
@@ -32,6 +32,7 @@ use std::{
 use super::{
     rendering_manager::RenderState,
     super::{
+        camera::camera2d::Camera2d,
         ecs::world::World,
         color::Color,
         game_loop::GameLoop,
@@ -139,11 +140,11 @@ impl ApplicationHandler for Application {
         };
         self.window = Some(window.clone());
 
+        let world: World = World::new();
         let mut render_state: RenderState = pollster::block_on(RenderState::new(window));
         render_state.color = color;
         render_state.background_image_path = background_image_path;
 
-        let world: World = World::new();
         self.context = Some(Context::new(
             render_state,
             world,
@@ -156,6 +157,7 @@ impl ApplicationHandler for Application {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
         let context: &mut Context = &mut self.context.as_mut().unwrap();
         let render_state: &mut RenderState = &mut context.render_state;
+        //let camera2d: Camera2d = { context.world.get_resource::<Camera2d>().unwrap().clone() };
         let mut input: RefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
 
         if !render_state.input(&window_event) {

@@ -31,8 +31,9 @@ use super::super::{
     sprite::Sprite,
     texture,
     texture::TextureCache,
+    camera::camera2d::Camera2d,
     ecs::{
-        entitiy::Entity,
+        entity::Entity,
         world::World,
         component::Component
     }
@@ -95,6 +96,7 @@ pub struct RenderState {
     pub texture_bind_group: Option<BindGroup>,
     pub color_bind_group: Option<BindGroup>,
     pub projection_buffer: Option<Buffer>,
+    pub view_buffer: Option<Buffer>,
     pub transform_buffer: Option<Buffer>,
     pub transform_bind_group: Option<BindGroup>,
     pub transform_bind_group_layout: Option<BindGroupLayout>,
@@ -124,6 +126,7 @@ impl RenderState {
             index_buffer: None,
             transform_buffer: None,
             projection_buffer: None,
+            view_buffer: None,
             number_of_indices: None,
             color_bind_group: None,
             texture_bind_group: None,
@@ -194,6 +197,7 @@ impl RenderState {
             index_buffer: None,
             transform_buffer: None,
             projection_buffer: None,
+            view_buffer: None,
             number_of_indices: None,
             color_bind_group: None,
             texture_bind_group: None,
@@ -221,6 +225,16 @@ impl RenderState {
                 },
                 BindGroupLayoutEntry {
                     binding: 1,
+                    visibility: ShaderStages::VERTEX,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None
+                    },
+                    count: None
+                },
+                BindGroupLayoutEntry {
+                    binding: 2,
                     visibility: ShaderStages::VERTEX,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
@@ -303,7 +317,7 @@ impl RenderState {
             self.surface_configuration.as_mut().unwrap().height = new_size.height;
             self.surface.as_ref().unwrap().configure(&self.device.as_ref().unwrap(), &self.surface_configuration.as_ref().unwrap());
 
-            let projection_matrix: Matrix4<f32> = get_projection_matrix(&self);
+            let projection_matrix: Matrix4<f32> = self.get_projection_matrix();
             let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
 
             if let Some(projection_buffer) = self.projection_buffer.as_ref() {
@@ -457,9 +471,23 @@ impl RenderState {
         self.color_bind_group = Some(color_bind_group);
         self.transform_bind_group = Some(transform_bind_group);
         self.projection_buffer = Some(projection_buffer);
+        //self.view_buffer = Some(view_buffer);
         self.vertex_buffer = Some(vertex_buffer);
         self.index_buffer = Some(index_buffer);
         self.number_of_indices = Some(shape.geometry_type.to_index_array().len() as u32);
+    }
+
+    pub(crate) fn get_projection_matrix(&self) -> Matrix4<f32> {
+        let aspect_ratio: f32 = self.physical_size.as_ref().unwrap().width as f32 / self.physical_size.as_ref().unwrap().height as f32;
+
+        return  ortho(
+            -aspect_ratio,
+            aspect_ratio,
+            -1.0,
+            1.0,
+            -1.0,
+            1.0
+        );
     }
 }
 
@@ -507,6 +535,7 @@ fn create_layouts_on_sprite_rendering(
     render_state.texture_bind_group = Some(texture_bind_group);
     render_state.transform_bind_group = Some(transform_bind_group);
     render_state.projection_buffer = Some(projection_buffer);
+    //render_state.view_buffer = Some(view_buffer);
     render_state.vertex_buffer = Some(vertex_buffer);
     render_state.index_buffer = Some(index_buffer);
     render_state.number_of_indices = Some(sprite.indices.len() as u32);
@@ -514,6 +543,7 @@ fn create_layouts_on_sprite_rendering(
 
 fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Transform>) -> (BindGroup, Buffer) {
     let projection_buffer: Buffer = get_projection_buffer(render_state);
+    //let view_buffer: Buffer = get_view_buffer(render_state, camera2d);
 
     if let Some(transform_unwrapped) = transform {
         let transform_matrix_unwrapped: [[f32; 4]; 4] = *transform_unwrapped.to_matrix().as_ref();
@@ -545,6 +575,10 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
             BindGroupEntry {
                 binding: 1,
                 resource: projection_buffer.as_entire_binding()
+            },
+            BindGroupEntry {
+                binding: 2,
+                resource: projection_buffer.as_entire_binding()
             }
         ]
     });
@@ -552,7 +586,7 @@ fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Tra
 }
 
 pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {
-    let projection_matrix: Matrix4<f32> = get_projection_matrix(render_state);
+    let projection_matrix: Matrix4<f32> = render_state.get_projection_matrix();
     let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
     return render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
         label: Some("Projection Buffer"),
@@ -561,17 +595,16 @@ pub(crate) fn get_projection_buffer(render_state: &RenderState) -> Buffer {
     });
 }
 
-fn get_projection_matrix(render_state: &RenderState) -> Matrix4<f32> {
-    let aspect_ratio: f32 = render_state.physical_size.as_ref().unwrap().width as f32 / render_state.physical_size.as_ref().unwrap().height as f32;
-    return ortho(
-        -aspect_ratio,
-        aspect_ratio as f32,
-        -1.0,
-        1.0,
-        -1.0,
-        1.0
-    );
-}
+/*
+pub(crate) fn get_view_buffer(render_state: &RenderState, camera2d: &Camera2d) -> Buffer {
+    let view_matrix: Matrix4<f32> = camera2d.view_matrix;
+    let view_matrix_unwrapped: [[f32; 4]; 4] = *view_matrix.as_ref();
+    return render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
+        label: Some("View Buffer"),
+        contents: bytemuck::cast_slice(&[view_matrix_unwrapped]),
+        usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
+    });
+}*/
 
 fn get_render_pipeline(render_state: &RenderState, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
     let shader_module: ShaderModule = render_state.device.as_ref().unwrap().create_shader_module(ShaderModuleDescriptor {

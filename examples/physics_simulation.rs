@@ -47,7 +47,7 @@ fn setup(context: &mut Context) {
 
 fn update(context: &mut Context) {
     let mut query: Query = Query::new(&context.world).with_components::<Object>();
-    let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+    let entities: Vec<Entity> = query.get_entities_flex().unwrap();
 
     check_border_collision(context, &entities);
     check_object_collision(context, &entities);
@@ -69,7 +69,7 @@ fn spawn_border(context: &mut Context, orientation: Orientation, position: Vecto
 
 fn check_border_collision(context: &mut Context, entities: &Vec<Entity>) {
     let mut border_query: Query = Query::new(&context.world).with_components::<Border>();
-    let borders: Vec<Entity> = border_query.get_entities_ids_flex().unwrap();
+    let borders: Vec<Entity> = border_query.get_entities_flex().unwrap();
 
     for entity in entities {
         let mut velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(entity).unwrap();
@@ -120,6 +120,6 @@ fn move_objects(context: &mut Context, entities: &Vec<Entity>) {
         let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(entity).unwrap();
 
         let new_position: Vector2<f32> = transform.position + velocity.value * context.delta;
-        transform.set_position(&context, new_position);
+        transform.set_position(&context.render_state, new_position);
     }
 }

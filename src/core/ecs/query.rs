@@ -5,7 +5,7 @@ use super::{
         World
     },
     component::Component,
-    entitiy::Entity
+    entity::Entity
 };
 
 /// Struct to represent the querys made on the world.
@@ -40,8 +40,8 @@ impl<'a> Query<'a> {
         return Some(results);
     }
 
-    /// Returns entities ids by the components of a archetype in a flexible way.
-    pub fn get_entities_ids_flex(&'a mut self) -> Option<Vec<Entity>> {
+    /// Returns entities by the components of a archetype in a flexible way.
+    pub fn get_entities_flex(&'a mut self) -> Option<Vec<Entity>> {
         let mut results: Vec<Entity> = Vec::new();
 
         for (_, archetype) in &self.world.archetypes {

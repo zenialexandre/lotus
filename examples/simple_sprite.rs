@@ -21,7 +21,7 @@ fn setup(context: &mut Context) {
 
 fn update(context: &mut Context) {
     let mut query: Query = Query::new(&context.world).with_components::<Sprite>();
-    let results: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+    let results: Vec<Entity> = query.get_entities_flex().unwrap();
     let entity: &Entity = results.first().unwrap();
 
     let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();

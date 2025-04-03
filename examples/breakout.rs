@@ -79,21 +79,16 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let input: Input = {
-        let input_ref: Ref<'_, Input> = context.world.get_resource::<Input>().unwrap();
-        input_ref.clone()
-    };
-
     let mut player_query: Query = Query::new(&context.world).with_components::<Player>();
-    let player_entity: Entity = player_query.get_entities_ids_flex().unwrap().first().unwrap().clone();
+    let player_entity: Entity = player_query.get_entities_flex().unwrap().first().unwrap().clone();
 
     let mut little_ball_query: Query = Query::new(&context.world).with_components::<LittleBall>();
-    let little_ball_entity: Entity = little_ball_query.get_entities_ids_flex().unwrap().first().unwrap().clone();
+    let little_ball_entity: Entity = little_ball_query.get_entities_flex().unwrap().first().unwrap().clone();
 
     let mut thread_rng: ThreadRng = rand::rng();
     let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
 
-    move_player(context, input, player_entity);
+    move_player(context, player_entity);
     move_little_ball(context, little_ball_entity);
     check_player_little_ball_collision(context, player_entity, little_ball_entity, random_factor);
     check_little_ball_borders_collision(context, little_ball_entity, random_factor);
@@ -153,16 +148,17 @@ fn spawn_targets(context: &mut Context) {
     }
 }
 
-fn move_player(context: &mut Context, input: Input, player_entity: Entity) {
+fn move_player(context: &mut Context, player_entity: Entity) {
+    let input: Ref<'_, Input> = context.world.get_resource::<Input>().unwrap();
     let mut player_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut(&player_entity).unwrap();
     let player_velocity: Ref<'_, Velocity> = context.world.get_entity_component(&player_entity).unwrap();
 
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowRight)) {
         let x: f32 = player_transform.position.x + player_velocity.value.x * context.delta;
-        player_transform.set_position_x(context, x);
+        player_transform.set_position_x(&context.render_state, x);
     } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowLeft)) {
         let x: f32 = player_transform.position.x - player_velocity.value.x * context.delta;
-        player_transform.set_position_x(context, x);
+        player_transform.set_position_x(&context.render_state, x);
     }
 }
 
@@ -171,7 +167,7 @@ fn move_little_ball(context: &mut Context, little_ball_entity: Entity) {
     let little_ball_velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(&little_ball_entity).unwrap();
 
     let new_position: Vector2<f32> = little_ball_transform.position + little_ball_velocity.value * context.delta;
-    little_ball_transform.set_position(context, new_position);
+    little_ball_transform.set_position(&context.render_state, new_position);
 }
 
 fn check_player_little_ball_collision(context: &mut Context, player_entity: Entity, little_ball_entity: Entity, random_factor: f32) {
@@ -197,7 +193,7 @@ fn check_player_little_ball_collision(context: &mut Context, player_entity: Enti
 
 fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity: Entity, random_factor: f32) {
     let mut border_query: Query = Query::new(&context.world).with_components::<Border>();
-    let borders_entities: Vec<Entity> = border_query.get_entities_ids_flex().unwrap();
+    let borders_entities: Vec<Entity> = border_query.get_entities_flex().unwrap();
 
     let mut little_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
     let mut little_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
@@ -220,7 +216,7 @@ fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity
 
 fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity: Entity, random_factor: f32) {
     let mut targets_query: Query = Query::new(&context.world).with_components::<Target>();
-    let targets_entities: Vec<Entity> = targets_query.get_entities_ids_flex().unwrap();
+    let targets_entities: Vec<Entity> = targets_query.get_entities_flex().unwrap();
 
     let mut little_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
     let mut little_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
@@ -242,11 +238,11 @@ fn respawn_little_ball_after_outbounds(context: &mut Context, little_ball_entity
     let position_default: Vector2<f32> = Vector2::new(0.0, -0.25);
 
     if litte_ball_transform.position.y < -1.0 {
-        let mut little_ball_respawn_timer: RefMut<'_, LittleBallRespawnTimer> = context.world.get_resource_mut::<LittleBallRespawnTimer>().unwrap();
+        let mut little_ball_respawn_timer = context.world.get_resource_mut::<LittleBallRespawnTimer>().unwrap();
         little_ball_respawn_timer.0.tick(context.delta);
 
         if little_ball_respawn_timer.0.is_finished() {
-            litte_ball_transform.set_position(context, position_default);
+            litte_ball_transform.set_position(&context.render_state, position_default);
         }
     }
 }

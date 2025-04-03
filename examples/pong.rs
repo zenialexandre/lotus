@@ -125,7 +125,7 @@ fn update(context: &mut Context) {
     };
 
     let mut pong_ball_query: Query = Query::new(&context.world).with_components::<PongBall>();
-    let pong_ball_entities: Vec<Entity> = pong_ball_query.get_entities_ids_flex().unwrap();
+    let pong_ball_entities: Vec<Entity> = pong_ball_query.get_entities_flex().unwrap();
     let pong_ball: &Entity = pong_ball_entities.first().unwrap();
     let mut thread_rng: ThreadRng = rand::rng();
     let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
@@ -153,7 +153,7 @@ fn spawn_border(context: &mut Context, position: Vector2<f32>) {
 
 fn move_gray_racket(context: &mut Context, input: Input) {
     let mut query: Query = Query::new(&context.world).with_components::<GrayRacket>();
-    let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+    let entities: Vec<Entity> = query.get_entities_flex().unwrap();
     let gray_racket_entity: &Entity = entities.first().unwrap();
 
     let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(gray_racket_entity).unwrap();
@@ -162,17 +162,17 @@ fn move_gray_racket(context: &mut Context, input: Input) {
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyW)) {
         transform.position.y += velocity.value.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
-        transform.set_position(&context, new_position);
+        transform.set_position(&context.render_state, new_position);
     } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyS)) {
         transform.position.y -= velocity.value.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
-        transform.set_position(&context, new_position);
+        transform.set_position(&context.render_state, new_position);
     }
 }
 
 fn move_pink_racket(context: &mut Context, input: Input) {
     let mut query: Query = Query::new(&context.world).with_components::<PinkRacket>();
-    let entities: Vec<Entity> = query.get_entities_ids_flex().unwrap();
+    let entities: Vec<Entity> = query.get_entities_flex().unwrap();
     let pink_racket_entity: &Entity = entities.first().unwrap();
 
     let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pink_racket_entity).unwrap();
@@ -181,11 +181,11 @@ fn move_pink_racket(context: &mut Context, input: Input) {
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowUp)) {
         transform.position.y += velocity.value.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
-        transform.set_position(&context, new_position);
+        transform.set_position(&context.render_state, new_position);
     } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowDown)) {
         transform.position.y -= velocity.value.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
-        transform.set_position(&context, new_position);
+        transform.set_position(&context.render_state, new_position);
     }
 }
 
@@ -194,13 +194,13 @@ fn move_pong_ball(context: &mut Context, pong_ball: &Entity) {
     let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(&pong_ball).unwrap();
 
     let new_position: Vector2<f32> = transform.position + velocity.value * context.delta;
-    transform.set_position(context, new_position);
+    transform.set_position(&context.render_state, new_position);
 }
 
 fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, random_factor: f32) {
     let mut racket_query: Query = Query::new(&context.world).with_components::<Racket>();
-    let rackets: Vec<Entity> = racket_query.get_entities_ids_flex().unwrap();
-    let mut game_audio: RefMut<'_, GameAudio> = context.world.get_resource_mut::<GameAudio>().unwrap();
+    let rackets: Vec<Entity> = racket_query.get_entities_flex().unwrap();
+    let mut game_audio = context.world.get_resource_mut::<GameAudio>().unwrap();
 
     for racket in &rackets {
         let racket_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(racket).unwrap();
@@ -224,14 +224,14 @@ fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, rando
                 pong_ball_transform.position.x += 0.1;
             }
             let new_position: Vector2<f32> = Vector2::new(pong_ball_transform.position.x, pong_ball_transform.position.y);
-            pong_ball_transform.set_position(context, new_position);
+            pong_ball_transform.set_position(&context.render_state, new_position);
         }
     }
 }
 
 fn check_borders_ball_collision(context: &mut Context, pong_ball: &Entity, random_factor: f32) {
     let mut border_query: Query = Query::new(&context.world).with_components::<Border>();
-    let borders: Vec<Entity> = border_query.get_entities_ids_flex().unwrap();
+    let borders: Vec<Entity> = border_query.get_entities_flex().unwrap();
 
     for border in &borders {
         let border_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();
@@ -250,7 +250,7 @@ fn check_borders_ball_collision(context: &mut Context, pong_ball: &Entity, rando
                 pong_ball_transform.position.y += 0.1;
             }
             let new_position: Vector2<f32> = Vector2::new(pong_ball_transform.position.x, pong_ball_transform.position.y);
-            pong_ball_transform.set_position(context, new_position);
+            pong_ball_transform.set_position(&context.render_state, new_position);
         }
     }
 }
@@ -260,11 +260,11 @@ fn respawn_pong_ball_after_outbounds(context: &mut Context, pong_ball: &Entity) 
     let position_default: Vector2<f32> = Vector2::new(0.0, 0.0);
 
     if pong_ball_transform.position.x > 2.0 || pong_ball_transform.position.x < -2.0 {
-        let mut pong_ball_respawn_timer: RefMut<'_, PongBallRespawnTimer> = context.world.get_resource_mut::<PongBallRespawnTimer>().unwrap();
+        let mut pong_ball_respawn_timer = context.world.get_resource_mut::<PongBallRespawnTimer>().unwrap();
         pong_ball_respawn_timer.0.tick(context.delta);
 
         if pong_ball_respawn_timer.0.is_finished() {
-            pong_ball_transform.set_position(context, position_default);
+            pong_ball_transform.set_position(&context.render_state, position_default);
         }
     }
 }
