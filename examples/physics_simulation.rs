@@ -1,5 +1,4 @@
 use lotus_engine::*;
-use std::cell::{Ref, RefMut};
 use rand::{rng, rngs::ThreadRng, Rng};
 
 #[derive(Clone, Component)]
@@ -72,14 +71,14 @@ fn check_border_collision(context: &mut Context, entities: &Vec<Entity>) {
     let borders: Vec<Entity> = border_query.get_entities_flex().unwrap();
 
     for entity in entities {
-        let mut velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(entity).unwrap();
-        let collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(entity).unwrap();
+        let mut velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(entity).unwrap();
+        let collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(entity).unwrap();
 
         for border in &borders {
-            let border_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&border).unwrap();
+            let border_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&border).unwrap();
     
             if Collision::check(CollisionAlgorithm::Aabb, &collision, &border_collision) {
-                let border_transform: Ref<'_, Transform> = context.world.get_entity_component::<Transform>(&border).unwrap();
+                let border_transform: ComponentRef<'_, Transform> = context.world.get_entity_component::<Transform>(&border).unwrap();
     
                 if border_transform.position.x.abs() < border_transform.position.y.abs() {
                     velocity.value.y *= -1.0;
@@ -94,12 +93,12 @@ fn check_border_collision(context: &mut Context, entities: &Vec<Entity>) {
 
 fn check_object_collision(context: &mut Context, entities: &Vec<Entity>) {
     for (index, entity) in entities.iter().enumerate() {
-        let mut velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(entity).unwrap();
-        let collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(entity).unwrap();
+        let mut velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(entity).unwrap();
+        let collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(entity).unwrap();
 
         if let Some(next_entity) = entities.get(index + 1) {
-            let mut next_entity_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(next_entity).unwrap();
-            let next_entity_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(next_entity).unwrap();
+            let mut next_entity_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(next_entity).unwrap();
+            let next_entity_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(next_entity).unwrap();
 
             if Collision::check(CollisionAlgorithm::Aabb, &collision, &next_entity_collision) {
                 let mut thread_rng: ThreadRng = rng();
@@ -116,8 +115,8 @@ fn check_object_collision(context: &mut Context, entities: &Vec<Entity>) {
 
 fn move_objects(context: &mut Context, entities: &Vec<Entity>) {
     for entity in entities {
-        let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
-        let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(entity).unwrap();
+        let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
+        let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(entity).unwrap();
 
         let new_position: Vector2<f32> = transform.position + velocity.value * context.delta;
         transform.set_position(&context.render_state, new_position);

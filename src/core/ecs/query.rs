@@ -1,4 +1,6 @@
-use std::{any::TypeId, cell::RefMut};
+use std::any::TypeId;
+use atomic_refcell::AtomicRefMut;
+
 use super::{
     world::{
         Archetype,
@@ -27,10 +29,10 @@ impl<'a> Query<'a> {
     }
 
     /// Returns entities by the exact components as mutables of a archetype.
-    pub fn get_entities_by_components_mut_exact(&'a mut self) -> Option<Vec<(Entity, Vec<RefMut<'a, Box<dyn Component>>>)>> {
+    pub fn get_entities_by_components_mut_exact(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
         let archetype_unique_key: u64 = self.world.get_archetype_unique_key(&mut self.parameters);
         let archetype: &Archetype = self.world.archetypes.get(&archetype_unique_key)?;
-        let mut results: Vec<(Entity, Vec<RefMut<'_, Box<dyn Component>>>)> = Vec::new();
+        let mut results: Vec<(Entity, Vec<AtomicRefMut<'_, Box<dyn Component>>>)> = Vec::new();
 
         for entity in &archetype.entities {
             if let Some(components) = self.world.get_entity_components_mut(entity) {
@@ -55,10 +57,10 @@ impl<'a> Query<'a> {
     }
 
     /// Returns entities by the components as mutables of a archetype in a flexible way.
-    pub fn get_entities_by_components_mut_flex(&'a mut self) -> Option<Vec<(Entity, Vec<RefMut<'a, Box<dyn Component>>>)>> {
+    pub fn get_entities_by_components_mut_flex(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
         for (_, archetype) in &self.world.archetypes {
             if self.parameters.iter().all(|param| archetype.components.contains_key(param)) {
-                let mut results: Vec<(Entity, Vec<RefMut<'_, Box<dyn Component>>>)> = Vec::new();
+                let mut results: Vec<(Entity, Vec<AtomicRefMut<'_, Box<dyn Component>>>)> = Vec::new();
     
                 for entity in &archetype.entities {
                     if let Some(components) = self.world.get_entity_components_mut(entity) {
@@ -72,8 +74,8 @@ impl<'a> Query<'a> {
     }
 
     /// Returns all entites by components as mutables in a flexible way.
-    pub fn get_all_entities_by_componenets_mut_flex(&'a mut self) -> Option<Vec<(Entity, Vec<RefMut<'a, Box<dyn Component>>>)>> {
-        let mut results: Vec<(Entity, Vec<RefMut<'_, Box<dyn Component>>>)> = Vec::new();
+    pub fn get_all_entities_by_componenets_mut_flex(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
+        let mut results: Vec<(Entity, Vec<AtomicRefMut<'_, Box<dyn Component>>>)> = Vec::new();
 
         for (_, archetype) in &self.world.archetypes {
             if self.parameters.iter().all(|param| archetype.components.contains_key(param)) {    

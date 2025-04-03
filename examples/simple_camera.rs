@@ -1,5 +1,4 @@
 use lotus_engine::*;
-use std::cell::{Ref, RefMut};
 
 your_game!(
     WindowConfiguration::default(),
@@ -35,8 +34,8 @@ fn update(context: &mut Context) {
     let mut camera2d: ResourceRefMut<'_, Camera2d> = context.world.get_resource_mut::<Camera2d>().unwrap();
     camera2d.set_target(player_entity);
 
-    let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(&player_entity).unwrap();
-    let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&player_entity).unwrap();
+    let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(&player_entity).unwrap();
+    let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&player_entity).unwrap();
 
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowRight)) {
         let x: f32 = transform.position.x + velocity.value.x * context.delta;

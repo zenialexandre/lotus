@@ -1,5 +1,4 @@
 use lotus_engine::*;
-use std::cell::RefMut;
 
 #[derive(Component)]
 struct MySquare();
@@ -60,7 +59,7 @@ fn update(context: &mut Context) {
     let entities: Vec<Entity> = query.get_entities_flex().unwrap();
 
     for entity in &entities {
-        let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
+        let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
         let rotation: f32 = transform.get_rotation() + 100.0 * context.delta;
         transform.set_rotation(&context.render_state, rotation);
     }

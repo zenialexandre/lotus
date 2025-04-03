@@ -1,5 +1,5 @@
 use lotus_engine::*;
-use std::{cell::{Ref, RefMut}, time::Duration};
+use std::time::Duration;
 use rand::{rngs::ThreadRng, Rng};
 
 #[derive(Clone, Component)]
@@ -154,8 +154,8 @@ fn spawn_targets(context: &mut Context) {
 }
 
 fn move_player(context: &mut Context, input: Input, player_entity: Entity) {
-    let mut player_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut(&player_entity).unwrap();
-    let player_velocity: Ref<'_, Velocity> = context.world.get_entity_component(&player_entity).unwrap();
+    let mut player_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut(&player_entity).unwrap();
+    let player_velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component(&player_entity).unwrap();
 
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowRight)) {
         let x: f32 = player_transform.position.x + player_velocity.value.x * context.delta;
@@ -167,19 +167,19 @@ fn move_player(context: &mut Context, input: Input, player_entity: Entity) {
 }
 
 fn move_little_ball(context: &mut Context, little_ball_entity: Entity) {
-    let mut little_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
-    let little_ball_velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(&little_ball_entity).unwrap();
+    let mut little_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
+    let little_ball_velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(&little_ball_entity).unwrap();
 
     let new_position: Vector2<f32> = little_ball_transform.position + little_ball_velocity.value * context.delta;
     little_ball_transform.set_position(&context.render_state, new_position);
 }
 
 fn check_player_little_ball_collision(context: &mut Context, player_entity: Entity, little_ball_entity: Entity, random_factor: f32) {
-    let mut little_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
-    let mut little_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
-    let little_ball_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&little_ball_entity).unwrap();
+    let mut little_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
+    let mut little_ball_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
+    let little_ball_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&little_ball_entity).unwrap();
 
-    let player_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&player_entity).unwrap();
+    let player_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&player_entity).unwrap();
 
     if Collision::check(CollisionAlgorithm::Aabb, &player_collision, &little_ball_collision) {
         let relative_collision_position: Vector2<f32> = little_ball_collision.collider.position - player_collision.collider.position;
@@ -199,12 +199,12 @@ fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity
     let mut border_query: Query = Query::new(&context.world).with_components::<Border>();
     let borders_entities: Vec<Entity> = border_query.get_entities_flex().unwrap();
 
-    let mut little_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
-    let mut little_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
-    let little_ball_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&little_ball_entity).unwrap();
+    let mut little_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
+    let mut little_ball_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
+    let little_ball_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&little_ball_entity).unwrap();
 
     for border in &borders_entities {
-        let border_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();
+        let border_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &little_ball_collision, &border_collision) {
             if border_collision.collider.position.x > 0.0 {
@@ -222,12 +222,12 @@ fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity:
     let mut targets_query: Query = Query::new(&context.world).with_components::<Target>();
     let targets_entities: Vec<Entity> = targets_query.get_entities_flex().unwrap();
 
-    let mut little_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
-    let mut little_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
-    let little_ball_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&little_ball_entity).unwrap();
+    let mut little_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
+    let mut little_ball_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
+    let little_ball_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&little_ball_entity).unwrap();
 
     for target in &targets_entities {
-        let target_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(target).unwrap();
+        let target_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(target).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &little_ball_collision, &target_collision) {
             little_ball_velocity.value = Vector2::new(little_ball_velocity.value.x.signum(), -1.0 + random_factor).normalize() * little_ball_velocity.value.magnitude();
@@ -238,7 +238,7 @@ fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity:
 }
 
 fn respawn_little_ball_after_outbounds(context: &mut Context, little_ball_entity: Entity) {
-    let mut litte_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
+    let mut litte_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
     let position_default: Vector2<f32> = Vector2::new(0.0, -0.25);
 
     if litte_ball_transform.position.y < -1.0 {

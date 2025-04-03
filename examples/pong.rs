@@ -1,6 +1,6 @@
 use lotus_engine::*;
 use rand::{rngs::ThreadRng, Rng};
-use std::{cell::{Ref, RefMut}, time::Duration};
+use std::time::Duration;
 
 #[derive(Component)]
 struct Border();
@@ -156,8 +156,8 @@ fn move_gray_racket(context: &mut Context, input: Input) {
     let entities: Vec<Entity> = query.get_entities_flex().unwrap();
     let gray_racket_entity: &Entity = entities.first().unwrap();
 
-    let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(gray_racket_entity).unwrap();
-    let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(gray_racket_entity).unwrap();
+    let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(gray_racket_entity).unwrap();
+    let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(gray_racket_entity).unwrap();
 
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyW)) {
         transform.position.y += velocity.value.y * context.delta;
@@ -175,8 +175,8 @@ fn move_pink_racket(context: &mut Context, input: Input) {
     let entities: Vec<Entity> = query.get_entities_flex().unwrap();
     let pink_racket_entity: &Entity = entities.first().unwrap();
 
-    let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pink_racket_entity).unwrap();
-    let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(pink_racket_entity).unwrap();
+    let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pink_racket_entity).unwrap();
+    let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(pink_racket_entity).unwrap();
     
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowUp)) {
         transform.position.y += velocity.value.y * context.delta;
@@ -190,8 +190,8 @@ fn move_pink_racket(context: &mut Context, input: Input) {
 }
 
 fn move_pong_ball(context: &mut Context, pong_ball: &Entity) {
-    let mut transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
-    let velocity: Ref<'_, Velocity> = context.world.get_entity_component::<Velocity>(&pong_ball).unwrap();
+    let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
+    let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(&pong_ball).unwrap();
 
     let new_position: Vector2<f32> = transform.position + velocity.value * context.delta;
     transform.set_position(&context.render_state, new_position);
@@ -200,15 +200,15 @@ fn move_pong_ball(context: &mut Context, pong_ball: &Entity) {
 fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, random_factor: f32) {
     let mut racket_query: Query = Query::new(&context.world).with_components::<Racket>();
     let rackets: Vec<Entity> = racket_query.get_entities_flex().unwrap();
-    let mut game_audio = context.world.get_resource_mut::<GameAudio>().unwrap();
+    let mut game_audio: ResourceRefMut<'_, GameAudio> = context.world.get_resource_mut::<GameAudio>().unwrap();
 
     for racket in &rackets {
-        let racket_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(racket).unwrap();
-        let racket_transform: Ref<'_, Transform> = context.world.get_entity_component::<Transform>(racket).unwrap();
+        let racket_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(racket).unwrap();
+        let racket_transform: ComponentRef<'_, Transform> = context.world.get_entity_component::<Transform>(racket).unwrap();
 
-        let pong_ball_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&pong_ball).unwrap();
-        let mut pong_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
-        let mut pong_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&pong_ball).unwrap();
+        let pong_ball_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&pong_ball).unwrap();
+        let mut pong_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
+        let mut pong_ball_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&pong_ball).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &racket_collision, &pong_ball_collision) {
             game_audio.0.play_static_sound("racket_hit".to_string()).ok();
@@ -234,12 +234,12 @@ fn check_borders_ball_collision(context: &mut Context, pong_ball: &Entity, rando
     let borders: Vec<Entity> = border_query.get_entities_flex().unwrap();
 
     for border in &borders {
-        let border_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();
-        let border_transform: Ref<'_, Transform> = context.world.get_entity_component::<Transform>(border).unwrap();
+        let border_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();
+        let border_transform: ComponentRef<'_, Transform> = context.world.get_entity_component::<Transform>(border).unwrap();
 
-        let pong_ball_collision: Ref<'_, Collision> = context.world.get_entity_component::<Collision>(&pong_ball).unwrap();
-        let mut pong_ball_velocity: RefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&pong_ball).unwrap();
-        let mut pong_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
+        let pong_ball_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&pong_ball).unwrap();
+        let mut pong_ball_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&pong_ball).unwrap();
+        let mut pong_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &border_collision, &pong_ball_collision) {
             if border_transform.position.y > 0.0 {
@@ -256,7 +256,7 @@ fn check_borders_ball_collision(context: &mut Context, pong_ball: &Entity, rando
 }
 
 fn respawn_pong_ball_after_outbounds(context: &mut Context, pong_ball: &Entity) {
-    let mut pong_ball_transform: RefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pong_ball).unwrap();
+    let mut pong_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pong_ball).unwrap();
     let position_default: Vector2<f32> = Vector2::new(0.0, 0.0);
 
     if pong_ball_transform.position.x > 2.0 || pong_ball_transform.position.x < -2.0 {

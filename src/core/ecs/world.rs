@@ -1,13 +1,12 @@
 use std::{
     any::TypeId,
-    cell::{Ref, RefCell, RefMut},
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     hash::{DefaultHasher, Hash, Hasher},
     marker::PhantomData,
     mem::take,
     sync::Arc
 };
-use atomic_refcell::{AtomicRefCell, AtomicRefMut};
+use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use cgmath::{Matrix4, Vector3};
 use uuid::Uuid;
 
@@ -18,15 +17,15 @@ use super::{
         managers::rendering_manager::RenderState,
         physics::{collision::Collision, transform::Transform}
     },
-    component::Component,
     entity::Entity,
-    resource::{Resource, ResourceRefMut, ResourceRef}
+    component::{Component, ComponentRefMut, ComponentRef, ComponentBorrowState},
+    resource::{Resource, ResourceRefMut, ResourceRef, ResourceBorrowState}
 };
 
 /// Struct to represent the different archetypes and/or clusters of data.
 pub struct Archetype {
     pub entities: Vec<Entity>,
-    pub components: HashMap<TypeId, Vec<RefCell<Box<dyn Component>>>>
+    pub components: HashMap<TypeId, Vec<AtomicRefCell<Box<dyn Component>>>>
 }
 
 impl Archetype {
@@ -39,7 +38,7 @@ impl Archetype {
     }
 
     /// Add a new entity to a archetype by its components.
-    pub fn add_entity(&mut self, entity: Entity, components: Vec<RefCell<Box<dyn Component>>>) {
+    pub fn add_entity(&mut self, entity: Entity, components: Vec<AtomicRefCell<Box<dyn Component>>>) {
         self.entities.push(entity);
 
         for component in components {
@@ -51,52 +50,12 @@ impl Archetype {
     }
 }
 
-/// Struct to represent the actual borrowing state of the world resources.
-pub struct BorrowState {
-    immutable_borrows: HashSet<TypeId>,
-    mutable_borrows: HashSet<TypeId>
-}
-
-impl BorrowState {
-    fn new() -> Self {
-        return Self {
-            immutable_borrows: HashSet::new(),
-            mutable_borrows: HashSet::new()
-        };
-    }
-
-    fn try_borrow_immutable(&mut self, type_id: TypeId) -> bool {
-        if self.mutable_borrows.contains(&type_id) {
-            return false;
-        } else {
-            self.immutable_borrows.insert(type_id);
-            return true;
-        }
-    }
-
-    fn try_borrow_mutable(&mut self, type_id: TypeId) -> bool {
-        if self.immutable_borrows.contains(&type_id) || self.mutable_borrows.contains(&type_id) {
-            return false;
-        } else {
-            self.mutable_borrows.insert(type_id);
-            return true;
-        }
-    }
-
-    pub(crate) fn release_immutable(&mut self, type_id: TypeId) {
-        self.immutable_borrows.remove(&type_id);
-    }
-
-    pub(crate) fn release_mutable(&mut self, type_id: TypeId) {
-        self.mutable_borrows.remove(&type_id);
-    }
-}
-
 /// Struct to represent the World of the Entity-Component-System architecture.
 pub struct World {
     pub archetypes: HashMap<u64, Archetype>,
     pub resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>>,
-    borrow_state: AtomicRefCell<BorrowState>
+    pub resource_borrow_state: AtomicRefCell<ResourceBorrowState>,
+    pub component_borrow_state: AtomicRefCell<ComponentBorrowState>
 }
 
 impl World {
@@ -109,7 +68,8 @@ impl World {
         return Self {
             archetypes: HashMap::new(),
             resources,
-            borrow_state: BorrowState::new().into()
+            resource_borrow_state: ResourceBorrowState::new().into(),
+            component_borrow_state: ComponentBorrowState::new().into()
         };
     }
 
@@ -136,20 +96,20 @@ impl World {
     pub(crate) fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
 
-        let mut components_refs: Vec<RefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
+        let mut components_refs: Vec<AtomicRefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
         for component in components {
-            components_refs.push(RefCell::new(component));
+            components_refs.push(AtomicRefCell::new(component));
         }
 
         let has_transform: bool = components_refs.iter().any(|c| c.borrow().as_any().is::<Transform>());
         if !has_transform {
-            components_refs.push(RefCell::new(Box::new(Transform::default())));
+            components_refs.push(AtomicRefCell::new(Box::new(Transform::default())));
         }
         let mut components_types_ids: Vec<TypeId> = components_refs.iter().map(|c| c.borrow().type_id()).collect();
         let archetype_unique_key: u64 = self.get_archetype_unique_key(&mut components_types_ids);
         let archetype: &mut Archetype = self.archetypes.entry(archetype_unique_key).or_insert_with(Archetype::new);
 
-        let moved_components: Vec<RefCell<Box<dyn Component>>> = take(&mut components_refs);
+        let moved_components: Vec<AtomicRefCell<Box<dyn Component>>> = take(&mut components_refs);
         archetype.add_entity(entity, moved_components);
         render_state.add_entity_to_render(entity);
 
@@ -182,8 +142,8 @@ impl World {
                 archetype.components.get(&TypeId::of::<Collision>())
             ) {
                 for (transform, collision) in transforms.iter().zip(collisions) {
-                    let transform: Ref<'_, Box<dyn Component>> = transform.borrow();
-                    let mut collision: RefMut<'_, Box<dyn Component>> = collision.borrow_mut();
+                    let transform: AtomicRef<'_, Box<dyn Component>> = transform.borrow();
+                    let mut collision: AtomicRefMut<'_, Box<dyn Component>> = collision.borrow_mut();
 
                     if let Some(collision) = collision.as_any_mut().downcast_mut::<Collision>() {
                         let transform: &Transform = transform.as_any().downcast_ref::<Transform>().unwrap();
@@ -260,18 +220,18 @@ impl World {
     /// Return an immutable reference to the specified resource
     pub fn get_resource<T: Resource + 'static>(&self) -> Option<ResourceRef<T>> {
         let type_id: TypeId = TypeId::of::<T>();
-        let mut borrow_state: AtomicRefMut<'_, BorrowState> = self.borrow_state.borrow_mut();
+        let mut resource_borrow_state: AtomicRefMut<'_, ResourceBorrowState> = self.resource_borrow_state.borrow_mut();
 
-        if borrow_state.try_borrow_immutable(type_id) {
+        if resource_borrow_state.try_borrow_immutable(type_id) {
             if let Some(resource) = self.resources.get(&type_id) {
                 return Some(ResourceRef {
                     inner: resource.borrow(),
                     type_id,
-                    borrow_state: &self.borrow_state,
+                    resource_borrow_state: &self.resource_borrow_state,
                     phantom_data: PhantomData
                 });
             } else {
-                borrow_state.release_immutable(type_id);
+                resource_borrow_state.release_immutable(type_id);
                 return None;
             }
         } else {
@@ -282,20 +242,20 @@ impl World {
     /// Return a mutable reference to the specified resource
     pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<ResourceRefMut<T>> {
         let type_id: TypeId = TypeId::of::<T>();
-        let mut borrow_state: AtomicRefMut<'_, BorrowState> = self.borrow_state.borrow_mut();
+        let mut resource_borrow_state: AtomicRefMut<'_, ResourceBorrowState> = self.resource_borrow_state.borrow_mut();
 
-        if borrow_state.try_borrow_mutable(type_id) {
+        if resource_borrow_state.try_borrow_mutable(type_id) {
             if let Some(resource) = self.resources.get(&type_id) {
                 return Some(
                     ResourceRefMut {
                         inner: resource.borrow_mut(),
                         type_id,
-                        borrow_state: &self.borrow_state,
+                        resource_borrow_state: &self.resource_borrow_state,
                         phantom_data: PhantomData
                     }  
                 );
             } else {
-                borrow_state.release_mutable(type_id);
+                resource_borrow_state.release_mutable(type_id);
                 return None;
             }
         } else {
@@ -303,38 +263,60 @@ impl World {
         }
     }
 
-    /// Return a specific component from a entity.
-    pub fn get_entity_component<T: Component + 'static>(&self, entity: &Entity) -> Option<Ref<'_, T>> {
+    /// Return a specific component from an entity.
+    pub fn get_entity_component<T: Component + 'static>(&self, entity: &Entity) -> Option<ComponentRef<'_, T>> {
         for archetype in self.archetypes.values() {
             if archetype.entities.contains(entity) {
                 let type_id: TypeId = TypeId::of::<T>();
+                let mut component_borrow_state: AtomicRefMut<'_, ComponentBorrowState> = self.component_borrow_state.borrow_mut();
 
-                if let Some(components) = archetype.components.get(&type_id) {
-                    if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
-                        return Some(Ref::map(
-                            components[index].borrow(),
-                            |component| component.as_any().downcast_ref::<T>().unwrap()
-                        ));
+                if component_borrow_state.try_borrow_immutable(type_id, entity.0) {
+                    if let Some(components) = archetype.components.get(&type_id) {
+                        if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
+                            return Some(ComponentRef {
+                                inner: components[index].borrow(),
+                                type_id,
+                                entity_id: entity.0,
+                                component_borrow_state: &self.component_borrow_state,
+                                phantom_data: std::marker::PhantomData
+                            });
+                        } else {
+                            component_borrow_state.release_immutable(type_id, entity.0);
+                            return None;
+                        }
                     }
+                } else {
+                    return None;
                 }
             }
         }
         return None;
     }
 
-    /// Return a specific component from a entity as mutable.
-    pub fn get_entity_component_mut<T: Component + 'static>(&self, entity: &Entity) -> Option<RefMut<'_, T>> {
+    /// Return a specific component from an entity as mutable.
+    pub fn get_entity_component_mut<T: Component + 'static>(&self, entity: &Entity) -> Option<ComponentRefMut<'_, T>> {
         for archetype in self.archetypes.values() {
             if archetype.entities.contains(entity) {
                 let type_id: TypeId = TypeId::of::<T>();
+                let mut component_borrow_state: AtomicRefMut<'_, ComponentBorrowState> = self.component_borrow_state.borrow_mut();
 
-                if let Some(components) = archetype.components.get(&type_id) {
-                    if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
-                        return Some(RefMut::map(
-                            components[index].borrow_mut(),
-                            |component| component.as_any_mut().downcast_mut::<T>().unwrap()
-                        ));
+                if component_borrow_state.try_borrow_mutable(type_id, entity.0) {
+                    if let Some(components) = archetype.components.get(&type_id) {
+                        if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
+                            return Some(ComponentRefMut {
+                                inner: components[index].borrow_mut(),
+                                type_id,
+                                entity_id: entity.0,
+                                component_borrow_state: &self.component_borrow_state,
+                                phantom_data: std::marker::PhantomData
+                            });
+                        } else {
+                            component_borrow_state.release_mutable(type_id, entity.0);
+                            return None;
+                        }
                     }
+                } else {
+                    return None;
                 }
             }
         }
@@ -342,14 +324,14 @@ impl World {
     }
 
     /// Return all the components from a specific entity.
-    pub fn get_entity_components<'a>(&'a self, entity: &'a Entity) -> Option<Vec<Ref<'a, Box<dyn Component>>>> {
+    pub fn get_entity_components<'a>(&'a self, entity: &'a Entity) -> Option<Vec<AtomicRef<'a, Box<dyn Component>>>> {
         if let Some((_, archetype)) = self.archetypes.iter().find(|(_, arch)| arch.entities.contains(entity)) {
             if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
-                let mut entity_components: Vec<Ref<'a, Box<dyn Component>>> = Vec::new();
+                let mut entity_components: Vec<AtomicRef<'a, Box<dyn Component>>> = Vec::new();
     
                 for component_vec in archetype.components.values() {
                     if let Some(component) = component_vec.get(index) {
-                        let borrowed: Ref<'_, Box<dyn Component>> = component.borrow();
+                        let borrowed: AtomicRef<'_, Box<dyn Component>> = component.borrow();
                         entity_components.push(borrowed);
                     }
                 }
@@ -360,14 +342,14 @@ impl World {
     }
 
     /// Return all the components from a specific entity as mutables.
-    pub fn get_entity_components_mut<'a>(&'a self, entity: &'a Entity) -> Option<Vec<RefMut<'a, Box<dyn Component>>>> {
+    pub fn get_entity_components_mut<'a>(&'a self, entity: &'a Entity) -> Option<Vec<AtomicRefMut<'a, Box<dyn Component>>>> {
         if let Some((_, archetype)) = self.archetypes.iter().find(|(_, arch)| arch.entities.contains(entity)) {
             if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
-                let mut entity_components: Vec<RefMut<'a, Box<dyn Component>>> = Vec::new();
+                let mut entity_components: Vec<AtomicRefMut<'a, Box<dyn Component>>> = Vec::new();
     
                 for component_vec in archetype.components.values() {
                     if let Some(component) = component_vec.get(index) {
-                        let borrowed: RefMut<'_, Box<dyn Component>> = component.borrow_mut();
+                        let borrowed: AtomicRefMut<'_, Box<dyn Component>> = component.borrow_mut();
                         entity_components.push(borrowed);
                     }
                 }

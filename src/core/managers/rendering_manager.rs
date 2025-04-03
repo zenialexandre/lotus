@@ -1,7 +1,8 @@
+use atomic_refcell::AtomicRefMut;
 use cgmath::{ortho, Matrix4, SquareMatrix};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 use wgpu::{*, util::{BufferInitDescriptor, DeviceExt}};
-use std::{cell::RefMut, collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use super::super::{
     color,
@@ -376,7 +377,7 @@ impl RenderState {
 
             for entity in self.entities_to_render.clone() {
                 if world.is_entity_alive(entity) {
-                    let components: Vec<RefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
+                    let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
 
                     if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
                         let transform: Option<&Transform> = components.iter()
