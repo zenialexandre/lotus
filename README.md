@@ -100,5 +100,5 @@ As a brief overview:
 ----------------
 
 ## Engine architecture overview
-<br><br>
+<br>
 ![lotus_diagram_v2](https://github.com/user-attachments/assets/54bdfcd8-0f00-4f87-a194-b1c879327c5f)
