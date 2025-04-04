@@ -95,6 +95,8 @@ As a brief overview:
 - The World can store multiple Archetypes, Entities, Components and Resources!
 - And all of them can be queried using the *Query* struct.
 
+# The architecture diagram:<br>
+![lotus_ecs_diagram](https://github.com/user-attachments/assets/257d9600-7c0e-493d-9c4c-34d5fdf0ff3d)
 ----------------
 
 ## The base diagram
