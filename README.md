@@ -93,11 +93,12 @@ As a brief overview:
 - Entities are stored in what is called as *Archetypes* in our World.
 - Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.
 - The World can store multiple Archetypes, Entities, Components and Resources!
-- And all of them can be queried using the *Query* struct.<br>
+- And all of them can be queried using the *Query* struct.
+<br><br>
 ![lotus_ecs_diagramv2](https://github.com/user-attachments/assets/e92130c7-26fb-4747-a1da-fdafe3a7fc70)
 
 ----------------
 
 ## Engine architecture overview
-
+<br><br>
 ![lotus_diagram_v2](https://github.com/user-attachments/assets/54bdfcd8-0f00-4f87-a194-b1c879327c5f)
