@@ -79,5 +79,24 @@ cargo add lotus_engine
 cargo run
 ```
 ----------------
-The final goal of this project should be something similar to this architecture diagram:<br>
+
+## The Entity-Component-System paradigm
+
+Lotus uses a custom Entity-Component-System (ECS) archictecture.<br>
+You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1.2/lotus_engine/core/ecs/index.html).<br>
+
+As a brief overview:
+
+- Structs defined with the #[derive] macro *Component* are Components, that can be spawned in our World within an Entity.
+- Structs defined with the #[derive] macro *Resource* are Resources, that can be added to in our World.
+- *Entities* are defined by it's components and every entity has a unique ID.
+- Entities are stored in what is called as *Archetypes* in our World.
+- Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.
+- The World can store multiple Archetypes, Entities, Components and Resources!
+- And all of them can be queried using the *Query* struct.
+
+----------------
+
+## The base diagram
+
 ![lotus_diagram_v2](https://github.com/user-attachments/assets/54bdfcd8-0f00-4f87-a194-b1c879327c5f)
