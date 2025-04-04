@@ -2,10 +2,7 @@ use std::any::TypeId;
 use atomic_refcell::AtomicRefMut;
 
 use super::{
-    world::{
-        Archetype,
-        World
-    },
+    world::{Archetype, World},
     component::Component,
     entity::Entity
 };

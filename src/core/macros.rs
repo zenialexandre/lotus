@@ -1,4 +1,5 @@
-/// # Macro created to facilitate the game programming using the engine.
+/// # The your_game! macro.
+/// Macro created to facilitate the game programming using the engine.<br>
 /// If you do something like:
 /// ```
 /// use lotus_engine::*;
