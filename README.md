@@ -1,5 +1,6 @@
-![lotus_pink_128x128](https://github.com/user-attachments/assets/a07bb1df-5a89-456d-9f73-02d4261d0c96)
-----------------
+![lotus_pink_256x256](https://github.com/user-attachments/assets/e7bbd3cf-cef3-44dd-8125-cddf0f53bab8)
+--------------
+
 Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.  
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
 Heavily inspired by awesome open-source projects like [`Bevy`](https://github.com/bevyengine/bevy), [`Comfy`](https://github.com/darthdeus/comfy) and [`LÖVE`](https://github.com/love2d/love).
