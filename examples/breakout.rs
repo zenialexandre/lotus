@@ -23,6 +23,21 @@ impl LittleBallRespawnTimer {
     }
 }
 
+#[derive(Clone, Resource)]
+pub struct NextState(pub GameState);
+
+impl Default for NextState {
+    fn default() -> Self {
+        return Self(GameState::Stopped);
+    }
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum GameState {
+    Running,
+    Stopped
+}
+
 your_game!(
     WindowConfiguration {
         icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
@@ -47,11 +62,21 @@ your_game!(
 fn setup(context: &mut Context) {
     let player: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::PURPLE);
     let little_ball: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.2)), Color::BLACK);
+    let start_text: Text = Text::new(
+        Font::new(Fonts::RobotoMonoItalic.get_path(), 40.0),
+        Vector2::new(0.10, 0.50),
+        Color::PURPLE,
+        "Press 'Enter' to start the game!".to_string()
+    );
 
     let mut thread_rng: ThreadRng = rand::rng();
     let random_x_direction: f32 = thread_rng.random_range(-0.8..0.8);
 
-    context.world.add_resource(LittleBallRespawnTimer::new());
+    context.world.add_resources(vec![
+        Box::new(LittleBallRespawnTimer::new()),
+        Box::new(NextState::default())
+    ]);
+    context.commands.spawn(vec![Box::new(start_text)]);
 
     context.commands.spawn(
         vec![
@@ -67,7 +92,7 @@ fn setup(context: &mut Context) {
         vec![
             Box::new(little_ball),
             Box::new(LittleBall()),
-            Box::new(Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.10, 0.10))),
+            Box::new(Transform::new(Vector2::new(0.0, -0.5), 0.0, Vector2::new(0.10, 0.10))),
             Box::new(Velocity::new(Vector2::new(random_x_direction, -0.5))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
@@ -84,21 +109,33 @@ fn update(context: &mut Context) {
         input_ref.clone()
     };
 
-    let mut player_query: Query = Query::new(&context.world).with_components::<Player>();
-    let player_entity: Entity = player_query.get_entities_flex().unwrap().first().unwrap().clone();
+    if input.is_key_released(PhysicalKey::Code(KeyCode::Enter)) {
+        let mut next_state: ResourceRefMut<'_, NextState> = context.world.get_resource_mut::<NextState>().unwrap();
+        next_state.0 = GameState::Running;
+        
+        let mut query: Query = Query::new(&context.world).with_components::<Text>();
+        if let Some(entity) = query.get_entities_flex().unwrap().first() {
+            context.commands.despawn(entity.clone());
+        }
+    }
 
-    let mut little_ball_query: Query = Query::new(&context.world).with_components::<LittleBall>();
-    let little_ball_entity: Entity = little_ball_query.get_entities_flex().unwrap().first().unwrap().clone();
+    if context.world.get_resource::<NextState>().unwrap().0 == GameState::Running {
+        let mut player_query: Query = Query::new(&context.world).with_components::<Player>();
+        let player_entity: Entity = player_query.get_entities_flex().unwrap().first().unwrap().clone();
 
-    let mut thread_rng: ThreadRng = rand::rng();
-    let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
+        let mut little_ball_query: Query = Query::new(&context.world).with_components::<LittleBall>();
+        let little_ball_entity: Entity = little_ball_query.get_entities_flex().unwrap().first().unwrap().clone();
 
-    move_player(context, input, player_entity);
-    move_little_ball(context, little_ball_entity);
-    check_player_little_ball_collision(context, player_entity, little_ball_entity, random_factor);
-    check_little_ball_borders_collision(context, little_ball_entity, random_factor);
-    check_litte_ball_targets_collision(context, little_ball_entity, random_factor);
-    respawn_little_ball_after_outbounds(context, little_ball_entity);
+        let mut thread_rng: ThreadRng = rand::rng();
+        let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
+
+        move_player(context, input, player_entity);
+        move_little_ball(context, little_ball_entity);
+        check_player_little_ball_collision(context, player_entity, little_ball_entity, random_factor);
+        check_little_ball_borders_collision(context, little_ball_entity, random_factor);
+        check_litte_ball_targets_collision(context, little_ball_entity, random_factor);
+        respawn_little_ball_after_outbounds(context, little_ball_entity);
+    }
 }
 
 fn spawn_border(context: &mut Context, position: Vector2<f32>) {

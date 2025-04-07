@@ -49,6 +49,28 @@ And here are some more complex initial examples to demonstrate the engine's pote
 - **Rendering geometric forms:** [`examples/simple_shapes.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/simple_shapes.rs)
 - **Rendering sprites:** [`examples/simple_sprite.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/simple_sprite.rs)
 - **Simple physics simulation:** [`examples/physics_simulation.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/physics_simulation.rs)
+
+## The Entity-Component-System paradigm
+
+Lotus uses a custom Entity-Component-System (ECS) archictecture.<br>
+You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1.2/lotus_engine/core/ecs/index.html).<br>
+
+As a brief overview:
+
+- Structs defined with the derive macro *Component* are Components that can be spawned in our World within an Entity.
+- Structs defined with the derive macro *Resource* are Resources that can be added to in our World.
+- *Entities* are defined by it's components and every entity has a unique ID.
+- Entities are stored in what is called as *Archetypes* in our World.
+- Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.
+- The World can store multiple Archetypes, Entities, Components and Resources!
+- And all of them can be queried using the *Query* struct.
+<br><br>
+![Lotus ECS Diagram](https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_ecs_diagram_v2.png)
+
+----------------
+
+## Engine architecture overview
+![Lotus Architecture Diagram](https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_diagram_v2.png)
 "#]
 
 /// Module with the main features of the engine.
@@ -65,6 +87,7 @@ pub use core::color::*;
 pub use core::shape::*;
 pub use core::sprite::*;
 pub use core::input::*;
+pub use core::text::*;
 pub use core::camera::camera2d::*;
 pub use core::physics::transform::Transform;
 pub use core::physics::acceleration::*;

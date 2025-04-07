@@ -88,8 +88,8 @@ You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1
 
 As a brief overview:
 
-- Structs defined with the #[derive] macro *Component* are Components, that can be spawned in our World within an Entity.
-- Structs defined with the #[derive] macro *Resource* are Resources, that can be added to in our World.
+- Structs defined with the #derive macro *Component* are Components that can be spawned in our World within an Entity.
+- Structs defined with the #derive macro *Resource* are Resources that can be added to in our World.
 - *Entities* are defined by it's components and every entity has a unique ID.
 - Entities are stored in what is called as *Archetypes* in our World.
 - Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.

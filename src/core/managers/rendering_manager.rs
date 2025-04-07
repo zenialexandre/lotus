@@ -1,5 +1,7 @@
 use atomic_refcell::AtomicRefMut;
 use cgmath::{ortho, Matrix4, SquareMatrix};
+use uuid::Uuid;
+use wgpu_text::glyph_brush::Section;
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 use wgpu::{*, util::{BufferInitDescriptor, DeviceExt}};
 use std::{collections::HashMap, sync::Arc};
@@ -11,8 +13,9 @@ use super::super::{
     sprite::Sprite,
     texture,
     texture::TextureCache,
+    text::{TextRenderer, Text},
     camera::camera2d::Camera2d,
-    ecs::{entity::Entity, world::World, component::Component}
+    ecs::{entity::Entity, world::World, component::Component, resource::ResourceRef}
 };
 use crate::utils::constants::shader::{COLOR_SHADER, TEXTURE_SHADER};
 
@@ -79,6 +82,7 @@ pub struct RenderState {
     pub texture_bind_group_layout: Option<BindGroupLayout>,
     pub color_bind_group_layout: Option<BindGroupLayout>,
     pub entities_to_render: Vec<Entity>,
+    pub text_renderers: HashMap<Uuid, TextRenderer>,
     pub texture_cache: TextureCache,
     pub vertex_index_buffer_cache: VertexIndexBufferCache
 }
@@ -111,6 +115,7 @@ impl RenderState {
             texture_bind_group_layout: None,
             color_bind_group_layout: None,
             entities_to_render: Vec::new(),
+            text_renderers: HashMap::new(),
             texture_cache: TextureCache::new(),
             vertex_index_buffer_cache: VertexIndexBufferCache::new()
         };
@@ -182,6 +187,7 @@ impl RenderState {
             texture_bind_group_layout: None,
             color_bind_group_layout: None,
             entities_to_render: Vec::new(),
+            text_renderers: HashMap::new(),
             texture_cache: TextureCache::new(),
             vertex_index_buffer_cache: VertexIndexBufferCache::new()
         };
@@ -303,6 +309,15 @@ impl RenderState {
                     bytemuck::cast_slice(&[projection_matrix_unwrapped])
                 );
             }
+
+            if !self.text_renderers.is_empty() {
+                for text_renderer in &self.text_renderers {
+                    text_renderer.1.text_brush.update_matrix(
+                        wgpu_text::ortho(new_size.width as f32, new_size.height as f32),
+                        self.queue.as_ref().unwrap()
+                    );
+                }
+            }
         }
     }
 
@@ -336,6 +351,32 @@ impl RenderState {
 
     /// Execute the rendering process.
     pub fn render(&mut self, world: &World) -> Result<(), SurfaceError> {
+        let mut entities_of_text: Vec<Entity> = Vec::new();
+
+        for entity in self.entities_to_render.clone() {
+            if world.is_entity_alive(entity) {
+                if let Some(text_renderer) = self.text_renderers.get_mut(&entity.0) {
+                    let (x, y): (f32, f32) = text_renderer.text.get_position_as_pixels(&self.physical_size.as_ref().unwrap());
+                    entities_of_text.push(entity);
+
+                    text_renderer.text_brush.queue(
+                        self.device.as_ref().unwrap(),
+                        self.queue.as_ref().unwrap(),
+                        vec![Section {
+                            screen_position: (x, y),
+                            bounds: (self.physical_size.as_ref().unwrap().width as f32, self.physical_size.as_ref().unwrap().height as f32),
+                            text: vec![
+                                wgpu_text::glyph_brush::Text::new(&text_renderer.text.content)
+                                    .with_color(text_renderer.text.color.to_rgba())
+                                    .with_scale(text_renderer.text.font.size)
+                            ],
+                            ..Default::default()
+                        }]
+                    ).ok();
+                }
+            }
+        }
+
         let surface_texture: SurfaceTexture = self.surface.as_ref().unwrap().get_current_texture()?;
         let texture_view: TextureView = surface_texture.texture.create_view(&TextureViewDescriptor::default());
         let mut command_encoder: CommandEncoder = self.device.as_ref().unwrap().create_command_encoder(&CommandEncoderDescriptor {
@@ -343,6 +384,7 @@ impl RenderState {
         });
 
         {
+            let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
             let mut render_pass: RenderPass<'_> = command_encoder.begin_render_pass(&RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(RenderPassColorAttachment {
@@ -365,8 +407,6 @@ impl RenderState {
                 0.0,
                 1.0
             );
-
-            let camera2d = world.get_resource::<Camera2d>().unwrap();
 
             if let Some(background_image_path) = &self.background_image_path {
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
@@ -395,6 +435,15 @@ impl RenderState {
                         self.apply_render_pass_with_values(&mut render_pass, self.color_bind_group.as_ref().unwrap().clone());
                     }
                 }
+            }
+
+            for entity in entities_of_text {
+                let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
+                if components.iter().any(|component| component.as_any().is::<Text>()) {
+                    if let Some(text_renderer) = self.text_renderers.get(&entity.0) {
+                        text_renderer.text_brush.draw(&mut render_pass);
+                    }
+                }   
             }
         }
         self.queue.as_ref().unwrap().submit(std::iter::once(command_encoder.finish()));

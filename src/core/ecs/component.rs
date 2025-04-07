@@ -2,6 +2,13 @@ use std::{any::{Any, TypeId}, collections::HashSet, ops::{Deref, DerefMut}};
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use uuid::Uuid;
 
+/// The Component trait to annotate which structs are.
+pub trait Component: Any + Send + Sync {
+   fn as_any(&self) -> &dyn Any;
+
+   fn as_any_mut(&mut self) -> &mut dyn Any;
+}
+
 /// Struct to represent the actual borrowing state of the entities components.
 pub struct ComponentBorrowState {
    pub immutable_borrows: HashSet<(TypeId, Uuid)>,
@@ -45,13 +52,6 @@ impl ComponentBorrowState {
    pub fn release_mutable(&mut self, type_id: TypeId, entity_id: Uuid) {
       self.mutable_borrows.remove(&(type_id, entity_id));
    }
-}
-
-/// The Component trait to annotate which structs are.
-pub trait Component: Any + Send + Sync {
-   fn as_any(&self) -> &dyn Any;
-
-   fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
 /// Struct to represent the immutable reference of a component.

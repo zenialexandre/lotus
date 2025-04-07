@@ -14,6 +14,7 @@ use super::{
     super::{
         camera::camera2d::Camera2d,
         input::Input,
+        text::{Text, TextRenderer},
         managers::rendering_manager::RenderState,
         physics::{collision::Collision, transform::Transform}
     },
@@ -96,15 +97,24 @@ impl World {
     pub(crate) fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
 
+        if components.iter().any(|component| component.as_any().is::<Text>()) {
+            let text: &Text = components.iter()
+                .find_map(|component| component.as_any().downcast_ref::<Text>()
+            ).unwrap();
+
+            let text_renderer: TextRenderer = TextRenderer::new(render_state, &text);
+            render_state.text_renderers.insert(entity.0, text_renderer);
+        }
+
         let mut components_refs: Vec<AtomicRefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
         for component in components {
             components_refs.push(AtomicRefCell::new(component));
         }
 
-        let has_transform: bool = components_refs.iter().any(|c| c.borrow().as_any().is::<Transform>());
-        if !has_transform {
+        if !components_refs.iter().any(|component| component.borrow().as_any().is::<Transform>()) {
             components_refs.push(AtomicRefCell::new(Box::new(Transform::default())));
         }
+
         let mut components_types_ids: Vec<TypeId> = components_refs.iter().map(|c| c.borrow().type_id()).collect();
         let archetype_unique_key: u64 = self.get_archetype_unique_key(&mut components_types_ids);
         let archetype: &mut Archetype = self.archetypes.entry(archetype_unique_key).or_insert_with(Archetype::new);

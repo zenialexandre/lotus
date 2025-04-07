@@ -5,9 +5,10 @@ use winit::event_loop::ActiveEventLoop;
 
 use super::{
     engine::Context,
+    input::Input,
     camera::camera2d::Camera2d,
     managers::rendering_manager::RenderState,
-    ecs::{world::World, resource::ResourceRef}
+    ecs::{world::World, resource::{ResourceRef, ResourceRefMut}}
 };
 
 /// Enumerator to store the engine current state.
@@ -51,8 +52,8 @@ impl GameLoop {
 
     /// Run the engine loop to start the logic and rendering processes.
     pub fn run(&mut self, context: &mut Context, event_loop: &ActiveEventLoop) {
-        // Calculating the Delta
         let now: Instant = Instant::now();
+
         self.delta = now - self.previous_time_of_last_run;
         self.previous_time_of_last_run = now;
 
@@ -61,6 +62,10 @@ impl GameLoop {
         context.world.synchronize_transformations_with_collisions();
         context.world.synchronize_camera_with_target(&mut context.render_state);
         (self.update)(context);
+
+        let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+        input.update_hashes();
+
         self.render(&mut context.render_state, &context.world, event_loop);
 
         // FPS calculus.

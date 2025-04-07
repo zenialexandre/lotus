@@ -39,3 +39,6 @@ pub mod audio;
 
 /// Camera related features.
 pub mod camera;
+
+/// Text related features.
+pub mod text;
