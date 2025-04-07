@@ -69,7 +69,7 @@ As a brief overview:
 
 ----------------
 
-## Engine architecture overview
+## Engine Architecture Overview
 ![Lotus Architecture Diagram](https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_diagram_v2.png)
 "#]
 
