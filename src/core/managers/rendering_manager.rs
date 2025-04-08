@@ -33,10 +33,6 @@ impl VertexIndexBufferCache {
     }
 }
 
-struct _TextureBindGroupCache {}
-
-struct _ColorBindGroupCache {}
-
 /// Struct to represent the vertices that will be sent to the shader.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]

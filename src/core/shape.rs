@@ -22,7 +22,7 @@ impl Shape {
 }
 
 /// Struct to represent the specific characteristics of a circle.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Circle {
     pub number_of_segments: u16,
     pub radius: f32
@@ -46,7 +46,7 @@ pub enum Orientation {
 }
 
 /// Enumerator that represent the actual shape of the geometric form.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum GeometryType {
     Triangle,
     Square,

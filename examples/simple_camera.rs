@@ -9,6 +9,7 @@ your_game!(
 fn setup(context: &mut Context) {
     let player: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
     let secondary_sprite: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
+    let shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BURGUNDY);
 
     context.commands.spawn(
         vec![
@@ -21,6 +22,14 @@ fn setup(context: &mut Context) {
         vec![
             Box::new(secondary_sprite),
             Box::new(Transform::new(Vector2::new(-0.25, 0.0), 0.0, Vector2::new(0.25, 0.25)))
+        ]
+    );
+
+    context.commands.spawn(
+        vec![
+            Box::new(shape),
+            Box::new(Transform::new(Vector2::new(-0.50, 0.0), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(Velocity::new(Vector2::new(1.0, 1.0)))
         ]
     );
 }

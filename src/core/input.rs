@@ -30,7 +30,7 @@ impl Input {
         self.previous_mouse_buttons = self.pressed_mouse_buttons.clone();
     }
 
-    /// Returns if any key is pressed at the moment.
+    /// Returns if any keyboard key is pressed at the moment.
     pub fn is_some_key_pressed(&self) -> bool {
         return self.pressed_keys.len() > 0;
     }
@@ -40,14 +40,29 @@ impl Input {
         return self.pressed_keys.contains(&key);
     }
 
+    /// Returns if any mouse button is pressed at the moment.
+    pub fn is_some_mouse_button_pressed(&self) -> bool {
+        return self.pressed_mouse_buttons.len() > 0;
+    }
+
     /// Returns if a specific mouse button is pressed at the moment.
     pub fn is_mouse_button_pressed(&self, mouse_button: MouseButton) -> bool {
         return self.pressed_mouse_buttons.contains(&mouse_button);
     }
 
+    /// Returns if any keyboard key is released.
+    pub fn is_some_key_released(&self) -> bool {
+        return self.previous_pressed_keys.len() > 0;
+    }
+
     /// Returns if a specific keyboard key is released.
     pub fn is_key_released(&self, key: PhysicalKey) -> bool {
         return self.previous_pressed_keys.contains(&key) && !self.pressed_keys.contains(&key);
+    }
+
+    /// Returns if any mouse button is released.
+    pub fn is_some_mouse_button_released(&self) -> bool {
+        return self.previous_mouse_buttons.len() > 0;
     }
 
     /// Returns if a specific mouse button is released.
