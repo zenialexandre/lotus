@@ -53,7 +53,7 @@ And here are some more complex initial examples to demonstrate the engine's pote
 ## The Entity-Component-System paradigm
 
 Lotus uses a custom Entity-Component-System (ECS) archictecture.<br>
-You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1.2/lotus_engine/core/ecs/index.html).<br>
+You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1.4/lotus_engine/core/ecs/index.html).<br>
 
 As a brief overview:
 
