@@ -50,7 +50,7 @@ your_game!(
         transparent: false,
         visible: true,
         active: true,
-        enabled_buttons: winit::window::WindowButtons::CLOSE | winit::window::WindowButtons::MINIMIZE
+        enabled_buttons: WindowButtons::CLOSE | WindowButtons::MINIMIZE
     },
     setup,
     update
