@@ -7,7 +7,7 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let sprite: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
+    let sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
 
     context.commands.spawn(
         vec![

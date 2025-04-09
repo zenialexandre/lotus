@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use wgpu::{
     TextureView,
     TextureDescriptor,
@@ -23,6 +23,7 @@ use image::{
     DynamicImage
 };
 use anyhow::*;
+use super::asset_loader::AssetLoader;
 
 /// Struct to represent a texture to be used on the rendering process.
 pub struct Texture {
@@ -121,7 +122,7 @@ impl TextureCache {
     /// Add a texture to the cache and returns it afterwards.
     pub fn load_texture(&mut self, key: String, device: &Device, queue: &Queue) -> Option<Arc<Texture>> {
         if !self.textures.contains_key(&key) {
-            let image: DynamicImage = image::open(Path::new(&key)).unwrap();
+            let image: DynamicImage = image::load_from_memory(&AssetLoader::load_bytes(&key).ok().unwrap()).unwrap();
             let texture: Texture = Texture::from_image(device, queue, &image, Some(&key)).unwrap();
             let texture_arc: Arc<Texture> = Arc::new(texture);
             self.textures.insert(key.clone(), Arc::clone(&texture_arc));

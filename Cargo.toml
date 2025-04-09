@@ -1,12 +1,21 @@
 [package]
 name = "lotus_engine"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Alexandre Zeni <zenialexandre123@gmail.com>"]
 description = "Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games."
 license = "MPL-2.0"
 edition = "2021"
 repository = "https://github.com/zenialexandre/lotus"
 documentation = "https://docs.rs/lotus_engine"
+
+include = [
+    "src/assets/textures/lotus_pink_256x256.png",
+    "src/assets/fonts/Underdog-Regular.ttf",
+    "src/assets/fonts/Codystar-Light.ttf",
+    "src/assets/fonts/Codystar-Regular.ttf",
+    "src/assets/fonts/RobotoMono-VariableFont_wght.ttf",
+    "src/assets/fonts/RobotoMono-Italic-VariableFont_wght.ttf"
+]
 
 [dependencies]
 lotus_proc_macros = { path = "lotus_proc_macros", version = "0.1.1" }

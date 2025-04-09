@@ -35,22 +35,17 @@ impl Text {
 /// Struct to represent a font.
 #[derive(Clone)]
 pub struct Font {
-    pub path: String,
+    pub bytes: Vec<u8>,
     pub size: f32
 }
 
 impl Font {
     /// Create a new font struct.
-    pub fn new(path: String, size: f32) -> Self {
+    pub fn new(bytes: Vec<u8>, size: f32) -> Self {
         return Self {
-            path,
+            bytes,
             size
         };
-    }
-
-    /// Convert the font to bytes.
-    pub fn to_bytes(&self) -> Vec<u8> {
-        return std::fs::read(&self.path).expect(&format!("Unable to load font from path: {:?}", self.path));
     }
 }
 
@@ -66,14 +61,14 @@ pub enum Fonts {
 }
 
 impl Fonts {
-    /// Returns the path of the following font.
-    pub fn get_path(&self) -> String {
+    /// Returns the bytes of the following font.
+    pub fn get_bytes(&self) -> Vec<u8> {
         return match self {
-            Self::UnderdogRegular => "assets/fonts/Underdog-Regular.ttf".to_string(),
-            Self::CodystarLight => "assets/fonts/Codystar-Light.ttf".to_string(),
-            Self::CodystarRegular => "assets/fonts/Codystar-Regular.ttf".to_string(),
-            Self::RobotoMono => "assets/fonts/RobotoMono-VariableFont_wght.ttf".to_string(),
-            Self::RobotoMonoItalic => "assets/fonts/RobotoMono-Italic-VariableFont_wght.ttf".to_string()
+            Self::UnderdogRegular => include_bytes!("../assets/fonts/Underdog-Regular.ttf").to_vec(),
+            Self::CodystarLight => include_bytes!("../assets/fonts/Codystar-Light.ttf").to_vec(),
+            Self::CodystarRegular => include_bytes!("../assets/fonts/Codystar-Regular.ttf").to_vec(),
+            Self::RobotoMono => include_bytes!("../assets/fonts/RobotoMono-VariableFont_wght.ttf").to_vec(),
+            Self::RobotoMonoItalic => include_bytes!("../assets/fonts/RobotoMono-Italic-VariableFont_wght.ttf").to_vec()
         }
     }
 }
@@ -87,7 +82,7 @@ pub struct TextRenderer {
 impl TextRenderer {
     /// Create a new text renderer struct.
     pub fn new(render_state: &RenderState, text: &Text) -> Self {
-        let font: FontArc = FontArc::try_from_vec(text.font.to_bytes()).expect("Failed to load font.");
+        let font: FontArc = FontArc::try_from_vec(text.font.bytes.clone()).expect("Failed to load font.");
         let text_brush: TextBrush<FontArc> = BrushBuilder::using_font(font).build(
             &render_state.device.as_ref().unwrap(),
             render_state.physical_size.unwrap().width,

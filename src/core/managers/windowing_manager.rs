@@ -5,11 +5,12 @@ use winit::{
     window::{Window, WindowAttributes, WindowId, WindowButtons, Icon},
     dpi::{Size, Position, LogicalSize, LogicalPosition}
 };
-use std::{path::Path, sync::Arc};
+use std::sync::Arc;
 
 use super::{
     rendering_manager::RenderState,
     super::{
+        asset_loader::AssetLoader,
         camera::camera2d::Camera2d,
         ecs::{world::World, resource::{ResourceRef, ResourceRefMut}},
         color::Color,
@@ -42,7 +43,7 @@ impl Default for WindowConfiguration {
     /// Returns a default configuration.
     fn default() -> Self {
         return Self {
-            icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
+            icon_path: "textures/lotus_pink_256x256.png".to_string(),
             title: "New Game!".to_string(),
             background_color: Some(Color::WHITE),
             background_image_path: None,
@@ -61,9 +62,121 @@ impl Default for WindowConfiguration {
 }
 
 impl WindowConfiguration {
-    /// Returns a icon by its relative file path.
-    pub fn get_icon_by_path(icon_path: String) -> Option<Icon> {
-        if let Ok(image) = image::open(Path::new(icon_path.as_str())) {
+    /// Returns the window configuration with the icon as bytes.
+	pub fn icon_path(self, icon_path: String) -> Self {
+		return Self {
+			icon_path,
+			..self
+		};
+	}
+
+	/// Returns the window configuration with the title.
+	pub fn title(self, title: String) -> Self {
+		return Self {
+			title,
+			..self
+		};
+	}
+
+	/// Returns the window configuration with the background color.
+	pub fn background_color(self, background_color: Option<Color>) -> Self {
+		return Self {
+			background_color,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the background image.
+    pub fn background_image_path(self, background_image_path: Option<String>) -> Self {
+		return Self {
+			background_image_path,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the width.
+	pub fn width(self, width: f64) -> Self {
+		return Self {
+			width,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the height.
+	pub fn height(self, height: f64) -> Self {
+		return Self {
+			height,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the position x.
+	pub fn position_x(self, position_x: f64) -> Self {
+		return Self {
+			position_x,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the position y.
+	pub fn position_y(self, position_y: f64) -> Self {
+		return Self {
+			position_y,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the resizable.
+	pub fn resizable(self, resizable: bool) -> Self {
+		return Self {
+			resizable,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the decorations.
+	pub fn decorations(self, decorations: bool) -> Self {
+		return Self {
+			decorations,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the transparent.
+	pub fn transparent(self, transparent: bool) -> Self {
+		return Self {
+			transparent,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the visible.
+	pub fn visible(self, visible: bool) -> Self {
+		return Self {
+			visible,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the active.
+	pub fn active(self, active: bool) -> Self {
+		return Self {
+			active,
+			..self
+		};
+	}
+
+    /// Returns the window configuration with the enabled buttons.
+	pub fn enabled_buttons(self, enabled_buttons: WindowButtons) -> Self {
+		return Self {
+			enabled_buttons,
+			..self
+		};
+	}
+
+    /// Returns a icon by its relative bytes.
+    pub fn get_icon_by_bytes(icon_as_bytes: Vec<u8>) -> Option<Icon> {
+        if let Ok(image) = image::load_from_memory(&icon_as_bytes) {
             let icon_image = image.into_rgba8();
             let (icon_width, icon_height): (u32, u32) = icon_image.dimensions();
             let icon_rgba: Vec<u8> = icon_image.into_raw();
@@ -103,7 +216,9 @@ impl ApplicationHandler for Application {
             window_attributes.visible = window_configuration.visible;
             window_attributes.active = window_configuration.active;
             window_attributes.enabled_buttons = window_configuration.enabled_buttons;
-            window_attributes.window_icon = WindowConfiguration::get_icon_by_path(window_configuration.icon_path.clone());
+            window_attributes.window_icon = WindowConfiguration::get_icon_by_bytes(
+                AssetLoader::load_bytes(&window_configuration.icon_path).ok().unwrap()
+            );
 
             if let Some(background_color) = window_configuration.background_color {
                 color = Some(background_color);
@@ -187,6 +302,8 @@ pub async fn initialize_application(
     env_logger::init();
     let event_loop: EventLoop<()> = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
+
+    AssetLoader::new().ok();
 
     let mut application: Application = if let Some(window_configuration_unwrapped) = window_configuration {
         Application {

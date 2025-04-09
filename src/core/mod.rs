@@ -42,3 +42,6 @@ pub mod camera;
 
 /// Text related features.
 pub mod text;
+
+/// Asset loading related features.
+pub mod asset_loader;

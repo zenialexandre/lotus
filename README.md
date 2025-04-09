@@ -23,6 +23,43 @@ The `your_game!` macro only needs three parameters to make a game real.
 - The function should contain a mutable reference to the context as the parameter.
 - Should contain all the logic functions behind the game.
 
+## About assets
+
+Make sure your textures, fonts, sounds and all that nice stuff are inside of the **assets** folder located in the root of your project!<br>
+The engine will use the **CARGO_MANIFEST_DIR** to search for your assets and make sure that all is loaded correctly.<br>
+Your folder tree should look similar to this:<br>
+
+```shell
+my_awesome_2d_application/
+├── assets/
+│ ├── textures/
+│ ├── fonts/
+│ ├── sounds/
+│ └── ...
+├── src/
+│ ├── main.rs
+└── Cargo.toml
+```
+
+You should use your relative paths like this:
+
+```rust
+use lotus_engine::*;
+
+your_game!(
+    WindowConfiguration::default(),
+    setup,
+    update
+);
+
+fn setup(_context: &mut Context) {
+    // As you can see, you DON'T need to use 'assets/' in your relative path.
+    let sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
+}
+
+fn update(_context: &mut Context) {}
+```
+
 ## Examples
 
 The classic hello world:
@@ -30,7 +67,11 @@ The classic hello world:
 ```rust
 use lotus_engine::*;
 
-your_game!(WindowConfiguration::default(), setup, update);
+your_game!(
+    WindowConfiguration::default(),
+    setup,
+    update
+);
 
 fn setup(_context: &mut Context) {}
 
@@ -51,7 +92,8 @@ And here are some more complex initial examples to demonstrate the engine's pote
 
 ## Build Instructions
 ### Setting Up a Lotus Project
-Lotus is a normal rust dependency, therefore an empty lotus project is very easy to set up.
+
+Lotus is a normal rust dependency, therefore an empty Lotus project is very easy to set up.
 You should use the latest stable version of rustc or above.
 
 - To check which version you have downloaded, use:

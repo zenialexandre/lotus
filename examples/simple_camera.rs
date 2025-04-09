@@ -7,8 +7,8 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let player: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
-    let secondary_sprite: Sprite = Sprite::new("assets/textures/lotus_pink_256x256.png".to_string());
+    let player: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
+    let secondary_sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
     let shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BURGUNDY);
 
     context.commands.spawn(

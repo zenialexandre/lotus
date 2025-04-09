@@ -19,7 +19,10 @@ use kira::{
     Value
 };
 use lotus_proc_macros::Resource;
-use super::audio_error::AudioError;
+use super::{
+    super::asset_loader::AssetLoader,
+    audio_error::AudioError
+};
 
 /// Struct to abstract the configurations for all types of audio.
 pub struct AudioSettings {
@@ -183,8 +186,11 @@ impl AudioSource {
     /// Loads a static sound to the audio source.
     pub fn load_static_sound(&mut self, name: impl Into<String>, path: impl AsRef<Path>, audio_settings: AudioSettings) -> Result<(), AudioError> {
         self.check_sound_file_format(&path)?;
+        
 
-        let static_sound_data: StaticSoundData = StaticSoundData::from_file(path).map_err(AudioError::from)?;
+        let static_sound_data: StaticSoundData = StaticSoundData::from_file(
+            AssetLoader::get_path(path.as_ref().to_str().unwrap())
+        ).map_err(AudioError::from)?;
         self.static_sounds.insert(name.into(), static_sound_data.with_settings(audio_settings.convert_to_static()).clone());
         return Ok(()).map_err(AudioError::from);
     }
@@ -193,7 +199,9 @@ impl AudioSource {
     pub fn load_streaming_sound(&mut self, name: impl Into<String>, path: impl AsRef<Path>, audio_settings: AudioSettings) -> Result<(), AudioError> {
         self.check_sound_file_format(&path)?;
 
-        let streaming_sound_data: StreamingSoundData<FromFileError> = StreamingSoundData::from_file(path).map_err(AudioError::from)?;
+        let streaming_sound_data: StreamingSoundData<FromFileError> = StreamingSoundData::from_file(
+            AssetLoader::get_path(path.as_ref().to_str().unwrap())
+        ).map_err(AudioError::from)?;
         self.streaming_sounds.insert(name.into(), streaming_sound_data.with_settings(audio_settings.convert_to_streaming()));
         return Ok(()).map_err(AudioError::from);
     }
@@ -209,7 +217,9 @@ impl AudioSource {
     /// Plays a streaming sound from the audio source.
     pub fn play_streaming_sound(&mut self, name: String) -> Result<(), AudioError> {
         if let Some(streaming_sound_data) = self.streaming_sounds.remove(&name) {
-            let stremaing_sound_handle: StreamingSoundHandle<FromFileError> = self.audio_manager.play::<StreamingSoundData<FromFileError>>(streaming_sound_data).map_err(AudioError::from_play_sound_error)?;
+            let stremaing_sound_handle: StreamingSoundHandle<FromFileError> = self.audio_manager
+                .play::<StreamingSoundData<FromFileError>>(streaming_sound_data)
+                .map_err(AudioError::from_play_sound_error)?;
             self.streaming_handles.insert(name.clone(), stremaing_sound_handle);
         }
         return Ok(()).map_err(AudioError::from);

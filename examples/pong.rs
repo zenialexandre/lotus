@@ -37,10 +37,10 @@ impl Default for GameAudio {
 
 your_game!(
     WindowConfiguration {
-        icon_path: "assets/textures/lotus_pink_256x256.png".to_string(),
+        icon_path: "textures/pong/pink_racket_256x256.png".to_string(),
         title: "Pong Game :)".to_string(),
         background_color: None,
-        background_image_path: Some("assets/textures/pong/pong_background_960x600.png".to_string()),
+        background_image_path: Some("textures/pong/pong_background_960x600.png".to_string()),
         width: 960.0,
         height: 600.0,
         position_x: 200.0,
@@ -57,21 +57,21 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let gray_racket_sprite: Sprite = Sprite::new("assets/textures/pong/gray_racket_256x256.png".to_string());
-    let pink_racket_sprite: Sprite = Sprite::new("assets/textures/pong/pink_racket_256x256.png".to_string());
-    let pong_ball_sprite: Sprite = Sprite::new("assets/textures/pong/pong_ball_left_256x256.png".to_string());
+    let gray_racket_sprite: Sprite = Sprite::new("textures/pong/gray_racket_256x256.png".to_string());
+    let pink_racket_sprite: Sprite = Sprite::new("textures/pong/pink_racket_256x256.png".to_string());
+    let pong_ball_sprite: Sprite = Sprite::new("textures/pong/pong_ball_left_256x256.png".to_string());
 
     let mut game_audio: GameAudio = GameAudio::default();
     game_audio.0.load_streaming_sound(
         "game_music",
-        "assets/audio/pong/soundtrack/arcade_music.ogg",
+        "audio/pong/soundtrack/arcade_music.ogg",
         AudioSettings::default().loop_region(..).volume(Value::Fixed(Decibels(-10.0)))
     ).ok();
     game_audio.0.play_streaming_sound("game_music".to_string()).ok();
 
     game_audio.0.load_static_sound(
         "racket_hit",
-        "assets/audio/pong/effect/pong_hit.wav",
+        "audio/pong/effect/pong_hit.wav",
         AudioSettings::default()
     ).ok();
 
