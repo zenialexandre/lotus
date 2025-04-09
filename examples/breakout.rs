@@ -63,7 +63,7 @@ fn setup(context: &mut Context) {
     let player: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::PURPLE);
     let little_ball: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.2)), Color::BLACK);
     let start_text: Text = Text::new(
-        Font::new(Fonts::RobotoMonoItalic.get_bytes(), 40.0),
+        Font::new(Fonts::RobotoMonoItalic.get_path(), 40.0),
         Vector2::new(0.10, 0.50),
         Color::PURPLE,
         "Press 'Enter' to start the game!".to_string()

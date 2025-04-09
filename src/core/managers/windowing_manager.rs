@@ -303,8 +303,6 @@ pub async fn initialize_application(
     let event_loop: EventLoop<()> = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
 
-    AssetLoader::new().ok();
-
     let mut application: Application = if let Some(window_configuration_unwrapped) = window_configuration {
         Application {
             window: None,

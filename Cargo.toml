@@ -22,6 +22,7 @@ anyhow = "1.0.97"
 uuid = { version = "1.16.0", features = ["v4"] }
 rand = "0.9.0"
 atomic_refcell = "0.1"
+once_cell = "1.21.3"
 env_logger = "0.11.8"
 log = "0.4.27"
 

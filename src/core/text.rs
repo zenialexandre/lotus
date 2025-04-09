@@ -2,7 +2,7 @@ use cgmath::Vector2;
 use lotus_proc_macros::Component;
 use wgpu_text::{glyph_brush::ab_glyph::FontArc, BrushBuilder, TextBrush};
 use winit::dpi::PhysicalSize;
-use super::{color::Color, managers::rendering_manager::RenderState};
+use super::{color::Color, asset_loader::AssetLoader, managers::rendering_manager::RenderState};
 
 /// Struct to represent a text to be rendered.
 #[derive(Clone, Component)]
@@ -41,9 +41,9 @@ pub struct Font {
 
 impl Font {
     /// Create a new font struct.
-    pub fn new(bytes: Vec<u8>, size: f32) -> Self {
+    pub fn new(path: String, size: f32) -> Self {
         return Self {
-            bytes,
+            bytes: AssetLoader::load_bytes(&path).ok().unwrap(),
             size
         };
     }
@@ -61,14 +61,14 @@ pub enum Fonts {
 }
 
 impl Fonts {
-    /// Returns the bytes of the following font.
-    pub fn get_bytes(&self) -> Vec<u8> {
+    /// Returns the path of the following font.
+    pub fn get_path(&self) -> String {
         return match self {
-            Self::UnderdogRegular => include_bytes!("../assets/fonts/Underdog-Regular.ttf").to_vec(),
-            Self::CodystarLight => include_bytes!("../assets/fonts/Codystar-Light.ttf").to_vec(),
-            Self::CodystarRegular => include_bytes!("../assets/fonts/Codystar-Regular.ttf").to_vec(),
-            Self::RobotoMono => include_bytes!("../assets/fonts/RobotoMono-VariableFont_wght.ttf").to_vec(),
-            Self::RobotoMonoItalic => include_bytes!("../assets/fonts/RobotoMono-Italic-VariableFont_wght.ttf").to_vec()
+            Self::UnderdogRegular => "fonts/Underdog-Regular.ttf".to_string(),
+            Self::CodystarLight => "fonts/Codystar-Light.ttf".to_string(),
+            Self::CodystarRegular => "fonts/Codystar-Regular.ttf".to_string(),
+            Self::RobotoMono => "fonts/RobotoMono-VariableFont_wght.ttf".to_string(),
+            Self::RobotoMonoItalic => "fonts/RobotoMono-Italic-VariableFont_wght.ttf".to_string()
         }
     }
 }
