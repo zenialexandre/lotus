@@ -5,6 +5,7 @@ use kira::{
         static_sound::{StaticSoundData, StaticSoundSettings},
         streaming::{StreamingSoundData, StreamingSoundHandle, StreamingSoundSettings},
         FromFileError,
+        IntoOptionalRegion,
         PlaybackPosition,
         Region
     },
@@ -48,6 +49,62 @@ impl Default for AudioSettings {
 }
 
 impl AudioSettings {
+    /// Returns the audio settings with a start time.
+	pub fn start_time(self, start_time: impl Into<StartTime>) -> Self {
+		return Self {
+			start_time: start_time.into(),
+			..self
+		};
+	}
+
+	/// Returns the audio settings with a start position.
+	pub fn start_position(self, start_position: impl Into<PlaybackPosition>) -> Self {
+		return Self {
+			start_position: start_position.into(),
+			..self
+		};
+	}
+
+	/// Returns the audio settings but with the loop behaviour.
+	pub fn loop_region(self, loop_region: impl IntoOptionalRegion) -> Self {
+		return Self {
+			loop_region: loop_region.into_optional_region(),
+			..self
+		};
+	}
+
+	/// Returns the audio settings with a volume.
+	pub fn volume(self, volume: impl Into<Value<Decibels>>) -> Self {
+		return Self {
+			volume: volume.into(),
+			..self
+		};
+	}
+
+	/// Returns the audio settings with the playback rate.
+	pub fn playback_rate(self, playback_rate: impl Into<Value<PlaybackRate>>) -> Self {
+		return Self {
+			playback_rate: playback_rate.into(),
+			..self
+		};
+	}
+
+    /// Returns the audio settings with the panning.
+	pub fn panning(self, panning: impl Into<Value<Panning>>) -> Self {
+		return Self {
+			panning: panning.into(),
+			..self
+		};
+	}
+
+    /// Returns the audio settings with a fade in tween.
+	pub fn fade_in_tween(self, fade_in_tween: impl Into<Option<Tween>>) -> Self {
+		return Self {
+			fade_in_tween: fade_in_tween.into(),
+			..self
+		};
+	}
+
     /// Convert the abstract settings to a static sound specific.
     pub fn convert_to_static(&self) -> StaticSoundSettings {
         return StaticSoundSettings {

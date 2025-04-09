@@ -62,12 +62,10 @@ fn setup(context: &mut Context) {
     let pong_ball_sprite: Sprite = Sprite::new("assets/textures/pong/pong_ball_left_256x256.png".to_string());
 
     let mut game_audio: GameAudio = GameAudio::default();
-    let mut audio_settings: AudioSettings = AudioSettings::default();
-    audio_settings.volume = Value::Fixed(Decibels(-10.0));
     game_audio.0.load_streaming_sound(
         "game_music",
         "assets/audio/pong/soundtrack/arcade_music.ogg",
-        audio_settings
+        AudioSettings::default().loop_region(..).volume(Value::Fixed(Decibels(-10.0)))
     ).ok();
     game_audio.0.play_streaming_sound("game_music".to_string()).ok();
 
