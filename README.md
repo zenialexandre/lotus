@@ -156,8 +156,8 @@ Its very simple to export your brand new Lotus project for distribution.
 cargo build --release
 ```
 
-- Then you can go to **target/release/** to get your executable archive.
--> It should be the executable that only has your project name.
+- Then you can go to **target/release/** to get your executable archive.<br>
+-> It should be the executable that only has your project name.<br>
 -> Something like **nice-project-name.exe**.
 
 - As of a commmon step on releasing indie games, you should send your executable archive along side your assets folder.
