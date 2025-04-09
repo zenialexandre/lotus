@@ -5,6 +5,8 @@ Lotus is a game engine with the main focus of being easy-to-use and straight for
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
 Heavily inspired by awesome open-source projects like [`Bevy`](https://github.com/bevyengine/bevy), [`Comfy`](https://github.com/darthdeus/comfy) and [`LÖVE`](https://github.com/love2d/love).
 
+----------------
+
 ## How it works?
 
 With the power of macros, the engine basic template could be very abstracted and easy to look up to.<br>
@@ -22,6 +24,8 @@ The `your_game!` macro only needs three parameters to make a game real.
 - This parameter is a real function as well, that will be ran at each frame of the application.
 - The function should contain a mutable reference to the context as the parameter.
 - Should contain all the logic functions behind the game.
+
+----------------
 
 ## About assets
 
@@ -60,6 +64,27 @@ fn setup(_context: &mut Context) {
 fn update(_context: &mut Context) {}
 ```
 
+----------------
+
+## The Entity-Component-System paradigm
+
+Lotus uses a custom Entity-Component-System (ECS) archictecture.<br>
+You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1.4/lotus_engine/core/ecs/index.html).<br>
+
+As a brief overview:
+
+- Structs defined with the #derive macro *Component* are Components that can be spawned in our World within an Entity.
+- Structs defined with the #derive macro *Resource* are Resources that can be added to in our World.
+- *Entities* are defined by it's components and every entity has a unique ID.
+- Entities are stored in what is called as *Archetypes* in our World.
+- Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.
+- The World can store multiple Archetypes, Entities, Components and Resources!
+- And all of them can be queried using the *Query* struct.
+<br><br>
+![lotus_ecs_diagramv2](https://github.com/user-attachments/assets/e92130c7-26fb-4747-a1da-fdafe3a7fc70)
+
+----------------
+
 ## Examples
 
 The classic hello world:
@@ -93,7 +118,7 @@ And here are some more complex initial examples to demonstrate the engine's pote
 ## Build Instructions
 ### Setting Up a Lotus Project
 
-Lotus is a normal rust dependency, therefore an empty Lotus project is very easy to set up.
+Lotus is a normal Rust dependency, therefore an empty Lotus project is very easy to set up.
 You should use the latest stable version of rustc or above.
 
 - To check which version you have downloaded, use:
@@ -121,24 +146,27 @@ cargo add lotus_engine
 ```rust
 cargo run
 ```
-----------------
 
-## The Entity-Component-System paradigm
+### Exporting a Lotus Project
 
-Lotus uses a custom Entity-Component-System (ECS) archictecture.<br>
-You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1.4/lotus_engine/core/ecs/index.html).<br>
+Its very simple to export your brand new Lotus project as a executable archive.
 
-As a brief overview:
+- You may first build your Rust project as release.
+```rust
+cargo build --release
+```
 
-- Structs defined with the #derive macro *Component* are Components that can be spawned in our World within an Entity.
-- Structs defined with the #derive macro *Resource* are Resources that can be added to in our World.
-- *Entities* are defined by it's components and every entity has a unique ID.
-- Entities are stored in what is called as *Archetypes* in our World.
-- Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.
-- The World can store multiple Archetypes, Entities, Components and Resources!
-- And all of them can be queried using the *Query* struct.
-<br><br>
-![lotus_ecs_diagramv2](https://github.com/user-attachments/assets/e92130c7-26fb-4747-a1da-fdafe3a7fc70)
+- Then you can go to **target/release/<nice-project-name>** to get your executable archive.
+
+- As of a commmon step on releasing indie games, you should send your executable archive along side your assets folder.
+
+- So your file tree should look like this:
+
+```shell
+nice-project-release/
+├── assets
+├── nice-project-name.exe
+```
 
 ----------------
 

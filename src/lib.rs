@@ -8,6 +8,8 @@ Lotus is a game engine with the main focus of being easy-to-use and straight for
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
 Heavily inspired by awesome open-source projects like [`Bevy`](https://github.com/bevyengine/bevy), [`Comfy`](https://github.com/darthdeus/comfy) and [`LÖVE`](https://github.com/love2d/love).
 
+----------------
+
 ## How it works?
 
 With the power of macros, the engine basic template could be very abstracted and easy to look up to.<br>
@@ -25,6 +27,8 @@ The `your_game!` macro only needs three parameters to make a game real.
 - This parameter is a real function as well, that will be ran at each frame of the application.
 - The function should contain a mutable reference to the context as the parameter.
 - Should contain all the logic functions behind the game.
+
+----------------
 
 ## About assets
 
@@ -63,6 +67,27 @@ fn setup(_context: &mut Context) {
 fn update(_context: &mut Context) {}
 ```
 
+----------------
+
+## The Entity-Component-System paradigm
+
+Lotus uses a custom Entity-Component-System (ECS) archictecture.<br>
+You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1.4/lotus_engine/core/ecs/index.html).<br>
+
+As a brief overview:
+
+- Structs defined with the derive macro *Component* are Components that can be spawned in our World within an Entity.
+- Structs defined with the derive macro *Resource* are Resources that can be added to in our World.
+- *Entities* are defined by it's components and every entity has a unique ID.
+- Entities are stored in what is called as *Archetypes* in our World.
+- Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.
+- The World can store multiple Archetypes, Entities, Components and Resources!
+- And all of them can be queried using the *Query* struct.
+<br><br>
+![Lotus ECS Diagram](https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_ecs_diagram_v2.png)
+
+----------------
+
 ## Examples
 
 The classic hello world:
@@ -90,23 +115,6 @@ And here are some more complex initial examples to demonstrate the engine's pote
 - **Rendering geometric forms:** [`examples/simple_shapes.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/simple_shapes.rs)
 - **Rendering sprites:** [`examples/simple_sprite.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/simple_sprite.rs)
 - **Simple physics simulation:** [`examples/physics_simulation.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/physics_simulation.rs)
-
-## The Entity-Component-System paradigm
-
-Lotus uses a custom Entity-Component-System (ECS) archictecture.<br>
-You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1.4/lotus_engine/core/ecs/index.html).<br>
-
-As a brief overview:
-
-- Structs defined with the derive macro *Component* are Components that can be spawned in our World within an Entity.
-- Structs defined with the derive macro *Resource* are Resources that can be added to in our World.
-- *Entities* are defined by it's components and every entity has a unique ID.
-- Entities are stored in what is called as *Archetypes* in our World.
-- Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.
-- The World can store multiple Archetypes, Entities, Components and Resources!
-- And all of them can be queried using the *Query* struct.
-<br><br>
-![Lotus ECS Diagram](https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_ecs_diagram_v2.png)
 
 ----------------
 
