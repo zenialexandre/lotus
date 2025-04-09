@@ -149,14 +149,16 @@ cargo run
 
 ### Exporting a Lotus Project
 
-Its very simple to export your brand new Lotus project as a executable archive.
+Its very simple to export your brand new Lotus project for distribution.
 
-- You may first build your Rust project as release.
+- You may first build your Rust project as a release.
 ```rust
 cargo build --release
 ```
 
-- Then you can go to **target/release/nice-project-name** to get your executable archive.
+- Then you can go to **target/release/** to get your executable archive.
+-> It should be the executable that only has your project name.
+-> Something like **nice-project-name.exe**.
 
 - As of a commmon step on releasing indie games, you should send your executable archive along side your assets folder.
 
