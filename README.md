@@ -156,7 +156,7 @@ Its very simple to export your brand new Lotus project as a executable archive.
 cargo build --release
 ```
 
-- Then you can go to **target/release/<nice-project-name>** to get your executable archive.
+- Then you can go to **target/release/nice-project-name** to get your executable archive.
 
 - As of a commmon step on releasing indie games, you should send your executable archive along side your assets folder.
 
