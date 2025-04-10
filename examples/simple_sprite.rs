@@ -1,3 +1,8 @@
+//! This example is a simple show off about rendering sprites.
+//! The sprite is rendered inside the 'setup' function.
+//! And is mutated inside the 'update' function, having its 'y' position updated at each frame.
+//! This example serves as an example of the basic use of the velocity component when mutating transformation matrices.
+
 use lotus_engine::*;
 
 your_game!(

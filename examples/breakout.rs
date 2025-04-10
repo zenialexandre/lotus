@@ -1,3 +1,8 @@
+//! This example aims to recreate the Breakout arcade game.
+//! Is a show off of timer, multiple entities rendering, game state workflow, text rendering and physics.
+//! The targets are spawned as a matrix of 8 rows and 10 columns.
+//! Each target is a specific entity with its own physics.
+
 use lotus_engine::*;
 use std::time::Duration;
 use rand::{rngs::ThreadRng, Rng};

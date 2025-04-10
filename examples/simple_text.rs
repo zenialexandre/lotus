@@ -1,3 +1,8 @@
+//! This example is a show off for the text rendering.
+//! Inside the 'setup' function, each text component is spawned as an entity.
+//! Each text component uses the default fonts available on the engine.
+//! As the end-user you can bring your own fonts or make use of the available ones.
+
 use lotus_engine::*;
 
 your_game!(

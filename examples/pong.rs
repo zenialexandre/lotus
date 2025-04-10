@@ -1,3 +1,10 @@
+//! This is a more complex example of a more complete application.
+//! The Pong arcade game, but with sprites.
+//! This example shows off the usage of timer, audio, input and physics.
+//! The timer works as a respawn for the pong ball after it goes outbounds.
+//! The audio is used for the game music (streaming) and for the rackets hits (static).
+//! The input is used for mapping the users keyboard actions.
+
 use lotus_engine::*;
 use rand::{rngs::ThreadRng, Rng};
 use std::time::Duration;

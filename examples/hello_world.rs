@@ -1,3 +1,6 @@
+//! This example is a simple show off of the engine baisc template.
+//! It will create a window with a white background and the 'Hello World!' message will be printed at each frame.
+
 use lotus_engine::*;
 
 your_game!(

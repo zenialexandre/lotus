@@ -1,3 +1,6 @@
+//! This example is a simple show off about telling the camera resource that it need to follow a specific target.
+//! The camera 2D is a resource of the world and can be accessed at easy.
+
 use lotus_engine::*;
 
 your_game!(

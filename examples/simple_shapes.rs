@@ -1,3 +1,7 @@
+//! This example is a show off on rendering geomtric forms with solid colors.
+//! Basic geometric forms are rendered inside the 'setup' function.
+//! Inside the 'update' function, each entity has its rotation factor mutated by a constant value of 100.0.
+
 use lotus_engine::*;
 
 #[derive(Component)]

@@ -1,3 +1,7 @@
+//! This example is a show off about physics.
+//! Making use of the velocity and collision components, two shapes (circles) are moving and colliding around the window.
+//! The collision happen between the two shapes and with the borders of the window. 
+
 use lotus_engine::*;
 use rand::{rng, rngs::ThreadRng, Rng};
 
