@@ -4,17 +4,11 @@ pub mod game_loop;
 /// Window and render managers.
 pub mod managers;
 
-/// Textures/images related features.
-pub mod texture;
-
 /// Colors related features.
 pub mod color;
 
 /// Shapes/Geometric forms related features.
 pub mod shape;
-
-/// Sprites related features.
-pub mod sprite;
 
 /// Macros of the engine.
 pub mod macros;
@@ -45,3 +39,9 @@ pub mod text;
 
 /// Asset loading related features.
 pub mod asset_loader;
+
+/// Texture related features.
+pub mod texture;
+
+/// Visibility related features.
+pub mod visibility;

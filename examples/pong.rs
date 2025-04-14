@@ -82,7 +82,7 @@ fn setup(context: &mut Context) {
         AudioSettings::default()
     ).ok();
 
-    context.world.add_resources(vec![
+    context.commands.add_resources(vec![
         Box::new(PongBallRespawnTimer::default()),
         Box::new(game_audio)
     ]);
@@ -129,8 +129,8 @@ fn update(context: &mut Context) {
         input_ref.clone()
     };
 
-    let mut pong_ball_query: Query = Query::new(&context.world).with_components::<PongBall>();
-    let pong_ball_entities: Vec<Entity> = pong_ball_query.get_entities_flex().unwrap();
+    let mut pong_ball_query: Query = Query::new(&context.world).with::<PongBall>();
+    let pong_ball_entities: Vec<Entity> = pong_ball_query.entities_with_components().unwrap();
     let pong_ball: &Entity = pong_ball_entities.first().unwrap();
     let mut thread_rng: ThreadRng = rand::rng();
     let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
@@ -157,8 +157,8 @@ fn spawn_border(context: &mut Context, position: Vector2<f32>) {
 }
 
 fn move_gray_racket(context: &mut Context, input: Input) {
-    let mut query: Query = Query::new(&context.world).with_components::<GrayRacket>();
-    let entities: Vec<Entity> = query.get_entities_flex().unwrap();
+    let mut query: Query = Query::new(&context.world).with::<GrayRacket>();
+    let entities: Vec<Entity> = query.entities_with_components().unwrap();
     let gray_racket_entity: &Entity = entities.first().unwrap();
 
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(gray_racket_entity).unwrap();
@@ -176,8 +176,8 @@ fn move_gray_racket(context: &mut Context, input: Input) {
 }
 
 fn move_pink_racket(context: &mut Context, input: Input) {
-    let mut query: Query = Query::new(&context.world).with_components::<PinkRacket>();
-    let entities: Vec<Entity> = query.get_entities_flex().unwrap();
+    let mut query: Query = Query::new(&context.world).with::<PinkRacket>();
+    let entities: Vec<Entity> = query.entities_with_components().unwrap();
     let pink_racket_entity: &Entity = entities.first().unwrap();
 
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pink_racket_entity).unwrap();
@@ -203,8 +203,8 @@ fn move_pong_ball(context: &mut Context, pong_ball: &Entity) {
 }
 
 fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, random_factor: f32) {
-    let mut racket_query: Query = Query::new(&context.world).with_components::<Racket>();
-    let rackets: Vec<Entity> = racket_query.get_entities_flex().unwrap();
+    let mut racket_query: Query = Query::new(&context.world).with::<Racket>();
+    let rackets: Vec<Entity> = racket_query.entities_with_components().unwrap();
     let mut game_audio: ResourceRefMut<'_, GameAudio> = context.world.get_resource_mut::<GameAudio>().unwrap();
 
     for racket in &rackets {
@@ -235,8 +235,8 @@ fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, rando
 }
 
 fn check_borders_ball_collision(context: &mut Context, pong_ball: &Entity, random_factor: f32) {
-    let mut border_query: Query = Query::new(&context.world).with_components::<Border>();
-    let borders: Vec<Entity> = border_query.get_entities_flex().unwrap();
+    let mut border_query: Query = Query::new(&context.world).with::<Border>();
+    let borders: Vec<Entity> = border_query.entities_with_components().unwrap();
 
     for border in &borders {
         let border_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();

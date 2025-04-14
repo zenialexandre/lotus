@@ -1,6 +1,6 @@
 //! This example is a show off about physics.
 //! Making use of the velocity and collision components, two shapes (circles) are moving and colliding around the window.
-//! The collision happen between the two shapes and with the borders of the window. 
+//! The collision happens between the two shapes and with the borders of the window. 
 
 use lotus_engine::*;
 use rand::{rng, rngs::ThreadRng, Rng};
@@ -49,8 +49,8 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let mut query: Query = Query::new(&context.world).with_components::<Object>();
-    let entities: Vec<Entity> = query.get_entities_flex().unwrap();
+    let mut query: Query = Query::new(&context.world).with::<Object>();
+    let entities: Vec<Entity> = query.entities_with_components().unwrap();
 
     check_border_collision(context, &entities);
     check_object_collision(context, &entities);
@@ -59,7 +59,7 @@ fn update(context: &mut Context) {
 
 fn spawn_border(context: &mut Context, orientation: Orientation, position: Vector2<f32>, scale: Vector2<f32>) {
     let border: Shape = Shape::new(orientation, GeometryType::Rectangle, Color::WHITE);
-    
+
     context.commands.spawn(
         vec![
             Box::new(border),
@@ -71,8 +71,8 @@ fn spawn_border(context: &mut Context, orientation: Orientation, position: Vecto
 }
 
 fn check_border_collision(context: &mut Context, entities: &Vec<Entity>) {
-    let mut border_query: Query = Query::new(&context.world).with_components::<Border>();
-    let borders: Vec<Entity> = border_query.get_entities_flex().unwrap();
+    let mut border_query: Query = Query::new(&context.world).with::<Border>();
+    let borders: Vec<Entity> = border_query.entities_with_components().unwrap();
 
     for entity in entities {
         let mut velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(entity).unwrap();

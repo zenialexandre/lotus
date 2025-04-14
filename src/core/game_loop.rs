@@ -33,7 +33,8 @@ pub struct GameLoop {
 /// Struct to update the current engine state as the end-user.
 #[derive(Clone, Debug, Resource)]
 pub struct GameLoopListener {
-    pub state: GameLoopState
+    pub state: GameLoopState,
+    pub maximum_fps_numer: f32
 }
 
 impl GameLoop {
@@ -124,7 +125,10 @@ impl GameLoop {
 impl GameLoopListener {
     /// Create a new loop listener.
     pub fn new() -> Self {
-        return Self { state: GameLoopState::Running };
+        return Self {
+            state: GameLoopState::Running,
+            maximum_fps_numer: 60.0
+        };
     }
 
     /// Update the current loop status to Paused.
@@ -135,5 +139,10 @@ impl GameLoopListener {
     /// Update the current loop status to Running.
     pub fn resume(&mut self) {
         self.state = GameLoopState::Running;
+    }
+
+    /// Update the maximum FPS number.
+    pub fn maximum_fps_numer(&mut self, maximum_fps_numer: f32) {
+        self.maximum_fps_numer = maximum_fps_numer;
     }
 }

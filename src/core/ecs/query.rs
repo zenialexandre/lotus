@@ -16,17 +16,20 @@ pub struct Query<'a> {
 impl<'a> Query<'a> {
     /// Create a new query with the world as the parameter.
     pub fn new(world: &'a World) -> Self {
-        return Self { parameters: Vec::new(), world };
+        return Self {
+            parameters: Vec::new(),
+            world
+        };
     }
 
     /// Set the components that will make up the query.
-    pub fn with_components<T: Component + 'static>(mut self) -> Self {
+    pub fn with<T: Component + 'static>(mut self) -> Self {
         self.parameters.push(TypeId::of::<T>());
         return self;
     }
 
     /// Returns entities by the exact components as mutables of a archetype.
-    pub fn get_entities_by_components_mut_exact(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
+    pub fn entities_with_all_components_mut(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
         let archetype_unique_key: u64 = self.world.get_archetype_unique_key(&mut self.parameters);
         let archetype: &Archetype = self.world.archetypes.get(&archetype_unique_key)?;
         let mut results: Vec<(Entity, Vec<AtomicRefMut<'_, Box<dyn Component>>>)> = Vec::new();
@@ -40,7 +43,7 @@ impl<'a> Query<'a> {
     }
 
     /// Returns entities by the components of a archetype in a flexible way.
-    pub fn get_entities_flex(&'a mut self) -> Option<Vec<Entity>> {
+    pub fn entities_with_components(&'a mut self) -> Option<Vec<Entity>> {
         let mut results: Vec<Entity> = Vec::new();
 
         for (_, archetype) in &self.world.archetypes {
@@ -54,7 +57,7 @@ impl<'a> Query<'a> {
     }
 
     /// Returns entities by the components as mutables of a archetype in a flexible way.
-    pub fn get_entities_by_components_mut_flex(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
+    pub fn entities_with_components_mut_one(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
         for (_, archetype) in &self.world.archetypes {
             if self.parameters.iter().all(|param| archetype.components.contains_key(param)) {
                 let mut results: Vec<(Entity, Vec<AtomicRefMut<'_, Box<dyn Component>>>)> = Vec::new();
@@ -71,7 +74,7 @@ impl<'a> Query<'a> {
     }
 
     /// Returns all entites by components as mutables in a flexible way.
-    pub fn get_all_entities_by_componenets_mut_flex(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
+    pub fn entities_with_components_mut_all(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
         let mut results: Vec<(Entity, Vec<AtomicRefMut<'_, Box<dyn Component>>>)> = Vec::new();
 
         for (_, archetype) in &self.world.archetypes {
@@ -84,11 +87,5 @@ impl<'a> Query<'a> {
             }
         }
         return Some(results);
-    }
-
-    fn _matches(&self, entity_components: &[&mut dyn Component]) -> bool {
-        return self.parameters.iter().all(|param| {
-            entity_components.iter().any(|component| component.as_any().type_id() == *param)
-        });
     }
 }

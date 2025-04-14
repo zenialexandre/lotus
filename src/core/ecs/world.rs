@@ -14,6 +14,7 @@ use super::{
     super::{
         camera::camera2d::Camera2d,
         input::Input,
+        visibility::Visibility,
         text::{Text, TextRenderer},
         managers::rendering_manager::RenderState,
         physics::{collision::Collision, transform::Transform}
@@ -75,10 +76,10 @@ impl World {
     }
 
     /// Add a new resource to the world.
-    pub fn add_resource<T: Resource + 'static>(&mut self, resource: T) {
+    pub fn add_resource(&mut self, resource: Box<dyn Resource>) {
         self.resources.insert(
-            TypeId::of::<T>(),
-            Arc::new(AtomicRefCell::new(Box::new(resource)))
+            resource.type_id(),
+            Arc::new(AtomicRefCell::new(resource))
         );
     }
 
@@ -113,6 +114,10 @@ impl World {
 
         if !components_refs.iter().any(|component| component.borrow().as_any().is::<Transform>()) {
             components_refs.push(AtomicRefCell::new(Box::new(Transform::default())));
+        }
+
+        if !components_refs.iter().any(|component| component.borrow().as_any().is::<Visibility>()) {
+            components_refs.push(AtomicRefCell::new(Box::new(Visibility::default())));
         }
 
         let mut components_types_ids: Vec<TypeId> = components_refs.iter().map(|c| c.borrow().type_id()).collect();
@@ -373,6 +378,12 @@ impl World {
     pub fn is_entity_alive(&self, entity: Entity) -> bool {
         return self.archetypes.values().any(|archetype| archetype.entities.iter().any(|e| e.0 == entity.0));    
     }
+
+    /// Returns if an entity is visible.
+    pub fn is_entity_visible(&self, entity: Entity) -> bool {
+        let visibility: ComponentRef<'_, Visibility> = self.get_entity_component::<Visibility>(&entity).unwrap();
+        return visibility.value;
+    }
 }
 
 /// Struct to represent the mutable commands to be made on the world.
@@ -400,6 +411,16 @@ impl Commands {
         self.commands.push(Command::Despawn(entity));
     }
 
+    /// # Add a new resource to the world.
+    pub fn add_resource(&mut self, resource: Box<dyn Resource>) {
+        self.commands.push(Command::AddResource(resource));
+    }
+
+    /// # Add a list of resources to the world.
+    pub fn add_resources(&mut self, resources: Vec<Box<dyn Resource>>) {
+        self.commands.push(Command::AddResources(resources));
+    }
+
     /// Take the commands memory reference.
     pub(crate) fn _take_commands(&mut self) -> Vec<Command> {
         return std::mem::take(&mut self.commands);
@@ -416,6 +437,12 @@ impl Commands {
                     if world.is_entity_alive(entity) {
                         world.despawn(render_state, &entity);
                     }
+                },
+                Command::AddResource(resource) => {
+                    world.add_resource(resource);   
+                },
+                Command::AddResources(resources) => {
+                    world.add_resources(resources);
                 }
             }
         }
@@ -425,5 +452,7 @@ impl Commands {
 /// Enumerator that store the mutable commands allowed in the world.
 pub enum Command {
     Spawn(Vec<Box<dyn Component>>),
-    Despawn(Entity)
+    Despawn(Entity),
+    AddResource(Box<dyn Resource>),
+    AddResources(Vec<Box<dyn Resource>>)
 }

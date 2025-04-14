@@ -40,8 +40,8 @@ fn setup(context: &mut Context) {
 fn update(context: &mut Context) {
     let input: ResourceRef<'_, Input> = context.world.get_resource::<Input>().unwrap();
 
-    let mut query: Query = Query::new(&context.world).with_components::<Sprite>().with_components::<Velocity>();
-    let player_entity: Entity = query.get_entities_flex().unwrap().first().unwrap().clone();
+    let mut query: Query = Query::new(&context.world).with::<Sprite>().with::<Velocity>();
+    let player_entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
 
     let mut camera2d: ResourceRefMut<'_, Camera2d> = context.world.get_resource_mut::<Camera2d>().unwrap();
     camera2d.set_target(player_entity);

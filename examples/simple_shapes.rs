@@ -59,8 +59,8 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let mut query: Query = Query::new(&context.world).with_components::<Shape>();
-    let entities: Vec<Entity> = query.get_entities_flex().unwrap();
+    let mut query: Query = Query::new(&context.world).with::<Shape>();
+    let entities: Vec<Entity> = query.entities_with_components().unwrap();
 
     for entity in &entities {
         let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
