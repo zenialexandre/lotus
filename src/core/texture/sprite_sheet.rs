@@ -56,11 +56,12 @@ impl SpriteSheet {
             let relative_width = 1.0 / self.columns as f32;
             let relative_height = 1.0 / self.rows as f32;
 
+            /*
             context.render_state.queue.as_ref().unwrap().write_buffer(
                 context.render_state.animation_frame_buffer.as_ref().unwrap(),
                 0,
                 bytemuck::cast_slice(&[normalized_column, normalized_row, relative_width, relative_height])
-            );
+            ); */
 
             self.current_index = (self.current_index + 1) % self.indices.len() as u32;
         }

@@ -7,15 +7,16 @@ use std::{
     sync::Arc
 };
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
-use cgmath::{Matrix4, Vector3};
+use cgmath::{Matrix4, Vector2, Vector3};
 use uuid::Uuid;
 
 use super::{
     super::{
+        color::Color,
         camera::camera2d::Camera2d,
         input::Input,
         visibility::Visibility,
-        text::{Text, TextRenderer},
+        text::{Text, TextRenderer, Font, Fonts},
         managers::rendering_manager::RenderState,
         physics::{collision::Collision, transform::Transform}
     },
@@ -91,6 +92,16 @@ impl World {
                 Arc::new(AtomicRefCell::new(resource))
             );
         }
+    }
+
+    pub fn show_fps(&mut self, render_state: &mut RenderState, current_fps: u32) {
+        let fps_text: Text = Text::new(
+            Font::new(Fonts::RobotoMonoItalic.get_path(), 1.0),
+            Vector2::new(0.0, 0.0),
+            Color::BLACK,
+            current_fps.to_string()
+        );
+        self.spawn(render_state, vec![Box::new(fps_text)]);
     }
 
     /// # Spawn a new entity on the world.
@@ -443,6 +454,9 @@ impl Commands {
                 },
                 Command::AddResources(resources) => {
                     world.add_resources(resources);
+                },
+                Command::ShowFPS(mut render_state, current_fps) => {
+                    world.show_fps(&mut render_state, current_fps);
                 }
             }
         }
@@ -454,5 +468,6 @@ pub enum Command {
     Spawn(Vec<Box<dyn Component>>),
     Despawn(Entity),
     AddResource(Box<dyn Resource>),
-    AddResources(Vec<Box<dyn Resource>>)
+    AddResources(Vec<Box<dyn Resource>>),
+    ShowFPS(RenderState, u32)
 }

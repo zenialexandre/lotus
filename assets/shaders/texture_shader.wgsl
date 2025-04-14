@@ -18,8 +18,6 @@ struct VertexOutput {
 @group(1) @binding(1) var<uniform> projection: mat4x4<f32>;
 @group(1) @binding(2) var<uniform> view: mat4x4<f32>;
 
-@group(2) @binding(0) var<uniform> animation_frame_data: vec4<f32>;
-
 // Vertex shader
 // -> Create the vertices to create the object.
 
@@ -32,13 +30,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     } else {
         out.clip_position = projection * view * transform * vec4<f32>(model.position, 1.0);
     }
-
-    out.texture_coordinates = vec2<f32>(
-        animation_frame_data.x + model.texture_coordinates.x * animation_frame_data.z,
-        animation_frame_data.y + model.texture_coordinates.y * animation_frame_data.w
-    );
-
-    //out.texture_coordinates = model.texture_coordinates;
+    out.texture_coordinates = model.texture_coordinates;
     return out;
 }
 

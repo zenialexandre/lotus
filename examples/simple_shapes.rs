@@ -23,6 +23,9 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
+    context.game_loop_listener.set_fps_cap(75.0);
+    context.world.show_fps(&mut context.render_state, context.game_loop_listener.current_fps);
+
     let my_square: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
     let my_rectangle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::GREEN);
     let my_triangle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Triangle, Color::RED);

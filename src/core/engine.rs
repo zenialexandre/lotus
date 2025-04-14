@@ -1,7 +1,8 @@
 use super::{
     managers::windowing_manager::WindowConfiguration,
     ecs::world::{World, Commands},
-    managers::rendering_manager::RenderState
+    managers::rendering_manager::RenderState,
+    game_loop::GameLoopListener
 };
 
 /// Struct created to provide the main features of the engine for the end-user.
@@ -17,6 +18,9 @@ pub struct Context {
     pub commands: Commands,
     /// The window configuration data for reading purposes.
     pub window_configuration: WindowConfiguration,
+    /// The listener of the game loop.
+    /// Use for mutating some useful data.
+    pub game_loop_listener: GameLoopListener,
     /// The delta time for reading purposes.
     pub delta: f32
 }
@@ -27,8 +31,9 @@ impl Context {
         return Self {
             render_state,
             world,
-            window_configuration,
             commands: Commands::new(),
+            window_configuration,
+            game_loop_listener: GameLoopListener::new(),
             delta
         };
     }
