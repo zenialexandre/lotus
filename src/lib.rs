@@ -1,8 +1,8 @@
 #![doc(html_favicon_url = "https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/icons/lotus_pink_aligned.ico")]
-#![doc(html_logo_url = "https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_pink_256x256.png")]
+#![doc(html_logo_url = "https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_pink_256x256_aligned.png")]
 
 #![doc = r#"
-![Lotus Logo](https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_pink_256x256.png)
+![Lotus Logo](https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_pink_256x256_aligned.png)
 
 Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.  
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
