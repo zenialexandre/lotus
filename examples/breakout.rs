@@ -56,7 +56,6 @@ your_game!(
         resizable: false,
         decorations: true,
         transparent: false,
-        visible: true,
         active: true,
         enabled_buttons: WindowButtons::CLOSE | WindowButtons::MINIMIZE
     },

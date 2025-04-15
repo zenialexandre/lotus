@@ -8,6 +8,7 @@ use std::{
 };
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use cgmath::{Matrix4, Vector2, Vector3};
+use lotus_proc_macros::Component;
 use uuid::Uuid;
 
 use super::{
@@ -20,10 +21,15 @@ use super::{
         managers::rendering_manager::RenderState,
         physics::{collision::Collision, transform::Transform}
     },
+    query::Query,
     entity::Entity,
     component::{Component, ComponentRefMut, ComponentRef, ComponentBorrowState},
     resource::{Resource, ResourceRefMut, ResourceRef, ResourceBorrowState}
 };
+
+/// Struct to represent the FPS entity on the world.
+#[derive(Clone, Component)]
+struct Fps();
 
 /// Struct to represent the different archetypes and/or clusters of data.
 pub struct Archetype {
@@ -95,13 +101,21 @@ impl World {
     }
 
     pub fn show_fps(&mut self, render_state: &mut RenderState, current_fps: u32) {
-        let fps_text: Text = Text::new(
-            Font::new(Fonts::RobotoMonoItalic.get_path(), 1.0),
-            Vector2::new(0.0, 0.0),
-            Color::BLACK,
-            current_fps.to_string()
-        );
-        self.spawn(render_state, vec![Box::new(fps_text)]);
+        let mut query: Query = Query::new(&self).with::<Fps>();
+
+        if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
+            if let Some(text_renderer) = render_state.text_renderers.get_mut(&fps_entity.0) {
+                text_renderer.update_brush(current_fps.to_string(), render_state.queue.as_ref().unwrap(), render_state.physical_size.as_ref().unwrap());
+            }
+        } else {
+            let fps_text: Text = Text::new(
+                Font::new(Fonts::RobotoMono.get_path(), 20.0),
+                Vector2::new(0.0, 0.0),
+                Color::BLACK,
+                current_fps.to_string()
+            );
+            self.spawn(render_state, vec![Box::new(fps_text), Box::new(Fps())]);
+        }
     }
 
     /// # Spawn a new entity on the world.
@@ -432,6 +446,11 @@ impl Commands {
         self.commands.push(Command::AddResources(resources));
     }
 
+    /// # Show the current FPS value.
+    pub fn show_fps(&mut self, current_fps: u32) {
+        self.commands.push(Command::ShowFps(current_fps));
+    }
+
     /// Take the commands memory reference.
     pub(crate) fn _take_commands(&mut self) -> Vec<Command> {
         return std::mem::take(&mut self.commands);
@@ -455,8 +474,8 @@ impl Commands {
                 Command::AddResources(resources) => {
                     world.add_resources(resources);
                 },
-                Command::ShowFPS(mut render_state, current_fps) => {
-                    world.show_fps(&mut render_state, current_fps);
+                Command::ShowFps(current_fps) => {
+                    world.show_fps(render_state, current_fps);
                 }
             }
         }
@@ -469,5 +488,5 @@ pub enum Command {
     Despawn(Entity),
     AddResource(Box<dyn Resource>),
     AddResources(Vec<Box<dyn Resource>>),
-    ShowFPS(RenderState, u32)
+    ShowFps(u32)
 }

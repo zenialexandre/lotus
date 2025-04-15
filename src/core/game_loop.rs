@@ -74,7 +74,7 @@ impl GameLoop {
         }
 
         // Frame Pacing - 60 FPS
-        let target_delta: Duration = Duration::from_secs_f32(1.0 / context.game_loop_listener.fps_cap);
+        let target_delta: Duration = Duration::from_secs_f32(1.0 / context.game_loop_listener.fps_cap as f32);
         let frame_time: Duration = Instant::now() - now;
         if frame_time < target_delta {
             std::thread::sleep(target_delta - frame_time);
@@ -121,7 +121,7 @@ impl GameLoop {
 pub struct GameLoopListener {
     pub state: GameLoopState,
     pub current_fps: u32,
-    pub fps_cap: f32
+    pub fps_cap: u32
 }
 
 impl GameLoopListener {
@@ -130,7 +130,7 @@ impl GameLoopListener {
         return Self {
             state: GameLoopState::Running,
             current_fps: 60,
-            fps_cap: 60.0
+            fps_cap: 60
         };
     }
 
@@ -145,7 +145,7 @@ impl GameLoopListener {
     }
 
     /// Update the maximum FPS number.
-    pub fn set_fps_cap(&mut self, fps_cap: f32) {
+    pub fn set_fps_cap(&mut self, fps_cap: u32) {
         self.fps_cap = fps_cap;
     }
 }

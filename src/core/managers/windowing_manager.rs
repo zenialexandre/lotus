@@ -34,7 +34,7 @@ pub struct WindowConfiguration {
     pub resizable: bool,
     pub decorations: bool,
     pub transparent: bool,
-    pub visible: bool,
+    //pub visible: bool,
     pub active: bool,
     pub enabled_buttons: WindowButtons
 }
@@ -43,7 +43,7 @@ impl Default for WindowConfiguration {
     /// Returns a default configuration.
     fn default() -> Self {
         return Self {
-            icon_path: "textures/lotus_pink_256x256.png".to_string(),
+            icon_path: "textures/lotus_pink_256x256_aligned.png".to_string(),
             title: "New Game!".to_string(),
             background_color: Some(Color::WHITE),
             background_image_path: None,
@@ -54,7 +54,7 @@ impl Default for WindowConfiguration {
             resizable: true,
             decorations: true,
             transparent: true,
-            visible: true,
+            //visible: false,
             active: true,
             enabled_buttons: WindowButtons::all()
         };
@@ -151,9 +151,9 @@ impl WindowConfiguration {
 	}
 
     /// Returns the window configuration with the visible.
-	pub fn visible(self, visible: bool) -> Self {
+	pub(crate) fn _visible(self, _visible: bool) -> Self {
 		return Self {
-			visible,
+			//visible,
 			..self
 		};
 	}
@@ -200,6 +200,9 @@ impl ApplicationHandler for Application {
         let mut background_image_path: Option<String> = None;
 
         let window: Arc<Window> = if let Some(window_configuration) = &self.window_configuration {
+            let icon: Option<Icon> = WindowConfiguration::get_icon_by_bytes(
+                AssetLoader::load_bytes(&window_configuration.icon_path).ok().unwrap()
+            );
             let mut window_attributes: WindowAttributes = Window::default_attributes();
             window_attributes.title = window_configuration.title.clone();
             window_attributes.inner_size =  Some(Size::Logical(LogicalSize::new(
@@ -213,12 +216,10 @@ impl ApplicationHandler for Application {
             window_attributes.resizable = window_configuration.resizable;
             window_attributes.decorations = window_configuration.decorations;
             window_attributes.transparent = window_configuration.transparent;
-            window_attributes.visible = window_configuration.visible;
+            window_attributes.visible = false; // Trick to appear the icon on the taskbar.
             window_attributes.active = window_configuration.active;
             window_attributes.enabled_buttons = window_configuration.enabled_buttons;
-            window_attributes.window_icon = WindowConfiguration::get_icon_by_bytes(
-                AssetLoader::load_bytes(&window_configuration.icon_path).ok().unwrap()
-            );
+            window_attributes.window_icon = icon.clone();
 
             if let Some(background_color) = window_configuration.background_color {
                 color = Some(background_color);
@@ -289,6 +290,7 @@ impl ApplicationHandler for Application {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        self.window.as_mut().unwrap().set_visible(true);
         self.game_loop.run(self.context.as_mut().unwrap(), event_loop);
     }
 }

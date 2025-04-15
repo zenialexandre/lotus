@@ -1,6 +1,7 @@
-//! This example is a show off on rendering geomtric forms with solid colors.
+//! This example is a show off on rendering geometric forms with solid colors.
 //! Basic geometric forms are rendered inside the 'setup' function.
 //! Inside the 'update' function, each entity has its rotation factor mutated by a constant value of 100.0.
+//! In this example the FPS cap is setted to 60 and in the 'update' function the FPS is shown on the screen.
 
 use lotus_engine::*;
 
@@ -23,8 +24,7 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    context.game_loop_listener.set_fps_cap(75.0);
-    context.world.show_fps(&mut context.render_state, context.game_loop_listener.current_fps);
+    context.game_loop_listener.set_fps_cap(60);
 
     let my_square: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
     let my_rectangle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::GREEN);
@@ -62,6 +62,8 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
+    context.commands.show_fps(context.game_loop_listener.current_fps);
+
     let mut query: Query = Query::new(&context.world).with::<Shape>();
     let entities: Vec<Entity> = query.entities_with_components().unwrap();
 

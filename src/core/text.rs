@@ -1,5 +1,6 @@
 use cgmath::Vector2;
 use lotus_proc_macros::Component;
+use wgpu::Queue;
 use wgpu_text::{glyph_brush::ab_glyph::FontArc, BrushBuilder, TextBrush};
 use winit::dpi::PhysicalSize;
 use super::{color::Color, asset_loader::AssetLoader, managers::rendering_manager::RenderState};
@@ -94,5 +95,14 @@ impl TextRenderer {
             text_brush,
             text: text.clone()
         };
+    }
+
+    pub(crate) fn update_brush(&mut self, content: String, queue: &Queue, physical_size: &PhysicalSize<u32>) {
+        self.text.content = content;
+
+        self.text_brush.update_matrix(
+            wgpu_text::ortho(physical_size.width as f32, physical_size.height as f32),
+            queue
+        );
     }
 }

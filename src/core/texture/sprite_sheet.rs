@@ -1,5 +1,4 @@
 use std::time::Duration;
-
 use lotus_proc_macros::Component;
 use super::super::{time::timer::Timer, physics::transform::Transform, engine::Context};
 
@@ -40,31 +39,20 @@ impl SpriteSheet {
         };
     }
 
-    pub fn animate(&mut self, context: &mut Context) {
-        self.timer.tick(context.delta);
+    pub fn next_frame(&mut self, delta: f32) {
+        self.timer.tick(delta);
 
         if self.timer.is_finished() {
-            let current_index = self.indices[self.current_index as usize];
-            let (tile_width, tile_height): (u32, u32) = self.tile_size;
-
-            let column = current_index % self.columns;
-            let row = current_index / self.columns;
-
-            let normalized_column = column as f32 / self.columns as f32;
-            let normalized_row = row as f32 / self.rows as f32;
-
-            let relative_width = 1.0 / self.columns as f32;
-            let relative_height = 1.0 / self.rows as f32;
-
-            /*
-            context.render_state.queue.as_ref().unwrap().write_buffer(
-                context.render_state.animation_frame_buffer.as_ref().unwrap(),
-                0,
-                bytemuck::cast_slice(&[normalized_column, normalized_row, relative_width, relative_height])
-            ); */
-
-            self.current_index = (self.current_index + 1) % self.indices.len() as u32;
+            self.current_index = if self.current_index == self.indices.last().unwrap().clone() {
+                self.current_index + 1
+            } else {
+                self.current_index + 1
+            };
         }
+    }
+
+    pub fn animate(&mut self, context: &mut Context) {
+        
     }
 
     pub fn animate_sprite() {
