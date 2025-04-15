@@ -16,6 +16,7 @@ pub mod tests {
         let archetypes_as_vec: Vec<(&u64, &Archetype)> = world.archetypes.iter().collect::<Vec<_>>().clone();
         assert!(&archetypes_as_vec.first().unwrap().1.entities.len() == &1);
         assert!(world.is_entity_alive(archetypes_as_vec.first().unwrap().1.entities[0]));
+        assert!(world.is_entity_visible(archetypes_as_vec.first().unwrap().1.entities[0]));
     }
 
     #[test]
@@ -28,8 +29,8 @@ pub mod tests {
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
-            let mut query: Query = Query::new(&world).with_components::<Velocity>();
-            query.get_entities_flex().unwrap().first().unwrap().clone()
+            let mut query: Query = Query::new(&world).with::<Velocity>();
+            query.entities_with_components().unwrap().first().unwrap().clone()
         };
 
         commands.despawn(entity);
@@ -51,8 +52,8 @@ pub mod tests {
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
-            let mut query: Query = Query::new(&world).with_components::<Shape>();
-            query.get_entities_flex().unwrap().first().unwrap().clone()
+            let mut query: Query = Query::new(&world).with::<Shape>();
+            query.entities_with_components().unwrap().first().unwrap().clone()
         };
         assert!(!world.get_entity_component::<Shape>(&entity).is_none());
     }
@@ -68,8 +69,8 @@ pub mod tests {
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
-            let mut query: Query = Query::new(&world).with_components::<Shape>();
-            query.get_entities_flex().unwrap().first().unwrap().clone()
+            let mut query: Query = Query::new(&world).with::<Shape>();
+            query.entities_with_components().unwrap().first().unwrap().clone()
         };
         assert!(!world.get_entity_component_mut::<Shape>(&entity).is_none());
     }
@@ -85,8 +86,8 @@ pub mod tests {
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
-            let mut query: Query = Query::new(&world).with_components::<Shape>();
-            query.get_entities_flex().unwrap().first().unwrap().clone()
+            let mut query: Query = Query::new(&world).with::<Shape>();
+            query.entities_with_components().unwrap().first().unwrap().clone()
         };
         assert!(!world.get_entity_components(&entity).is_none());
         assert!(!world.get_entity_components(&entity).unwrap().is_empty());
@@ -103,8 +104,8 @@ pub mod tests {
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
-            let mut query: Query = Query::new(&world).with_components::<Shape>();
-            query.get_entities_flex().unwrap().first().unwrap().clone()
+            let mut query: Query = Query::new(&world).with::<Shape>();
+            query.entities_with_components().unwrap().first().unwrap().clone()
         };
         assert!(!world.get_entity_components_mut(&entity).is_none());
         assert!(!world.get_entity_components_mut(&entity).unwrap().is_empty());

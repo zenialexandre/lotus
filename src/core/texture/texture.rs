@@ -23,7 +23,7 @@ use image::{
     DynamicImage
 };
 use anyhow::*;
-use super::asset_loader::AssetLoader;
+use super::super::asset_loader::AssetLoader;
 
 /// Struct to represent a texture to be used on the rendering process.
 pub struct Texture {

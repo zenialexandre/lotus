@@ -1,4 +1,4 @@
-#![doc(html_favicon_url = "https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/icons/lotus_doc_icon.ico")]
+#![doc(html_favicon_url = "https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/icons/lotus_pink_aligned.ico")]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_pink_256x256.png")]
 
 #![doc = r#"
@@ -134,8 +134,10 @@ pub use core::game_loop::*;
 pub use core::asset_loader::AssetLoader;
 pub use core::engine::*;
 pub use core::color::*;
+pub use core::visibility::*;
 pub use core::shape::*;
-pub use core::sprite::*;
+pub use core::texture::sprite::*;
+pub use core::texture::sprite_sheet::*;
 pub use core::input::*;
 pub use core::text::*;
 pub use core::camera::camera2d::*;

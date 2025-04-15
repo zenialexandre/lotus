@@ -1,6 +1,6 @@
 use lotus_proc_macros::Component;
 
-use super::{
+use super::super::{
     managers::rendering_manager::Vertex,
     shape::{
         GeometryType,

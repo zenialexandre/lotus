@@ -30,12 +30,6 @@ pub struct GameLoop {
     pub current_fps: u32
 }
 
-/// Struct to update the current engine state as the end-user.
-#[derive(Clone, Debug, Resource)]
-pub struct GameLoopListener {
-    pub state: GameLoopState
-}
-
 impl GameLoop {
     /// Create a new loop with parameters.
     pub fn new(setup: fn(context: &mut Context), update: fn(context: &mut Context)) -> Self {
@@ -75,11 +69,12 @@ impl GameLoop {
             self.current_fps = self.frame_count;
             self.frame_count = 0;
             self.last_fps_update = Instant::now();
+            context.game_loop_listener.current_fps = self.current_fps;
             //println!("FPS: {}", self.current_fps);
         }
 
         // Frame Pacing - 60 FPS
-        let target_delta: Duration = Duration::from_secs_f32(1.0 / 60.0);
+        let target_delta: Duration = Duration::from_secs_f32(1.0 / context.game_loop_listener.fps_cap as f32);
         let frame_time: Duration = Instant::now() - now;
         if frame_time < target_delta {
             std::thread::sleep(target_delta - frame_time);
@@ -121,19 +116,36 @@ impl GameLoop {
     }
 }
 
+/// Struct to update the current engine state as the end-user.
+#[derive(Clone, Debug, Resource)]
+pub struct GameLoopListener {
+    pub state: GameLoopState,
+    pub current_fps: u32,
+    pub fps_cap: u32
+}
+
 impl GameLoopListener {
     /// Create a new loop listener.
     pub fn new() -> Self {
-        return Self { state: GameLoopState::Running };
+        return Self {
+            state: GameLoopState::Running,
+            current_fps: 60,
+            fps_cap: 60
+        };
     }
 
     /// Update the current loop status to Paused.
-    pub fn pause(&mut self) {
+    pub(crate) fn _pause(&mut self) {
         self.state = GameLoopState::Paused;
     }
 
     /// Update the current loop status to Running.
-    pub fn resume(&mut self) {
+    pub(crate) fn _resume(&mut self) {
         self.state = GameLoopState::Running;
+    }
+
+    /// Update the maximum FPS number.
+    pub fn set_fps_cap(&mut self, fps_cap: u32) {
+        self.fps_cap = fps_cap;
     }
 }

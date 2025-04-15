@@ -10,9 +10,8 @@ use super::super::{
     color,
     shape::{Orientation, Shape},
     physics::transform::Transform,
-    sprite::Sprite,
     texture,
-    texture::TextureCache,
+    texture::{texture::TextureCache, sprite::Sprite},
     text::{TextRenderer, Text},
     camera::camera2d::Camera2d,
     ecs::{entity::Entity, world::World, component::Component, resource::ResourceRef}
@@ -271,8 +270,17 @@ impl RenderState {
                 }
             ]
         });
-        let texture_render_pipeline: RenderPipeline = get_render_pipeline(&render_state, vec![&texture_bind_group_layout, &transform_bind_group_layout], TEXTURE_SHADER);
-        let color_render_pipeline: RenderPipeline = get_render_pipeline(&render_state, vec![&color_bind_group_layout, &transform_bind_group_layout], COLOR_SHADER);
+
+        let texture_render_pipeline: RenderPipeline = get_render_pipeline(
+            &render_state,
+            vec![&texture_bind_group_layout, &transform_bind_group_layout],
+            TEXTURE_SHADER
+        );
+        let color_render_pipeline: RenderPipeline = get_render_pipeline(
+            &render_state,
+            vec![&color_bind_group_layout, &transform_bind_group_layout],
+            COLOR_SHADER
+        );
 
         render_state.texture_render_pipeline = Some(texture_render_pipeline);
         render_state.color_render_pipeline = Some(color_render_pipeline);
@@ -397,9 +405,9 @@ impl RenderState {
             });
             render_pass.set_viewport(
                 0.0,
-                0.0, 
-                self.physical_size.as_ref().unwrap().width as f32, 
-                self.physical_size.as_ref().unwrap().height as f32, 
+                0.0,
+                self.physical_size.as_ref().unwrap().width as f32,
+                self.physical_size.as_ref().unwrap().height as f32,
                 0.0,
                 1.0
             );
@@ -408,11 +416,14 @@ impl RenderState {
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
                 render_pass.set_pipeline(self.texture_render_pipeline.as_ref().unwrap());
                 self.setup_sprite_rendering(None, &background_sprite, None, &camera2d, true);
-                self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
+                self.apply_render_pass_with_values(
+                    &mut render_pass,
+                    self.texture_bind_group.as_ref().unwrap().clone()
+                );
             }
 
             for entity in self.entities_to_render.clone() {
-                if world.is_entity_alive(entity) {
+                if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
                     let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
 
                     if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
@@ -421,7 +432,10 @@ impl RenderState {
                         );
                         render_pass.set_pipeline(self.texture_render_pipeline.as_ref().unwrap());
                         self.setup_sprite_rendering(Some(&entity), sprite, transform, &camera2d, false);
-                        self.apply_render_pass_with_values(&mut render_pass, self.texture_bind_group.as_ref().unwrap().clone());
+                        self.apply_render_pass_with_values(
+                            &mut render_pass,
+                            self.texture_bind_group.as_ref().unwrap().clone()
+                        );
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
                         let transform: Option<&Transform> = components.iter()
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
@@ -456,7 +470,7 @@ impl RenderState {
     }
 
     pub(crate) fn setup_sprite_rendering(&mut self, entity: Option<&Entity>, sprite: &Sprite, transform: Option<&Transform>, camera2d: &Camera2d, is_background: bool) {
-        let texture: Arc<texture::Texture> = {
+        let texture: Arc<texture::texture::Texture> = {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
                 texture_from_cache
             } else {
@@ -518,7 +532,7 @@ fn create_layouts_on_sprite_rendering(
     render_state: &mut RenderState,
     entity: Option<&Entity>,
     sprite: &Sprite,
-    texture: &texture::Texture,
+    texture: &texture::texture::Texture,
     transform: Option<&Transform>,
     camera2d: &Camera2d,
     is_background: bool

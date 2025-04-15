@@ -56,7 +56,6 @@ your_game!(
         resizable: false,
         decorations: true,
         transparent: false,
-        visible: true,
         active: true,
         enabled_buttons: WindowButtons::CLOSE | WindowButtons::MINIMIZE
     },
@@ -77,7 +76,7 @@ fn setup(context: &mut Context) {
     let mut thread_rng: ThreadRng = rand::rng();
     let random_x_direction: f32 = thread_rng.random_range(-0.8..0.8);
 
-    context.world.add_resources(vec![
+    context.commands.add_resources(vec![
         Box::new(LittleBallRespawnTimer::new()),
         Box::new(NextState::default())
     ]);
@@ -118,18 +117,18 @@ fn update(context: &mut Context) {
         let mut next_state: ResourceRefMut<'_, NextState> = context.world.get_resource_mut::<NextState>().unwrap();
         next_state.0 = GameState::Running;
         
-        let mut query: Query = Query::new(&context.world).with_components::<Text>();
-        if let Some(entity) = query.get_entities_flex().unwrap().first() {
+        let mut query: Query = Query::new(&context.world).with::<Text>();
+        if let Some(entity) = query.entities_with_components().unwrap().first() {
             context.commands.despawn(entity.clone());
         }
     }
 
     if context.world.get_resource::<NextState>().unwrap().0 == GameState::Running {
-        let mut player_query: Query = Query::new(&context.world).with_components::<Player>();
-        let player_entity: Entity = player_query.get_entities_flex().unwrap().first().unwrap().clone();
+        let mut player_query: Query = Query::new(&context.world).with::<Player>();
+        let player_entity: Entity = player_query.entities_with_components().unwrap().first().unwrap().clone();
 
-        let mut little_ball_query: Query = Query::new(&context.world).with_components::<LittleBall>();
-        let little_ball_entity: Entity = little_ball_query.get_entities_flex().unwrap().first().unwrap().clone();
+        let mut little_ball_query: Query = Query::new(&context.world).with::<LittleBall>();
+        let little_ball_entity: Entity = little_ball_query.entities_with_components().unwrap().first().unwrap().clone();
 
         let mut thread_rng: ThreadRng = rand::rng();
         let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
@@ -238,8 +237,8 @@ fn check_player_little_ball_collision(context: &mut Context, player_entity: Enti
 }
 
 fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity: Entity, random_factor: f32) {
-    let mut border_query: Query = Query::new(&context.world).with_components::<Border>();
-    let borders_entities: Vec<Entity> = border_query.get_entities_flex().unwrap();
+    let mut border_query: Query = Query::new(&context.world).with::<Border>();
+    let borders_entities: Vec<Entity> = border_query.entities_with_components().unwrap();
 
     let mut little_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
     let mut little_ball_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();
@@ -261,8 +260,8 @@ fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity
 }
 
 fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity: Entity, random_factor: f32) {
-    let mut targets_query: Query = Query::new(&context.world).with_components::<Target>();
-    let targets_entities: Vec<Entity> = targets_query.get_entities_flex().unwrap();
+    let mut targets_query: Query = Query::new(&context.world).with::<Target>();
+    let targets_entities: Vec<Entity> = targets_query.entities_with_components().unwrap();
 
     let mut little_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
     let mut little_ball_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&little_ball_entity).unwrap();

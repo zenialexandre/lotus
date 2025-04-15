@@ -7,21 +7,29 @@ use std::{
     sync::Arc
 };
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
-use cgmath::{Matrix4, Vector3};
+use cgmath::{Matrix4, Vector2, Vector3};
+use lotus_proc_macros::Component;
 use uuid::Uuid;
 
 use super::{
     super::{
+        color::Color,
         camera::camera2d::Camera2d,
         input::Input,
-        text::{Text, TextRenderer},
+        visibility::Visibility,
+        text::{Text, TextRenderer, Font, Fonts},
         managers::rendering_manager::RenderState,
         physics::{collision::Collision, transform::Transform}
     },
+    query::Query,
     entity::Entity,
     component::{Component, ComponentRefMut, ComponentRef, ComponentBorrowState},
     resource::{Resource, ResourceRefMut, ResourceRef, ResourceBorrowState}
 };
+
+/// Struct to represent the FPS entity on the world.
+#[derive(Clone, Component)]
+struct Fps();
 
 /// Struct to represent the different archetypes and/or clusters of data.
 pub struct Archetype {
@@ -75,10 +83,10 @@ impl World {
     }
 
     /// Add a new resource to the world.
-    pub fn add_resource<T: Resource + 'static>(&mut self, resource: T) {
+    pub fn add_resource(&mut self, resource: Box<dyn Resource>) {
         self.resources.insert(
-            TypeId::of::<T>(),
-            Arc::new(AtomicRefCell::new(Box::new(resource)))
+            resource.type_id(),
+            Arc::new(AtomicRefCell::new(resource))
         );
     }
 
@@ -89,6 +97,24 @@ impl World {
                 resource.type_id(),
                 Arc::new(AtomicRefCell::new(resource))
             );
+        }
+    }
+
+    pub fn show_fps(&mut self, render_state: &mut RenderState, current_fps: u32) {
+        let mut query: Query = Query::new(&self).with::<Fps>();
+
+        if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
+            if let Some(text_renderer) = render_state.text_renderers.get_mut(&fps_entity.0) {
+                text_renderer.update_brush(current_fps.to_string(), render_state.queue.as_ref().unwrap(), render_state.physical_size.as_ref().unwrap());
+            }
+        } else {
+            let fps_text: Text = Text::new(
+                Font::new(Fonts::RobotoMono.get_path(), 20.0),
+                Vector2::new(0.0, 0.0),
+                Color::BLACK,
+                current_fps.to_string()
+            );
+            self.spawn(render_state, vec![Box::new(fps_text), Box::new(Fps())]);
         }
     }
 
@@ -113,6 +139,10 @@ impl World {
 
         if !components_refs.iter().any(|component| component.borrow().as_any().is::<Transform>()) {
             components_refs.push(AtomicRefCell::new(Box::new(Transform::default())));
+        }
+
+        if !components_refs.iter().any(|component| component.borrow().as_any().is::<Visibility>()) {
+            components_refs.push(AtomicRefCell::new(Box::new(Visibility::default())));
         }
 
         let mut components_types_ids: Vec<TypeId> = components_refs.iter().map(|c| c.borrow().type_id()).collect();
@@ -373,6 +403,12 @@ impl World {
     pub fn is_entity_alive(&self, entity: Entity) -> bool {
         return self.archetypes.values().any(|archetype| archetype.entities.iter().any(|e| e.0 == entity.0));    
     }
+
+    /// Returns if an entity is visible.
+    pub fn is_entity_visible(&self, entity: Entity) -> bool {
+        let visibility: ComponentRef<'_, Visibility> = self.get_entity_component::<Visibility>(&entity).unwrap();
+        return visibility.value;
+    }
 }
 
 /// Struct to represent the mutable commands to be made on the world.
@@ -400,6 +436,21 @@ impl Commands {
         self.commands.push(Command::Despawn(entity));
     }
 
+    /// # Add a new resource to the world.
+    pub fn add_resource(&mut self, resource: Box<dyn Resource>) {
+        self.commands.push(Command::AddResource(resource));
+    }
+
+    /// # Add a list of resources to the world.
+    pub fn add_resources(&mut self, resources: Vec<Box<dyn Resource>>) {
+        self.commands.push(Command::AddResources(resources));
+    }
+
+    /// # Show the current FPS value.
+    pub fn show_fps(&mut self, current_fps: u32) {
+        self.commands.push(Command::ShowFps(current_fps));
+    }
+
     /// Take the commands memory reference.
     pub(crate) fn _take_commands(&mut self) -> Vec<Command> {
         return std::mem::take(&mut self.commands);
@@ -416,6 +467,15 @@ impl Commands {
                     if world.is_entity_alive(entity) {
                         world.despawn(render_state, &entity);
                     }
+                },
+                Command::AddResource(resource) => {
+                    world.add_resource(resource);   
+                },
+                Command::AddResources(resources) => {
+                    world.add_resources(resources);
+                },
+                Command::ShowFps(current_fps) => {
+                    world.show_fps(render_state, current_fps);
                 }
             }
         }
@@ -425,5 +485,8 @@ impl Commands {
 /// Enumerator that store the mutable commands allowed in the world.
 pub enum Command {
     Spawn(Vec<Box<dyn Component>>),
-    Despawn(Entity)
+    Despawn(Entity),
+    AddResource(Box<dyn Resource>),
+    AddResources(Vec<Box<dyn Resource>>),
+    ShowFps(u32)
 }

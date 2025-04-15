@@ -1,7 +1,6 @@
 use cgmath::{Deg, Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
-
-use super::super::{engine::Context, managers::rendering_manager::RenderState};
+use super::super::managers::rendering_manager::RenderState;
 
 /// Struct to represent the transform matrix of every object rendered.
 #[derive(Clone, Debug, Component)]
@@ -53,22 +52,19 @@ impl Transform {
         }
     }
 
-    fn _interpolate(&mut self, context: &Context, alpha: f32) {
-        let interpolated_position: Vector2<f32> = self.position * (1.0 - alpha) + self.position * alpha;
-        self.set_position(&context.render_state, interpolated_position);
-    }
-
     /// Set the current position and sends it to the buffer.
     pub fn set_position(&mut self, render_state: &RenderState, position: Vector2<f32>) {
         self.position = position;
         self.write_update_to_buffer(render_state);
     }
 
+    /// Set the curretn position x and sends it to the buffer.
     pub fn set_position_x(&mut self, render_state: &RenderState, x: f32) {
         self.position.x = x;
         self.write_update_to_buffer(render_state);
     }
 
+    /// Set the curretn position y and sends it to the buffer.
     pub fn set_position_y(&mut self, render_state: &RenderState, y: f32) {
         self.position.y = y;
         self.write_update_to_buffer(render_state);
