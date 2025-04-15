@@ -1,4 +1,4 @@
-![lotus_pink_256x256](https://github.com/user-attachments/assets/e7bbd3cf-cef3-44dd-8125-cddf0f53bab8)
+![lotus_pink_256x256_aligned](https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f)
 --------------
 
 Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.  
