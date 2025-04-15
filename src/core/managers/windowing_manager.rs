@@ -94,7 +94,7 @@ impl WindowConfiguration {
         };
     }
 
-        /// Returns the window configuration with the width.
+    /// Returns the window configuration with the width.
     pub fn width(self, width: f64) -> Self {
         return Self {
             width,
@@ -102,7 +102,7 @@ impl WindowConfiguration {
         };
     }
 
-        /// Returns the window configuration with the height.
+    /// Returns the window configuration with the height.
     pub fn height(self, height: f64) -> Self {
         return Self {
             height,
