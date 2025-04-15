@@ -62,7 +62,7 @@ impl Default for WindowConfiguration {
 }
 
 impl WindowConfiguration {
-    /// Returns the window configuration with the icon as bytes.
+	/// Returns the window configuration with the icon as bytes.
 	pub fn icon_path(self, icon_path: String) -> Self {
 		return Self {
 			icon_path,
@@ -86,15 +86,15 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the background image.
-    pub fn background_image_path(self, background_image_path: Option<String>) -> Self {
+	/// Returns the window configuration with the background image.
+	pub fn background_image_path(self, background_image_path: Option<String>) -> Self {
 		return Self {
 			background_image_path,
 			..self
 		};
 	}
 
-    /// Returns the window configuration with the width.
+    	/// Returns the window configuration with the width.
 	pub fn width(self, width: f64) -> Self {
 		return Self {
 			width,
@@ -102,7 +102,7 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the height.
+    	/// Returns the window configuration with the height.
 	pub fn height(self, height: f64) -> Self {
 		return Self {
 			height,
@@ -110,7 +110,7 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the position x.
+    	/// Returns the window configuration with the position x.
 	pub fn position_x(self, position_x: f64) -> Self {
 		return Self {
 			position_x,
@@ -118,7 +118,7 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the position y.
+    	/// Returns the window configuration with the position y.
 	pub fn position_y(self, position_y: f64) -> Self {
 		return Self {
 			position_y,
@@ -126,7 +126,7 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the resizable.
+    	/// Returns the window configuration with the resizable.
 	pub fn resizable(self, resizable: bool) -> Self {
 		return Self {
 			resizable,
@@ -134,7 +134,7 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the decorations.
+    	/// Returns the window configuration with the decorations.
 	pub fn decorations(self, decorations: bool) -> Self {
 		return Self {
 			decorations,
@@ -142,7 +142,7 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the transparent.
+    	/// Returns the window configuration with the transparent.
 	pub fn transparent(self, transparent: bool) -> Self {
 		return Self {
 			transparent,
@@ -150,7 +150,7 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the visible.
+    	/// Returns the window configuration with the visible.
 	pub(crate) fn _visible(self, _visible: bool) -> Self {
 		return Self {
 			//visible,
@@ -158,7 +158,7 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the active.
+    	/// Returns the window configuration with the active.
 	pub fn active(self, active: bool) -> Self {
 		return Self {
 			active,
@@ -166,25 +166,25 @@ impl WindowConfiguration {
 		};
 	}
 
-    /// Returns the window configuration with the enabled buttons.
+    	/// Returns the window configuration with the enabled buttons.
 	pub fn enabled_buttons(self, enabled_buttons: WindowButtons) -> Self {
 		return Self {
 			enabled_buttons,
 			..self
 		};
 	}
-
-    /// Returns a icon by its relative bytes.
-    pub fn get_icon_by_bytes(icon_as_bytes: Vec<u8>) -> Option<Icon> {
-        if let Ok(image) = image::load_from_memory(&icon_as_bytes) {
-            let icon_image = image.into_rgba8();
-            let (icon_width, icon_height): (u32, u32) = icon_image.dimensions();
-            let icon_rgba: Vec<u8> = icon_image.into_raw();
-            let icon: Icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
-            return Some(icon);
-        };
-        return None;
-    }
+	
+	/// Returns a icon by its relative bytes.
+    	pub fn get_icon_by_bytes(icon_as_bytes: Vec<u8>) -> Option<Icon> {
+		if let Ok(image) = image::load_from_memory(&icon_as_bytes) {
+	            let icon_image = image.into_rgba8();
+	            let (icon_width, icon_height): (u32, u32) = icon_image.dimensions();
+	            let icon_rgba: Vec<u8> = icon_image.into_raw();
+	            let icon: Icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
+	            return Some(icon);
+	        };
+	        return None;
+	}
 }
 
 struct Application {
