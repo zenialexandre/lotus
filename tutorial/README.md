@@ -83,7 +83,7 @@ fn update(_context: &mut Context) {
 ```
 
 Now just run the following command on your prompt targetting your root folder. <br>
-You may notice that the assets directory will be automatically created, with it wasn't before.
+You may notice that the assets directory will be automatically created if it wasn't before.
 
 ```rust
 cargo run
@@ -127,6 +127,58 @@ fn update(context: &mut Context) {
 
     // Every entity has an unique ID on our World.
     eprintln!("My Entity Unique ID: {:?}", my_entity.0);
+}
+```
+
+### Mutating a Component
+
+Let's mutate our first component. <br>
+If the Transform component isn't on our 'spawn' function, it will be created as default. <br>
+So let's create the component with our own values.
+
+```rust
+use lotus_engine::*;
+
+your_game!(
+    WindowConfiguration::default(),
+    setup,
+    update
+);
+
+fn setup(context: &mut Context) {
+    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
+
+    // We created a Transform variable.
+    // Setting the initial position to x=0.0 and y=0.0 (middle of the screen).
+    // Rotation to 0.0.
+    // And scale to x=0.25 and y=0.25.
+    let transform: Transform = Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25));
+    
+    // Now we send the transform component too.
+    context.commands.spawn(vec![Box::new(my_shape), Box::new(transform)]);
+}
+
+fn update(context: &mut Context) {
+    // Just to demonstrate, you can set more filters to your query.
+    // In this case only passing Shape would do the trick.
+    // But our entity have the Transform component too, so it will work as well.
+    let mut query: Query = Query::new(&context.world).with::<Shape>().with::<Transform>();
+
+    let my_entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
+
+    // Here we access our world through the context parameter.
+    // Our world knows everything, so it only needs the entity to find its components!
+    // In this case we want to mutate the transformation matrix of our entity, so we want the mutable reference.
+    let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&my_entity).unwrap();
+
+    // We declare our rotation variable.
+    // It will be updated at each frame.
+    // Remember always to make use of the delta value!
+    let my_rotation: f32 = transform.rotation + 100.0 * context.delta;
+
+    // Here we use the 'set_rotation' function of the Transform component.
+    // At each frame, the rotation of our shape will be updated with our variable.
+    transform.set_rotation(&context.render_state, my_rotation);
 }
 ```
 
