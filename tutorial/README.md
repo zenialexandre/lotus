@@ -130,7 +130,7 @@ fn update(context: &mut Context) {
 }
 ```
 
-### Mutating a Component
+### Working With Components
 
 Let's mutate our first component. <br>
 If the Transform component isn't on our 'spawn' function, it will be created as default. <br>
@@ -182,7 +182,7 @@ fn update(context: &mut Context) {
 }
 ```
 
-### Reading a Resource
+### Working With Resources
 
 Resources are available singletons in our world that store useful data and help us out. <br>
 Always remember that you CAN create your own componentes and resources at easy. <br>
@@ -253,4 +253,4 @@ fn update(context: &mut Context) {
 
 Thank you for reading until here! <br>
 To learn more about the engine, please look into our examples [`here`](https://github.com/zenialexandre/lotus/tree/main/examples). <br>
-Happy coding!!
+Happy coding!! 👾
