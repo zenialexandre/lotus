@@ -182,4 +182,75 @@ fn update(context: &mut Context) {
 }
 ```
 
-To learn more about the engine, please look into our examples [`here`](https://github.com/zenialexandre/lotus/tree/main/examples).
+### Reading a Resource
+
+Resources are available singletons in our world that store useful data and help us out. <br>
+Always remember that you CAN create your own componentes and resources at easy. <br>
+In this next example I will make use of a default resource of the world. <br>
+And I will create my own component and resource.
+
+```rust
+use lotus_engine::*;
+
+// You can create a component that can be very complex.
+// In this case it will only work as a filter for our query.
+#[derive(Clone, Component)]
+pub struct JustAComponent();
+
+// Here a resource is created.
+// It hold a u32 value.
+#[derive(Clone, Resource)]
+pub struct JustAResource(u32);
+
+your_game!(
+    WindowConfiguration::default(),
+    setup,
+    update
+);
+
+fn setup(context: &mut Context) {
+    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
+    let transform: Transform = Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25));
+    
+    // Add our component.
+    context.commands.spawn(vec![Box::new(my_shape), Box::new(transform), Box::new(JustAComponent())]);
+
+    // Add our resource with its initial value.
+    context.commands.add_resource(Box::new(JustAResource(1)));
+}
+
+fn update(context: &mut Context) {
+    // Using our component on the query.
+    // With a filter like this, it can be much easier to find an entity.
+    let mut query: Query = Query::new(&context.world).with::<JustAComponent>();
+    let my_entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
+    let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&my_entity).unwrap();
+
+    // Here we use the world to get a specific resource.
+    // We only want to read the information of input.
+    // So the input will not be mutable.
+    let input: ResourceRef<'_, Input> = context.world.get_resource::<Input>().unwrap();
+
+    // Here we get our resource as a mutable reference.
+    // We want to change the value.
+    let mut just_a_resource: ResourceRefMut<'_, JustAResource> = context.world.get_resource_mut::<JustAResource>().unwrap();
+
+    // While we are pressing the X key, our shape will be rotated.
+    if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyX)) {
+        let my_rotation: f32 = transform.rotation + 100.0 * context.delta;
+        transform.set_rotation(&context.render_state, my_rotation);
+    }
+
+    // Every time the X key is released, the resource value will be updated and printed.
+    if input.is_key_released(PhysicalKey::Code(KeyCode::KeyX)) {
+        just_a_resource.0 += 1;
+        eprintln!("Resource Value: {:?}", just_a_resource.0);
+    }
+}
+```
+
+### Now Its Up To You
+
+Thank you for reading until here! <br>
+To learn more about the engine, please look into our examples [`here`](https://github.com/zenialexandre/lotus/tree/main/examples). <br>
+Happy coding!!
