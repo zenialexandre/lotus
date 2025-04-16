@@ -36,7 +36,7 @@ fn setup(context: &mut Context) {
         vec![
             Box::new(blue_object),
             Box::new(Object()),
-            Box::new(Transform::new(Vector2::new(-0.45, 0.), 0.0, Vector2::new(0.30, 0.30))),
+            Box::new(Transform::new(Vector2::new(-0.45, 0.0), 0.0, Vector2::new(0.30, 0.30))),
             Box::new(Velocity::new(Vector2::new(0.45, 0.45))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]

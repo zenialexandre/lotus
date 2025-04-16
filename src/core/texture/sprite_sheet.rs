@@ -6,12 +6,12 @@ use super::super::{time::timer::Timer, physics::transform::Transform, engine::Co
 /// An entity can have multiple sprite sheets to do multiple animations.
 #[derive(Clone, Component)]
 pub struct SpriteSheet {
-    path: String,
-    transform: Transform,
+    _path: String,
+    _transform: Transform,
     timer: Timer,
-    tile_size: (u32, u32),
-    rows: u32,
-    columns: u32,
+    _tile_size: (u32, u32),
+    _rows: u32,
+    _columns: u32,
     indices: Vec<u32>,
     current_index: u32
 }
@@ -28,12 +28,12 @@ impl SpriteSheet {
         indices: Vec<u32>
     ) -> Self {
         return Self {
-            path,
-            transform,
+            _path: path,
+            _transform: transform,
             timer: Timer::new(crate::TimerType::Repeat, Duration::from_secs_f32(time_between_tiles)),
-            tile_size,
-            rows,
-            columns,
+            _tile_size: tile_size,
+            _rows: rows,
+            _columns: columns,
             indices,
             current_index: 0
         };
@@ -51,8 +51,8 @@ impl SpriteSheet {
         }
     }
 
-    pub fn animate(&mut self, context: &mut Context) {
-        
+    pub fn animate(&mut self, _context: &mut Context) {
+        //..
     }
 
     pub fn animate_sprite() {

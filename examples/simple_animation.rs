@@ -22,6 +22,6 @@ fn setup(context: &mut Context) {
     context.commands.spawn(vec![Box::new(scarfy_sprite_sheet)]);
 }
 
-fn update(context: &mut Context) {
+fn update(_context: &mut Context) {
     //..
 }

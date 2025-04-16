@@ -138,9 +138,9 @@ impl RenderState {
                 required_features: Features::default(),
                 required_limits: Limits::default(),
                 label: None,
-                memory_hints: Default::default()
-            },
-            None
+                memory_hints: Default::default(),
+                trace: Trace::Off
+            }
         ).await.unwrap();
 
         let surface_capabilities: SurfaceCapabilities = surface.get_capabilities(&adapter);
