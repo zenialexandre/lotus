@@ -43,7 +43,7 @@ impl Default for WindowConfiguration {
     /// Returns a default configuration.
     fn default() -> Self {
         return Self {
-            icon_path: "textures/lotus_pink_256x256_aligned.png".to_string(),
+            icon_path: "".to_string(),
             title: "New Game!".to_string(),
             background_color: Some(Color::WHITE),
             background_image_path: None,
@@ -200,9 +200,6 @@ impl ApplicationHandler for Application {
         let mut background_image_path: Option<String> = None;
 
         let window: Arc<Window> = if let Some(window_configuration) = &self.window_configuration {
-            let icon: Option<Icon> = WindowConfiguration::get_icon_by_bytes(
-                AssetLoader::load_bytes(&window_configuration.icon_path).ok().unwrap()
-            );
             let mut window_attributes: WindowAttributes = Window::default_attributes();
             window_attributes.title = window_configuration.title.clone();
             window_attributes.inner_size =  Some(Size::Logical(LogicalSize::new(
@@ -219,7 +216,16 @@ impl ApplicationHandler for Application {
             window_attributes.visible = false; // Trick to appear the icon on the taskbar.
             window_attributes.active = window_configuration.active;
             window_attributes.enabled_buttons = window_configuration.enabled_buttons;
-            window_attributes.window_icon = icon.clone();
+
+            if window_configuration.icon_path.is_empty() {
+                window_attributes.window_icon = WindowConfiguration::get_icon_by_bytes(
+                    include_bytes!("../../../assets/textures/lotus_pink_256x256_aligned.png").to_vec()
+                );
+            } else {
+                window_attributes.window_icon = WindowConfiguration::get_icon_by_bytes(
+                    AssetLoader::load_bytes(&window_configuration.icon_path).ok().unwrap()
+                );
+            }
 
             if let Some(background_color) = window_configuration.background_color {
                 color = Some(background_color);
