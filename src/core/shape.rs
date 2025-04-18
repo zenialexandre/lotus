@@ -28,6 +28,15 @@ pub struct Circle {
     pub radius: f32
 }
 
+impl Default for Circle {
+    fn default() -> Self {
+        return Self {
+            number_of_segments: 32,
+            radius: 0.5
+        };
+    }
+}
+
 impl Circle {
     /// Create a new circle with parameters.
     pub fn new(number_of_segments: u16, radius: f32) -> Self {
