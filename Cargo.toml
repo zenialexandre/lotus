@@ -1,6 +1,6 @@
 [package]
 name = "lotus_engine"
-version = "0.1.12"
+version = "0.1.13"
 authors = ["Alexandre Zeni <zenialexandre123@gmail.com>"]
 description = "Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games."
 license = "MPL-2.0"
@@ -20,7 +20,7 @@ pollster = "0.4"
 bytemuck = { version = "1.22.0", features = [ "derive" ] }
 anyhow = "1.0.98"
 uuid = { version = "1.16.0", features = ["v4"] }
-rand = "0.9.0"
+rand = "0.9.1"
 atomic_refcell = "0.1"
 once_cell = "1.21.3"
 env_logger = "0.11.8"

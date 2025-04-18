@@ -10,6 +10,7 @@ use super::super::{
     color,
     shape::{Orientation, Shape},
     physics::transform::Transform,
+    draw_order::DrawOrder,
     texture,
     texture::{texture::TextureCache, sprite::Sprite},
     text::{TextRenderer, Text},
@@ -422,7 +423,15 @@ impl RenderState {
                 );
             }
 
-            for entity in self.entities_to_render.clone() {
+            let mut entities_to_render_sorted: Vec<Entity> = self.entities_to_render.clone();
+
+            if entities_to_render_sorted.len() > 1 {
+                entities_to_render_sorted.sort_by(|a, b| {
+                    DrawOrder::compare(world, a, b)
+                });
+            }
+
+            for entity in entities_to_render_sorted.clone() {
                 if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
                     let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
 

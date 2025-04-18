@@ -146,6 +146,7 @@ pub use core::physics::acceleration::*;
 pub use core::physics::collision::*;
 pub use core::physics::velocity::*;
 pub use core::time::timer::*;
+pub use core::draw_order::*;
 pub use core::audio::audio_source::*;
 pub use core::audio::audio_error::*;
 pub use core::ecs::world::*;
