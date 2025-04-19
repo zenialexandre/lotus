@@ -105,7 +105,7 @@ impl World {
 
         if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
             if let Some(text_renderer) = render_state.text_renderers.get_mut(&fps_entity.0) {
-                text_renderer.update_brush(current_fps.to_string(), render_state.queue.as_ref().unwrap(), render_state.physical_size.as_ref().unwrap());
+                text_renderer.update_brush(current_fps.to_string(), render_state.queue.clone(), render_state.physical_size);
             }
         } else {
             let fps_text: Text = Text::new(

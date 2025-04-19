@@ -136,12 +136,12 @@ impl TextRenderer {
     }
 
     /// Updates the text rendering context with the new content.
-    pub fn update_brush(&mut self, content: String, queue: &Queue, physical_size: &PhysicalSize<u32>) {
+    pub fn update_brush(&mut self, content: String, queue: Option<Queue>, physical_size: Option<PhysicalSize<u32>>) {
         self.text.content = content;
 
         self.text_brush.update_matrix(
-            wgpu_text::ortho(physical_size.width as f32, physical_size.height as f32),
-            queue
+            wgpu_text::ortho(physical_size.as_ref().unwrap().width as f32, physical_size.as_ref().unwrap().height as f32),
+            queue.as_ref().unwrap()
         );
     }
 }
