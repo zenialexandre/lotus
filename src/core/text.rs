@@ -1,9 +1,8 @@
-use cgmath::Vector2;
 use lotus_proc_macros::Component;
 use wgpu::Queue;
 use wgpu_text::{glyph_brush::ab_glyph::FontArc, BrushBuilder, TextBrush};
 use winit::dpi::PhysicalSize;
-use super::{color::Color, asset_loader::AssetLoader, managers::rendering_manager::RenderState};
+use super::{physics::transform::Position, color::Color, asset_loader::AssetLoader, managers::rendering_manager::RenderState};
 
 const UNDERDOG_REGULAR_PATH: &str = "../../assets/fonts/Underdog-Regular.ttf";
 const CODYSTAR_LIGHT_PATH: &str = "../../assets/fonts/Codystar-Light.ttf";
@@ -15,14 +14,14 @@ const ROBOTO_MONO_ITALIC: &str = "../../assets/fonts/RobotoMono-Italic-VariableF
 #[derive(Clone, Component)]
 pub struct Text {
     pub font: Font,
-    pub position: Vector2<f32>,
+    pub position: Position,
     pub color: Color,
     pub content: String
 }
 
 impl Text {
     /// Create a new text struct.
-    pub fn new(font: Font, position: Vector2<f32>, color: Color, content: String) -> Self {
+    pub fn new(font: Font, position: Position, color: Color, content: String) -> Self {
         return Self {
             font,
             position,

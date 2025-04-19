@@ -2,28 +2,96 @@ use cgmath::{Deg, Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
 use super::super::managers::rendering_manager::RenderState;
 
+/// Enumerator to represent the strategy that will be used for the positioning and scaling. 
+#[derive(Clone, Default, Debug, PartialEq)]
+pub enum Strategy {
+    #[default]
+    Normalized,
+    Pixelated
+}
+
+/// Struct to represent the position of the transformation matrix.
+#[derive(Clone, Debug)]
+pub struct Position {
+    pub x: f32,
+    pub y: f32,
+    pub strategy: Strategy
+}
+
+impl Position {
+    /// Creates a new position struct.
+    pub fn new(value: Vector2<f32>, strategy: Strategy) -> Self {
+        return Self {
+            x: value.x,
+            y: value.y,
+            strategy
+        };
+    }
+
+    /// Update the position values.
+    pub fn update_values(&mut self, value: Vector2<f32>) {
+        self.x = value.x;
+        self.y = value.y;
+    }
+
+    /// Returns the position as a vector.
+    pub fn to_vec(&self) -> Vector2<f32> {
+        return Vector2::new(self.x, self.y);
+    }
+}
+
+/// Struct to represent the scale of the transformation matrix.
+#[derive(Clone, Debug)]
+pub struct Scale {
+    pub x: f32,
+    pub y: f32,
+    pub strategy: Strategy
+}
+
+impl Scale {
+    /// Creates a new scale struct.
+    pub fn new(value: Vector2<f32>, strategy: Strategy) -> Self {
+        return Self {
+            x: value.x,
+            y: value.y,
+            strategy
+        };
+    }
+
+    /// Update the scale values.
+    pub fn update_values(&mut self, value: Vector2<f32>) {
+        self.x = value.x;
+        self.y = value.y;
+    }
+
+    /// Returns the scale as a vector.
+    pub fn to_vec(&self) -> Vector2<f32> {
+        return Vector2::new(self.x, self.y);
+    }
+}
+
 /// Struct to represent the transform matrix of every object rendered.
 #[derive(Clone, Debug, Component)]
 pub struct Transform {
-    pub position: Vector2<f32>,
+    pub position: Position,
     pub rotation: f32,
-    pub scale: Vector2<f32>
+    pub scale: Scale
 }
 
 impl Default for Transform {
     /// Returns a default transform struct.
     fn default() -> Self {
         return Self {
-            position: Vector2::new(0.0, 0.0),
+            position: Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
             rotation: 0.0,
-            scale: Vector2::new(0.25, 0.25)
+            scale: Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
         };
     }
 }
 
 impl Transform {
     /// Create a new transform with parameters.
-    pub fn new(position: Vector2<f32>, rotation: f32, scale: Vector2<f32>) -> Self {
+    pub fn new(position: Position, rotation: f32, scale: Scale) -> Self {
         return Self {
             position,
             rotation,
@@ -54,7 +122,8 @@ impl Transform {
 
     /// Set the current position and sends it to the buffer.
     pub fn set_position(&mut self, render_state: &RenderState, position: Vector2<f32>) {
-        self.position = position;
+        self.position.x = position.x;
+        self.position.y = position.y;
         self.write_update_to_buffer(render_state);
     }
 
@@ -72,7 +141,7 @@ impl Transform {
 
     /// Get the current position.
     pub fn get_position(&self) -> Vector2<f32> {
-        return self.position;
+        return Vector2::new(self.position.x, self.position.y);
     }
 
     /// Set the current rotation and sends it to the buffer.
@@ -88,12 +157,13 @@ impl Transform {
 
     /// Set the current scale and sends it to the buffer.
     pub fn set_scale(&mut self, render_state: &RenderState, scale: Vector2<f32>) {
-        self.scale = scale;
+        self.scale.x = scale.x;
+        self.scale.y = scale.y;
         self.write_update_to_buffer(render_state);
     }
 
     /// Get the current scale.
     pub fn get_scale(&self) -> Vector2<f32> {
-        return self.scale;
+        return Vector2::new(self.scale.x, self.scale.y);
     }
 }

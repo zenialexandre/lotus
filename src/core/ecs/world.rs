@@ -19,7 +19,7 @@ use super::{
         visibility::Visibility,
         text::{Text, TextRenderer, Font, Fonts},
         managers::rendering_manager::RenderState,
-        physics::{collision::Collision, transform::Transform}
+        physics::{collision::Collision, transform::{Transform, Position, Strategy}}
     },
     query::Query,
     entity::Entity,
@@ -110,7 +110,7 @@ impl World {
         } else {
             let fps_text: Text = Text::new(
                 Font::new(Fonts::RobotoMono.get_path(), 20.0),
-                Vector2::new(0.0, 0.0),
+                Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
                 Color::BLACK,
                 current_fps.to_string()
             );
@@ -202,7 +202,7 @@ impl World {
 
             if let Some(entity) = camera2d.target {
                 if let Some(transform) = self.get_entity_component::<Transform>(&entity) {
-                    (Some(entity), Some(transform.position))
+                    (Some(entity), Some(transform.position.clone()))
                 } else {
                     (None, None)
                 }
@@ -213,9 +213,9 @@ impl World {
 
         if let (Some(_), Some(position)) = (target_entity, target_position) {
             let mut camera2d: ResourceRefMut<'_, Camera2d> = self.get_resource_mut::<Camera2d>().unwrap();
-            camera2d.transform.position = position;
+            camera2d.transform.position = position.clone();
             camera2d.view_matrix = Matrix4::from_translation(Vector3::new(
-                -position.x,
+                -position.x.clone(),
                 -position.y,
                 0.0
             ));
@@ -407,7 +407,7 @@ impl World {
     /// Returns if an entity is visible.
     pub fn is_entity_visible(&self, entity: Entity) -> bool {
         let visibility: ComponentRef<'_, Visibility> = self.get_entity_component::<Visibility>(&entity).unwrap();
-        return visibility.value;
+        return visibility.0;
     }
 }
 

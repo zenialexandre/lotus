@@ -24,14 +24,22 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(secondary_sprite),
-            Box::new(Transform::new(Vector2::new(-0.25, 0.0), 0.0, Vector2::new(0.25, 0.25)))
+            Box::new(Transform::new(
+                Position::new(Vector2::new(-0.25, 0.0), Strategy::Normalized),
+                0.0,
+                Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+            ))
         ]
     );
 
     context.commands.spawn(
         vec![
             Box::new(shape),
-            Box::new(Transform::new(Vector2::new(-0.50, 0.0), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(Transform::new(
+                Position::new(Vector2::new(-0.50, 0.0), Strategy::Normalized),
+                0.0,
+                Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+            )),
             Box::new(Velocity::new(Vector2::new(1.0, 1.0)))
         ]
     );
@@ -50,10 +58,10 @@ fn update(context: &mut Context) {
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&player_entity).unwrap();
 
     if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowRight)) {
-        let x: f32 = transform.position.x + velocity.value.x * context.delta;
+        let x: f32 = transform.position.x + velocity.x * context.delta;
         transform.set_position_x(&context.render_state, x);
     } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowLeft)) {
-        let x: f32 = transform.position.x - velocity.value.x * context.delta;
+        let x: f32 = transform.position.x - velocity.x * context.delta;
         transform.set_position_x(&context.render_state, x);
     }
 }

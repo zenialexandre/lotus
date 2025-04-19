@@ -8,6 +8,11 @@ use super::ecs::{world::World, entity::Entity};
 pub struct DrawOrder(pub u32);
 
 impl DrawOrder {
+    /// Creates a new draw order struct.
+    pub fn new(value: u32) -> Self {
+        return Self(value);
+    }
+
     /// Returns the ordering related to the comparison.
     pub fn compare(world: &World, a: &Entity, b: &Entity) -> Ordering {
         let a_order: u32 = world.get_entity_component::<DrawOrder>(a).map(|d| d.0).unwrap_or(0);

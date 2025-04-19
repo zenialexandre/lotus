@@ -17,7 +17,11 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(sprite),
-            Box::new(Transform::new(Vector2::new(-0.50, -0.50), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(Transform::new(
+                Position::new(Vector2::new(-0.50, -0.50), Strategy::Normalized),
+                0.0,
+                Scale::new(Vector2::new(32.0, 32.0), Strategy::Pixelated)
+            )),
             Box::new(Velocity::new(Vector2::new(0.50, 0.50)))
         ]
     );
@@ -31,5 +35,5 @@ fn update(context: &mut Context) {
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(entity).unwrap();
 
-    transform.position.y += velocity.value.y * context.delta;
+    transform.position.y += velocity.y * context.delta;
 }

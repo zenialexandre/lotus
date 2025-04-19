@@ -34,28 +34,44 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(my_square),
-            Box::new(Transform::new(Vector2::new(-0.60, -0.25), 0.0, Vector2::new(0.10, 0.10))),
+            Box::new(Transform::new(
+                Position::new(Vector2::new(-0.60, -0.25), Strategy::Normalized),
+                0.0,
+                Scale::new(Vector2::new(0.10, 0.10), Strategy::Normalized)
+            )),
             Box::new(MySquare())
         ]
     );
     context.commands.spawn(
         vec![
             Box::new(my_rectangle),
-            Box::new(Transform::new(Vector2::new(-0.35, 0.20), 0.0, Vector2::new(0.50, 0.50))),
+            Box::new(Transform::new(
+                Position::new(Vector2::new(-0.35, 0.20), Strategy::Normalized),
+                0.0,
+                Scale::new(Vector2::new(0.50, 0.50), Strategy::Normalized)
+            )),
             Box::new(MyRectangle())
         ]
     );
     context.commands.spawn(
         vec![
             Box::new(my_triangle),
-            Box::new(Transform::new(Vector2::new(0.50, 0.50), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(Transform::new(
+                Position::new(Vector2::new(0.50, 0.50), Strategy::Normalized),
+                0.0,
+                Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+            )),
             Box::new(MyTriangle())
         ]
     );
     context.commands.spawn(
         vec![
             Box::new(my_circle),
-            Box::new(Transform::new(Vector2::new(0.80, 0.50), 0.0, Vector2::new(0.25, 0.25))),
+            Box::new(Transform::new(
+                Position::new(Vector2::new(0.80, 0.50), Strategy::Normalized),
+                0.0,
+                Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+            )),
             Box::new(MyCircle())
         ]
     );

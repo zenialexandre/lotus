@@ -142,6 +142,7 @@ pub use core::input::*;
 pub use core::text::*;
 pub use core::camera::camera2d::*;
 pub use core::physics::transform::Transform;
+pub use core::physics::transform::*;
 pub use core::physics::acceleration::*;
 pub use core::physics::collision::*;
 pub use core::physics::velocity::*;

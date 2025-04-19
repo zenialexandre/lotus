@@ -148,11 +148,16 @@ your_game!(
 fn setup(context: &mut Context) {
     let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
 
-    // We created a Transform variable.
+    // We need to create a Transform variable.
     // Setting the initial position to x=0.0 and y=0.0 (middle of the screen).
     // Rotation to 0.0.
     // And scale to x=0.25 and y=0.25.
-    let transform: Transform = Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25));
+    // The strategy normalized means that it will not use pixelated coordinates.
+    let transform: Transform = Transform::new(
+        Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+        0.0,
+        Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+    );
     
     // Now we send the transform component too.
     context.commands.spawn(vec![Box::new(my_shape), Box::new(transform)]);
@@ -210,8 +215,12 @@ your_game!(
 
 fn setup(context: &mut Context) {
     let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
-    let transform: Transform = Transform::new(Vector2::new(0.0, 0.0), 0.0, Vector2::new(0.25, 0.25));
-    
+    let transform: Transform = Transform::new(
+        Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+        0.0,
+        Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+    );
+
     // Add our component.
     context.commands.spawn(vec![Box::new(my_shape), Box::new(transform), Box::new(JustAComponent())]);
 

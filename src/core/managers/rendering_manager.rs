@@ -9,7 +9,7 @@ use std::{collections::HashMap, sync::Arc};
 use super::super::{
     color,
     shape::{Orientation, Shape},
-    physics::transform::Transform,
+    physics::transform::{Transform, Strategy},
     draw_order::DrawOrder,
     texture,
     texture::{texture::TextureCache, sprite::Sprite},
@@ -506,7 +506,12 @@ impl RenderState {
             ]
         });
 
-        let (transform_bind_group, projection_buffer, view_buffer) = get_transform_bindings(self, transform, camera2d);
+        let (transform_bind_group, projection_buffer, view_buffer) = get_transform_bindings(
+            self,
+            transform,
+            None,
+            camera2d
+        );
         let (vertex_buffer, index_buffer) = get_vertex_and_index_buffers(
             self,
             Some(entity),
@@ -571,7 +576,12 @@ fn create_layouts_on_sprite_rendering(
         ]
     });
 
-    let (transform_bind_group, projection_buffer, view_buffer) = get_transform_bindings(render_state, transform, camera2d);
+    let (transform_bind_group, projection_buffer, view_buffer) = get_transform_bindings(
+        render_state,
+        transform,
+        Some(texture),
+        camera2d
+    );
     let (vertex_buffer, index_buffer) = get_vertex_and_index_buffers(
         render_state,
         entity,
@@ -588,15 +598,43 @@ fn create_layouts_on_sprite_rendering(
     render_state.number_of_indices = Some(sprite.indices.len() as u32);
 }
 
-fn get_transform_bindings(render_state: &mut RenderState, transform: Option<&Transform>, camera2d: &Camera2d) -> (BindGroup, Buffer, Buffer) {
+fn get_transform_bindings(
+    render_state: &mut RenderState,
+    transform: Option<&Transform>,
+    texture: Option<&texture::texture::Texture>,
+    camera2d: &Camera2d
+) -> (BindGroup, Buffer, Buffer) {
     let projection_buffer: Buffer = get_projection_buffer(render_state, camera2d);
     let view_buffer: Buffer = get_view_buffer(render_state, camera2d);
 
     if let Some(transform_unwrapped) = transform {
-        let transform_matrix_unwrapped: [[f32; 4]; 4] = *transform_unwrapped.to_matrix().as_ref();
+        let mut transform_cloned: Transform = transform_unwrapped.clone();
+
+        if transform_cloned.position.strategy == Strategy::Pixelated {
+            let physical_size: &PhysicalSize<u32> = render_state.physical_size.as_ref().unwrap();
+            let aspect_ratio: f32 = physical_size.width as f32 / physical_size.height as f32;
+            let pixelated_x: f32 = transform_cloned.position.x / physical_size.width as f32 * 2.0 * aspect_ratio - aspect_ratio;
+            let pixelated_y: f32 = -(transform_cloned.position.y / physical_size.height as f32 * 2.0 - 1.0);
+
+            transform_cloned.position.x = pixelated_x;
+            transform_cloned.position.y = pixelated_y;
+        }
+
+        if let Some(texture_unwrapped) = texture {
+            if transform_cloned.scale.strategy == Strategy::Pixelated {
+                let (width, height): (u32, u32) = (texture_unwrapped.wgpu_texture.size().width, texture_unwrapped.wgpu_texture.size().height);
+
+                let pixelated_width: f32 = transform_cloned.scale.x / width as f32;
+                let pixelated_height: f32 = transform_cloned.scale.y / height as f32;
+                transform_cloned.scale.x = pixelated_width;
+                transform_cloned.scale.y = pixelated_height;
+            }
+        }
+
+        let transform_cloned: [[f32; 4]; 4] = *transform_cloned.to_matrix().as_ref();
         let transform_buffer: Buffer = render_state.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
             label: Some("Transform Buffer"),
-            contents: bytemuck::cast_slice(&[transform_matrix_unwrapped]),
+            contents: bytemuck::cast_slice(&[transform_cloned]),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
         });
         render_state.transform_buffer = Some(transform_buffer);

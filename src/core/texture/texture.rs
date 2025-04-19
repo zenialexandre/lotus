@@ -27,8 +27,7 @@ use super::super::asset_loader::AssetLoader;
 
 /// Struct to represent a texture to be used on the rendering process.
 pub struct Texture {
-    #[allow(unused)]
-    pub texture: wgpu::Texture,
+    pub wgpu_texture: wgpu::Texture,
     pub texture_view: TextureView,
     pub sampler: Sampler
 }
@@ -97,7 +96,7 @@ impl Texture {
             ..Default::default()
         });
 
-        return Ok(Self { texture, texture_view, sampler });
+        return Ok(Self { wgpu_texture: texture, texture_view, sampler });
     }
 }
 
