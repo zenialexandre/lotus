@@ -5,6 +5,12 @@ use wgpu_text::{glyph_brush::ab_glyph::FontArc, BrushBuilder, TextBrush};
 use winit::dpi::PhysicalSize;
 use super::{color::Color, asset_loader::AssetLoader, managers::rendering_manager::RenderState};
 
+const UNDERDOG_REGULAR_PATH: &str = "../../assets/fonts/Underdog-Regular.ttf";
+const CODYSTAR_LIGHT_PATH: &str = "../../assets/fonts/Codystar-Light.ttf";
+const CODYSTAR_REGULAR_PATH: &str = "../../assets/fonts/Codystar-Regular.ttf";
+const ROBOTO_MONO_PATH: &str = "../../assets/fonts/RobotoMono-VariableFont_wght.ttf";
+const ROBOTO_MONO_ITALIC: &str = "../../assets/fonts/RobotoMono-Italic-VariableFont_wght.ttf";
+
 /// Struct to represent a text to be rendered.
 #[derive(Clone, Component)]
 pub struct Text {
@@ -43,8 +49,15 @@ pub struct Font {
 impl Font {
     /// Create a new font struct.
     pub fn new(path: String, size: f32) -> Self {
+        let bytes: Vec<u8> = if path.contains("../../") {
+            let font: Fonts = Fonts::from_path(path).unwrap();
+            font.get_bytes()
+        } else {
+            AssetLoader::load_bytes(&path).ok().unwrap()
+        };
+
         return Self {
-            bytes: AssetLoader::load_bytes(&path).ok().unwrap(),
+            bytes,
             size
         };
     }
@@ -65,11 +78,36 @@ impl Fonts {
     /// Returns the path of the following font.
     pub fn get_path(&self) -> String {
         return match self {
-            Self::UnderdogRegular => "fonts/Underdog-Regular.ttf".to_string(),
-            Self::CodystarLight => "fonts/Codystar-Light.ttf".to_string(),
-            Self::CodystarRegular => "fonts/Codystar-Regular.ttf".to_string(),
-            Self::RobotoMono => "fonts/RobotoMono-VariableFont_wght.ttf".to_string(),
-            Self::RobotoMonoItalic => "fonts/RobotoMono-Italic-VariableFont_wght.ttf".to_string()
+            Self::UnderdogRegular => UNDERDOG_REGULAR_PATH.to_string(),
+            Self::CodystarLight => CODYSTAR_LIGHT_PATH.to_string(),
+            Self::CodystarRegular => CODYSTAR_REGULAR_PATH.to_string(),
+            Self::RobotoMono => ROBOTO_MONO_PATH.to_string(),
+            Self::RobotoMonoItalic => ROBOTO_MONO_ITALIC.to_string()
+        }
+    }
+
+    /// Returns the bytes of the following font.
+    pub fn get_bytes(&self) -> Vec<u8> {
+        return match self {
+            Self::UnderdogRegular => include_bytes!("../../assets/fonts/Underdog-Regular.ttf").to_vec(),
+            Self::CodystarLight => include_bytes!("../../assets/fonts/Codystar-Light.ttf").to_vec(),
+            Self::CodystarRegular => include_bytes!("../../assets/fonts/Codystar-Regular.ttf").to_vec(),
+            Self::RobotoMono => include_bytes!("../../assets/fonts/RobotoMono-VariableFont_wght.ttf").to_vec(),
+            Self::RobotoMonoItalic => include_bytes!("../../assets/fonts/RobotoMono-Italic-VariableFont_wght.ttf").to_vec()
+        }
+    }
+
+    /// Returns the enumerator value from the path.
+    pub fn from_path(path: String) -> Option<Self> {
+        let path_as_str: &str = &path;
+
+        return match path_as_str {
+            UNDERDOG_REGULAR_PATH => Some(Self::UnderdogRegular),
+            CODYSTAR_LIGHT_PATH => Some(Self::CodystarLight),
+            CODYSTAR_REGULAR_PATH => Some(Self::CodystarRegular),
+            ROBOTO_MONO_PATH => Some(Self::RobotoMono),
+            ROBOTO_MONO_ITALIC => Some(Self::RobotoMonoItalic),
+            _ => None
         }
     }
 }
@@ -97,7 +135,8 @@ impl TextRenderer {
         };
     }
 
-    pub(crate) fn update_brush(&mut self, content: String, queue: &Queue, physical_size: &PhysicalSize<u32>) {
+    /// Updates the text rendering context with the new content.
+    pub fn update_brush(&mut self, content: String, queue: &Queue, physical_size: &PhysicalSize<u32>) {
         self.text.content = content;
 
         self.text_brush.update_matrix(
