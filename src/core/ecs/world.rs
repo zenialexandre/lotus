@@ -64,7 +64,8 @@ pub struct World {
     pub archetypes: HashMap<u64, Archetype>,
     pub resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>>,
     pub resource_borrow_state: AtomicRefCell<ResourceBorrowState>,
-    pub component_borrow_state: AtomicRefCell<ComponentBorrowState>
+    pub component_borrow_state: AtomicRefCell<ComponentBorrowState>,
+    pub text_renderers: HashMap<Uuid, TextRenderer>
 }
 
 impl World {
@@ -78,7 +79,8 @@ impl World {
             archetypes: HashMap::new(),
             resources,
             resource_borrow_state: ResourceBorrowState::new().into(),
-            component_borrow_state: ComponentBorrowState::new().into()
+            component_borrow_state: ComponentBorrowState::new().into(),
+            text_renderers: HashMap::new()
         };
     }
 
@@ -104,7 +106,7 @@ impl World {
         let mut query: Query = Query::new(&self).with::<Fps>();
 
         if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
-            if let Some(text_renderer) = render_state.text_renderers.get_mut(&fps_entity.0) {
+            if let Some(text_renderer) = self.text_renderers.get_mut(&fps_entity.0) {
                 text_renderer.update_brush(current_fps.to_string(), render_state.queue.clone(), render_state.physical_size);
             }
         } else {
@@ -129,7 +131,7 @@ impl World {
             ).unwrap();
 
             let text_renderer: TextRenderer = TextRenderer::new(render_state, &text);
-            render_state.text_renderers.insert(entity.0, text_renderer);
+            self.text_renderers.insert(entity.0, text_renderer);
         }
 
         let mut components_refs: Vec<AtomicRefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());

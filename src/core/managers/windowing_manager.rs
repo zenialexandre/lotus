@@ -257,8 +257,6 @@ impl ApplicationHandler for Application {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, window_event: WindowEvent) {
         let context: &mut Context = &mut self.context.as_mut().unwrap();
         let render_state: &mut RenderState = &mut context.render_state;
-        let camera2d: ResourceRef<'_, Camera2d> = context.world.get_resource::<Camera2d>().unwrap();
-        let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
 
         if !render_state.input(&window_event) {
             match window_event {
@@ -266,9 +264,12 @@ impl ApplicationHandler for Application {
                     event_loop.exit();
                 },
                 WindowEvent::Resized(new_size) => {
-                    render_state.resize(new_size, &camera2d);
+                    let camera2d: ResourceRef<'_, Camera2d> = context.world.get_resource::<Camera2d>().unwrap();
+                    render_state.resize(new_size, &camera2d, &context.world.text_renderers);
                 },
                 WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
+                    let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+
                     if ElementState::Pressed == event.state {
                         input.pressed_keys.insert(event.physical_key);
                     } else if ElementState::Released == event.state {
@@ -276,6 +277,8 @@ impl ApplicationHandler for Application {
                     }
                 },
                 WindowEvent::MouseInput { device_id: _, state, button } => {
+                    let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+
                     if ElementState::Pressed == state {
                         input.pressed_mouse_buttons.insert(button);
                     } else if ElementState::Released == state {
@@ -283,12 +286,13 @@ impl ApplicationHandler for Application {
                     }
                 },
                 WindowEvent::CursorMoved { device_id: _, position } => {
+                    let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
                     input.mouse_position.0 = position.x as f32;
                     input.mouse_position.1 = position.y as f32;
                 },
                 WindowEvent::RedrawRequested => {
                     render_state.window().request_redraw();
-                    self.game_loop.render(&mut context.render_state, &context.world, event_loop);
+                    self.game_loop.render(&mut context.render_state, &mut context.world, event_loop);
                 }
                 _ => ()
             }

@@ -56,6 +56,20 @@ impl<'a> Query<'a> {
         return Some(results);
     }
 
+    /// Returns entities that doesn't have the components queried.
+    pub fn entities_without_components(&'a mut self) -> Option<Vec<Entity>> {
+        let mut results: Vec<Entity> = Vec::new();
+
+        for (_, archetype) in &self.world.archetypes {
+            if self.parameters.iter().all(|param| !archetype.components.contains_key(param)) {
+                for entity in &archetype.entities {
+                    results.push(*entity);
+                }
+            }
+        }
+        return Some(results);
+    }
+
     /// Returns entities by the components as mutables of a archetype in a flexible way.
     pub fn entities_with_components_mut_one(&'a mut self) -> Option<Vec<(Entity, Vec<AtomicRefMut<'a, Box<dyn Component>>>)>> {
         for (_, archetype) in &self.world.archetypes {

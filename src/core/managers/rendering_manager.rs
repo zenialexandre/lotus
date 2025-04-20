@@ -13,7 +13,7 @@ use super::super::{
     draw_order::DrawOrder,
     texture,
     texture::{texture::TextureCache, sprite::Sprite},
-    text::{TextRenderer, Text},
+    text::TextRenderer,
     camera::camera2d::Camera2d,
     ecs::{entity::Entity, world::World, component::Component, resource::ResourceRef}
 };
@@ -78,7 +78,6 @@ pub struct RenderState {
     pub texture_bind_group_layout: Option<BindGroupLayout>,
     pub color_bind_group_layout: Option<BindGroupLayout>,
     pub entities_to_render: Vec<Entity>,
-    pub text_renderers: HashMap<Uuid, TextRenderer>,
     pub texture_cache: TextureCache,
     pub vertex_index_buffer_cache: VertexIndexBufferCache
 }
@@ -111,7 +110,6 @@ impl RenderState {
             texture_bind_group_layout: None,
             color_bind_group_layout: None,
             entities_to_render: Vec::new(),
-            text_renderers: HashMap::new(),
             texture_cache: TextureCache::new(),
             vertex_index_buffer_cache: VertexIndexBufferCache::new()
         };
@@ -183,7 +181,6 @@ impl RenderState {
             texture_bind_group_layout: None,
             color_bind_group_layout: None,
             entities_to_render: Vec::new(),
-            text_renderers: HashMap::new(),
             texture_cache: TextureCache::new(),
             vertex_index_buffer_cache: VertexIndexBufferCache::new()
         };
@@ -297,7 +294,7 @@ impl RenderState {
     }
 
     /// Resize the rendering projection.
-    pub fn resize(&mut self, new_size: PhysicalSize<u32>, camera2d: &Camera2d) {
+    pub fn resize(&mut self, new_size: PhysicalSize<u32>, camera2d: &Camera2d, text_renderers: &HashMap<Uuid, TextRenderer>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.physical_size = Some(new_size);
             self.surface_configuration.as_mut().unwrap().width = new_size.width;
@@ -315,8 +312,8 @@ impl RenderState {
                 );
             }
 
-            if !self.text_renderers.is_empty() {
-                for text_renderer in &self.text_renderers {
+            if !text_renderers.is_empty() {
+                for text_renderer in text_renderers {
                     text_renderer.1.text_brush.update_matrix(
                         wgpu_text::ortho(new_size.width as f32, new_size.height as f32),
                         self.queue.as_ref().unwrap()
@@ -355,38 +352,13 @@ impl RenderState {
     }
 
     /// Execute the rendering process.
-    pub fn render(&mut self, world: &World) -> Result<(), SurfaceError> {
-        let mut entities_of_text: Vec<Entity> = Vec::new();
-
-        for entity in self.entities_to_render.clone() {
-            if world.is_entity_alive(entity) {
-                if let Some(text_renderer) = self.text_renderers.get_mut(&entity.0) {
-                    let (x, y): (f32, f32) = text_renderer.text.get_position_as_pixels(&self.physical_size.as_ref().unwrap());
-                    entities_of_text.push(entity);
-
-                    text_renderer.text_brush.queue(
-                        self.device.as_ref().unwrap(),
-                        self.queue.as_ref().unwrap(),
-                        vec![Section {
-                            screen_position: (x, y),
-                            bounds: (self.physical_size.as_ref().unwrap().width as f32, self.physical_size.as_ref().unwrap().height as f32),
-                            text: vec![
-                                wgpu_text::glyph_brush::Text::new(&text_renderer.text.content)
-                                    .with_color(text_renderer.text.color.to_rgba())
-                                    .with_scale(text_renderer.text.font.size)
-                            ],
-                            ..Default::default()
-                        }]
-                    ).ok();
-                }
-            }
-        }
-
+    pub fn render(&mut self, world: &mut World) -> Result<(), SurfaceError> {
         let surface_texture: SurfaceTexture = self.surface.as_ref().unwrap().get_current_texture()?;
         let texture_view: TextureView = surface_texture.texture.create_view(&TextureViewDescriptor::default());
         let mut command_encoder: CommandEncoder = self.device.as_ref().unwrap().create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Render Encoder")
         });
+        self.prepare_text_rendering(world);
 
         {
             let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
@@ -424,7 +396,6 @@ impl RenderState {
             }
 
             let mut entities_to_render_sorted: Vec<Entity> = self.entities_to_render.clone();
-
             if entities_to_render_sorted.len() > 1 {
                 entities_to_render_sorted.sort_by(|a, b| {
                     DrawOrder::compare(world, a, b)
@@ -435,7 +406,9 @@ impl RenderState {
                 if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
                     let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
 
-                    if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
+                    if let Some(sprite) = components.iter()
+                        .find_map(|component| component.as_any().downcast_ref::<Sprite>()) 
+                    {
                         let transform: Option<&Transform> = components.iter()
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
                         );
@@ -445,29 +418,52 @@ impl RenderState {
                             &mut render_pass,
                             self.texture_bind_group.as_ref().unwrap().clone()
                         );
-                    } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
+                    } else if let Some(shape) = components.iter()
+                        .find_map(|component| component.as_any().downcast_ref::<Shape>())
+                    {
                         let transform: Option<&Transform> = components.iter()
                             .find_map(|component| component.as_any().downcast_ref::<Transform>()
                         );
                         render_pass.set_pipeline(self.color_render_pipeline.as_ref().unwrap());
                         self.setup_shape_rendering(&entity, shape, transform, &camera2d);
-                        self.apply_render_pass_with_values(&mut render_pass, self.color_bind_group.as_ref().unwrap().clone());
-                    }
-                }
-            }
-
-            for entity in entities_of_text {
-                let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
-                if components.iter().any(|component| component.as_any().is::<Text>()) {
-                    if let Some(text_renderer) = self.text_renderers.get(&entity.0) {
+                        self.apply_render_pass_with_values(
+                            &mut render_pass,
+                            self.color_bind_group.as_ref().unwrap().clone()
+                        );
+                    } else if let Some(text_renderer) = world.text_renderers.get(&entity.0) {
                         text_renderer.text_brush.draw(&mut render_pass);
                     }
-                }   
+                }
             }
         }
         self.queue.as_ref().unwrap().submit(std::iter::once(command_encoder.finish()));
         surface_texture.present();
         return Ok(());
+    }
+
+    pub(crate) fn prepare_text_rendering(&mut self, world: &mut World) {
+        for entity in self.entities_to_render.clone() {
+            if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
+                if let Some(text_renderer) = world.text_renderers.get_mut(&entity.0) {
+                    let (x, y): (f32, f32) = text_renderer.text.get_position_as_pixels(&self.physical_size.as_ref().unwrap());
+
+                    text_renderer.text_brush.queue(
+                        self.device.as_ref().unwrap(),
+                        self.queue.as_ref().unwrap(),
+                        vec![Section {
+                            screen_position: (x, y),
+                            bounds: (self.physical_size.as_ref().unwrap().width as f32, self.physical_size.as_ref().unwrap().height as f32),
+                            text: vec![
+                                wgpu_text::glyph_brush::Text::new(&text_renderer.text.content)
+                                    .with_color(text_renderer.text.color.to_rgba())
+                                    .with_scale(text_renderer.text.font.size)
+                            ],
+                            ..Default::default()
+                        }]
+                    ).ok();
+                }
+            }
+        }
     }
 
     pub(crate) fn apply_render_pass_with_values(&mut self, render_pass: &mut RenderPass<'_>, generic_bind_group: BindGroup) {

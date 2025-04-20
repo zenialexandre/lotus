@@ -57,10 +57,10 @@ impl GameLoop {
         context.world.synchronize_camera_with_target(&mut context.render_state);
         (self.update)(context);
 
+        self.render(&mut context.render_state, &mut context.world, event_loop);
+
         let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
         input.update_hashes();
-
-        self.render(&mut context.render_state, &context.world, event_loop);
 
         // FPS calculus.
         self.frame_count += 1;
@@ -82,7 +82,7 @@ impl GameLoop {
     }
 
     /// Call the rendering process.
-    pub fn render(&self, render_state: &mut RenderState, world: &World, event_loop: &ActiveEventLoop) {
+    pub fn render(&self, render_state: &mut RenderState, world: &mut World, event_loop: &ActiveEventLoop) {
         match render_state.render(world) {
             Ok(_) => {}
 
@@ -90,7 +90,11 @@ impl GameLoop {
                 SurfaceError::Lost | SurfaceError::Outdated
             ) => {
                 let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
-                render_state.resize(render_state.physical_size.as_ref().unwrap().clone(), &camera2d);
+                render_state.resize(
+                    render_state.physical_size.as_ref().unwrap().clone(),
+                    &camera2d,
+                    &world.text_renderers
+                );
             },
             Err(
                 SurfaceError::OutOfMemory | SurfaceError::Other

@@ -112,6 +112,38 @@ pub mod tests {
     }
 
     #[test]
+    fn entities_with_components_test() {
+        let mut commands: Commands = Commands::new();
+        let mut world: World = World::new();
+        let mut render_state: RenderState = RenderState::dummy();
+
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLACK);
+        commands.spawn(vec![Box::new(dummy_shape)]);
+        commands.flush_commands(&mut world, &mut render_state);
+
+        let mut query: Query = Query::new(&world).with::<Shape>();
+        let entities: Vec<Entity> = query.entities_with_components().unwrap();
+        assert!(!entities.is_empty());
+        assert!(entities.len() == 1);
+    }
+
+    #[test]
+    fn entities_without_components_test() {
+        let mut commands: Commands = Commands::new();
+        let mut world: World = World::new();
+        let mut render_state: RenderState = RenderState::dummy();
+
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLACK);
+        commands.spawn(vec![Box::new(dummy_shape)]);
+        commands.flush_commands(&mut world, &mut render_state);
+
+        let mut query: Query = Query::new(&world).with::<Text>();
+        let entities: Vec<Entity> = query.entities_without_components().unwrap();
+        assert!(!entities.is_empty());
+        assert!(entities.len() == 1);
+    }
+
+    #[test]
     fn get_resource_as_immutable_test() {
         let world: World = World::new();
         assert!(!world.get_resource::<Input>().is_none());
