@@ -1,7 +1,7 @@
 //! This example is a show off on rendering geometric forms with solid colors.
 //! Basic geometric forms are rendered inside the 'setup' function.
 //! Inside the 'update' function, each entity has its rotation factor mutated by a constant value of 100.0.
-//! In this example the FPS cap is setted to 60 and in the 'update' function the FPS is shown on the screen.
+//! In this example the FPS cap is setted to 120 and in the 'update' function the FPS is shown on the screen.
 
 use lotus_engine::*;
 
