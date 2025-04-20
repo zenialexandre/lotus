@@ -152,7 +152,7 @@ impl RenderState {
             format: surface_format,
             width: physical_size.width,
             height: physical_size.height,
-            present_mode: PresentMode::Fifo,
+            present_mode: PresentMode::AutoNoVsync,
             alpha_mode: surface_capabilities.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2

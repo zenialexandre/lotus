@@ -47,7 +47,6 @@ impl GameLoop {
     /// Run the engine loop to start the logic and rendering processes.
     pub fn run(&mut self, context: &mut Context, event_loop: &ActiveEventLoop) {
         let now: Instant = Instant::now();
-
         self.delta = now - self.previous_time_of_last_run;
         self.previous_time_of_last_run = now;
 
@@ -73,11 +72,14 @@ impl GameLoop {
             //println!("FPS: {}", self.current_fps);
         }
 
-        // Frame Pacing - 60 FPS
-        let target_delta: Duration = Duration::from_secs_f32(1.0 / context.game_loop_listener.fps_cap as f32);
-        let frame_time: Duration = Instant::now() - now;
-        if frame_time < target_delta {
-            std::thread::sleep(target_delta - frame_time);
+        // Optional FPS capping.
+        if let Some(fps_cap) = context.game_loop_listener.fps_cap {
+            let target_delta: Duration = Duration::from_secs_f32(1.0 / fps_cap as f32);
+            let frame_time: Duration = Instant::now() - now;
+
+            if frame_time < target_delta {
+                std::thread::sleep(target_delta - frame_time);
+            }
         }
     }
 
@@ -125,7 +127,7 @@ impl GameLoop {
 pub struct GameLoopListener {
     pub state: GameLoopState,
     pub current_fps: u32,
-    pub fps_cap: u32
+    pub fps_cap: Option<u32>
 }
 
 impl GameLoopListener {
@@ -134,7 +136,7 @@ impl GameLoopListener {
         return Self {
             state: GameLoopState::Running,
             current_fps: 60,
-            fps_cap: 60
+            fps_cap: None
         };
     }
 
@@ -148,8 +150,8 @@ impl GameLoopListener {
         self.state = GameLoopState::Running;
     }
 
-    /// Update the maximum FPS number.
-    pub fn set_fps_cap(&mut self, fps_cap: u32) {
-        self.fps_cap = fps_cap;
+    /// Enable FPS capping.
+    pub fn fps_cap(&mut self, fps_cap: u32) {
+        self.fps_cap = Some(fps_cap);
     }
 }
