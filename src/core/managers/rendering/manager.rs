@@ -502,7 +502,7 @@ impl RenderState {
     pub(crate) fn get_projection_matrix(&self, camera2d: &Camera2d) -> Matrix4<f32> {
         let aspect_ratio: f32 = self.physical_size.as_ref().unwrap().width as f32 / self.physical_size.as_ref().unwrap().height as f32;
 
-        return  ortho(
+        return ortho(
             -aspect_ratio * camera2d.zoom,
             aspect_ratio * camera2d.zoom,
             -1.0 * camera2d.zoom,
