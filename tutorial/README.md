@@ -156,7 +156,7 @@ fn setup(context: &mut Context) {
     let transform: Transform = Transform::new(
         Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
         0.0,
-        Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+        Vector2::new(0.25, 0.25)
     );
     
     // Now we send the transform component too.
@@ -218,7 +218,7 @@ fn setup(context: &mut Context) {
     let transform: Transform = Transform::new(
         Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
         0.0,
-        Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+        Vector2::new(0.25, 0.25)
     );
 
     // Add our component.
