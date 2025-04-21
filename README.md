@@ -105,7 +105,8 @@ fn update(_context: &mut Context) {
 }
 ```
 
-And here are some more complex initial examples to demonstrate the engine's potential:
+Refer to the [`tutorial`](https://github.com/zenialexandre/lotus/blob/main/tutorial/README.md).<br>
+And here are some more complex initial examples to demonstrate the engine's potential:<br>
 
 - **Pong:** [`examples/pong.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/pong.rs)
 - **Breakout:** [`examples/breakout.rs`](https://github.com/zenialexandre/lotus/blob/main/examples/breakout.rs)
