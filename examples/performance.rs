@@ -37,7 +37,7 @@ fn setup(context: &mut Context) {
                 Box::new(Transform::new(
                     Position::new(Vector2::new(randomic_position_x, randomic_position_y), Strategy::Normalized),
                     0.0,
-                    Scale::new(Vector2::new(0.15, 0.15), Strategy::Normalized)
+                    Vector2::new(0.15, 0.15)
                 )),
                 Box::new(Velocity::new(Vector2::new(randomic_velocity_x, randomic_velocity_y))),
                 Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
@@ -71,7 +71,7 @@ fn spawn_border(context: &mut Context, orientation: Orientation, position: Vecto
             Box::new(Transform::new(
                 Position::new(position, Strategy::Normalized),
                 0.0,
-                Scale::new(scale, Strategy::Normalized)
+                scale
             )),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
         ]

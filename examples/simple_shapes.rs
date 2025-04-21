@@ -37,7 +37,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(-0.60, -0.25), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.10, 0.10), Strategy::Normalized)
+                Vector2::new(0.10, 0.10)
             )),
             Box::new(MySquare())
         ]
@@ -48,7 +48,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(-0.35, 0.20), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.50, 0.50), Strategy::Normalized)
+                Vector2::new(0.50, 0.50)
             )),
             Box::new(MyRectangle())
         ]
@@ -59,7 +59,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(0.50, 0.50), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+                Vector2::new(0.25, 0.25)
             )),
             Box::new(MyTriangle())
         ]
@@ -70,7 +70,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(0.80, 0.50), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+                Vector2::new(0.25, 0.25)
             )),
             Box::new(MyCircle())
         ]

@@ -20,7 +20,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(-0.50, -0.50), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(32.0, 32.0), Strategy::Pixelated)
+                Vector2::new(0.5, 0.5)
             )),
             Box::new(Velocity::new(Vector2::new(0.50, 0.50)))
         ]

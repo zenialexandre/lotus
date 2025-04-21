@@ -1226,9 +1226,9 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "kira"
-version = "0.10.5"
+version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca93f751f06014627e4f659e73e0677f0369967a093485f4ec5f91f75d9592ce"
+checksum = "315cbdaa382944922b0d19a78890d0344396d7ed840044e4ed9c93dfff9aafe7"
 dependencies = [
  "atomic-arena",
  "cpal",
@@ -1341,7 +1341,7 @@ dependencies = [
 
 [[package]]
 name = "lotus_engine"
-version = "0.1.19"
+version = "0.1.20"
 dependencies = [
  "anyhow",
  "atomic_refcell",

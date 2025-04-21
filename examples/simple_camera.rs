@@ -27,7 +27,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(-0.25, 0.0), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+                Vector2::new(0.25, 0.25)
             ))
         ]
     );
@@ -38,7 +38,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(-0.50, 0.0), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.25, 0.25), Strategy::Normalized)
+                Vector2::new(0.25, 0.25)
             )),
             Box::new(Velocity::new(Vector2::new(1.0, 1.0)))
         ]

@@ -507,7 +507,6 @@ impl RenderState {
         let (transform_bind_group, projection_buffer, view_buffer) = get_transform_bindings(
             self,
             transform,
-            None,
             camera2d
         );
         let (vertex_buffer, index_buffer) = get_vertex_and_index_buffers(
@@ -577,7 +576,6 @@ fn create_layouts_on_sprite_rendering(
     let (transform_bind_group, projection_buffer, view_buffer) = get_transform_bindings(
         render_state,
         transform,
-        Some(texture),
         camera2d
     );
     let (vertex_buffer, index_buffer) = get_vertex_and_index_buffers(
@@ -599,7 +597,6 @@ fn create_layouts_on_sprite_rendering(
 fn get_transform_bindings(
     render_state: &mut RenderState,
     transform: Option<&Transform>,
-    texture: Option<&texture::texture::Texture>,
     camera2d: &Camera2d
 ) -> (BindGroup, Buffer, Buffer) {
     let projection_buffer: Buffer = get_projection_buffer(render_state, camera2d);
@@ -616,17 +613,6 @@ fn get_transform_bindings(
 
             transform_cloned.position.x = pixelated_x;
             transform_cloned.position.y = pixelated_y;
-        }
-
-        if let Some(texture_unwrapped) = texture {
-            if transform_cloned.scale.strategy == Strategy::Pixelated {
-                let (width, height): (u32, u32) = (texture_unwrapped.wgpu_texture.size().width, texture_unwrapped.wgpu_texture.size().height);
-
-                let pixelated_width: f32 = transform_cloned.scale.x / width as f32;
-                let pixelated_height: f32 = transform_cloned.scale.y / height as f32;
-                transform_cloned.scale.x = pixelated_width;
-                transform_cloned.scale.y = pixelated_height;
-            }
         }
 
         let transform_cloned: [[f32; 4]; 4] = *transform_cloned.to_matrix().as_ref();

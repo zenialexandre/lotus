@@ -89,7 +89,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(0.0, -0.85), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.15, 0.10), Strategy::Normalized)
+                Vector2::new(0.15, 0.10)
             )),
             Box::new(Velocity::new(Vector2::new(2.0, 2.0))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
@@ -103,7 +103,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(0.0, -0.5), Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.10, 0.10), Strategy::Normalized)
+                Vector2::new(0.10, 0.10)
             )),
             Box::new(Velocity::new(Vector2::new(random_x_direction, -0.5))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
@@ -160,7 +160,7 @@ fn spawn_border(context: &mut Context, position: Vector2<f32>) {
             Box::new(Transform::new(
                 Position::new(position, Strategy::Normalized),
                 0.0,
-                Scale::new(Vector2::new(0.01, context.window_configuration.height as f32), Strategy::Normalized)
+                Vector2::new(0.01, context.window_configuration.height as f32)
             )),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
         ]
@@ -201,7 +201,7 @@ fn spawn_targets(context: &mut Context) {
                     Box::new(Transform::new(
                         Position::new(Vector2::new(x, y), Strategy::Normalized),
                         0.0,
-                        Scale::new(Vector2::new(width, height), Strategy::Normalized)
+                        Vector2::new(width, height)
                     )),
                     Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle))),
                 ]
