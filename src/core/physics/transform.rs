@@ -2,7 +2,7 @@ use cgmath::{Deg, Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
 use super::super::managers::rendering_manager::RenderState;
 
-/// Enumerator to represent the strategy that will be used for the positioning and scaling. 
+/// Enumerator to represent the strategy that will be used for the positioning. 
 #[derive(Clone, Default, Debug, PartialEq)]
 pub enum Strategy {
     #[default]
@@ -135,13 +135,12 @@ impl Transform {
 
     /// Set the current scale and sends it to the buffer.
     pub fn set_scale(&mut self, render_state: &RenderState, scale: Vector2<f32>) {
-        self.scale.x = scale.x;
-        self.scale.y = scale.y;
+        self.scale = scale;
         self.write_update_to_buffer(render_state);
     }
 
     /// Get the current scale.
     pub fn get_scale(&self) -> Vector2<f32> {
-        return Vector2::new(self.scale.x, self.scale.y);
+        return self.scale;
     }
 }
