@@ -7,7 +7,7 @@ use super::{
     engine::Context,
     input::Input,
     camera::camera2d::Camera2d,
-    managers::rendering_manager::RenderState,
+    managers::rendering::manager::RenderState,
     ecs::{world::World, resource::{ResourceRef, ResourceRefMut}}
 };
 

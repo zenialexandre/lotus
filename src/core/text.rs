@@ -2,7 +2,7 @@ use lotus_proc_macros::Component;
 use wgpu::Queue;
 use wgpu_text::{glyph_brush::ab_glyph::FontArc, BrushBuilder, TextBrush};
 use winit::dpi::PhysicalSize;
-use super::{physics::transform::Position, color::Color, asset_loader::AssetLoader, managers::rendering_manager::RenderState};
+use super::{physics::transform::Position, color::Color, asset_loader::AssetLoader, managers::rendering::manager::RenderState};
 
 const UNDERDOG_REGULAR_PATH: &str = "../../assets/fonts/Underdog-Regular.ttf";
 const CODYSTAR_LIGHT_PATH: &str = "../../assets/fonts/Codystar-Light.ttf";

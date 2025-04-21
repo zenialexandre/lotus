@@ -19,7 +19,7 @@ use super::{
         draw_order::DrawOrder,
         visibility::Visibility,
         text::{Text, TextRenderer, Font, Fonts},
-        managers::rendering_manager::RenderState,
+        managers::rendering::manager::RenderState,
         physics::{collision::Collision, transform::{Transform, Position, Strategy}}
     },
     query::Query,

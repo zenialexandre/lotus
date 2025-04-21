@@ -1,6 +1,6 @@
 use cgmath::{Deg, Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
-use super::super::managers::rendering_manager::RenderState;
+use super::super::managers::rendering::manager::RenderState;
 
 /// Enumerator to represent the strategy that will be used for the positioning. 
 #[derive(Clone, Default, Debug, PartialEq)]

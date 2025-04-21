@@ -128,8 +128,8 @@ pub mod core;
 /// Module with utilities of the engine.
 pub mod utils;
 
-pub use core::managers::rendering_manager::*;
-pub use core::managers::windowing_manager::*;
+pub use core::managers::rendering::manager::*;
+pub use core::managers::windowing::manager::*;
 pub use core::game_loop::*;
 pub use core::asset_loader::AssetLoader;
 pub use core::engine::*;

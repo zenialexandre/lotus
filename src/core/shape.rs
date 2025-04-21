@@ -1,5 +1,5 @@
 use lotus_proc_macros::Component;
-use super::{color::Color, managers::rendering_manager::Vertex};
+use super::{color::Color, managers::rendering::manager::Vertex};
 
 /// Struct that represents every solid geometric form on the engine.
 #[derive(Clone, Debug, Component)]

@@ -158,7 +158,7 @@ fn setup(context: &mut Context) {
         0.0,
         Vector2::new(0.25, 0.25)
     );
-    
+
     // Now we send the transform component too.
     context.commands.spawn(vec![Box::new(my_shape), Box::new(transform)]);
 }

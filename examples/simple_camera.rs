@@ -17,6 +17,11 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(player),
+            Box::new(Transform::new(
+                Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+                0.0,
+                Vector2::new(0.25, 0.25)
+            )),
             Box::new(Velocity::new(Vector2::new(1.0, 1.0)))
         ]
     );

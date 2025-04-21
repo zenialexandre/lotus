@@ -1,5 +1,5 @@
-/// Windowing management related features.
-pub mod windowing_manager;
+/// Windowing related features.
+pub mod windowing;
 
-/// Rendering management related features.
-pub mod rendering_manager;
+/// Rendering related features.
+pub mod rendering;

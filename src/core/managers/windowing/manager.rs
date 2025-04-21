@@ -8,8 +8,8 @@ use winit::{
 use std::sync::Arc;
 use sysinfo::System;
 
-use super::{
-    rendering_manager::RenderState,
+use super::super::{
+    rendering::manager::RenderState,
     super::{
         asset_loader::AssetLoader,
         camera::camera2d::Camera2d,
@@ -221,7 +221,7 @@ impl ApplicationHandler for Application {
 
             if window_configuration.icon_path.is_empty() {
                 window_attributes.window_icon = WindowConfiguration::get_icon_by_bytes(
-                    include_bytes!("../../../assets/textures/lotus_pink_256x256_aligned.png").to_vec()
+                    include_bytes!("../../../../assets/textures/lotus_pink_256x256_aligned.png").to_vec()
                 );
             } else {
                 window_attributes.window_icon = WindowConfiguration::get_icon_by_bytes(
