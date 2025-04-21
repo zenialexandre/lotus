@@ -16,6 +16,7 @@ use super::{
         color::Color,
         camera::camera2d::Camera2d,
         input::Input,
+        draw_order::DrawOrder,
         visibility::Visibility,
         text::{Text, TextRenderer, Font, Fonts},
         managers::rendering_manager::RenderState,
@@ -145,6 +146,10 @@ impl World {
 
         if !components_refs.iter().any(|component| component.borrow().as_any().is::<Visibility>()) {
             components_refs.push(AtomicRefCell::new(Box::new(Visibility::default())));
+        }
+
+        if !components_refs.iter().any(|component| component.borrow().as_any().is::<DrawOrder>()) {
+            components_refs.push(AtomicRefCell::new(Box::new(DrawOrder::default())));
         }
 
         let mut components_types_ids: Vec<TypeId> = components_refs.iter().map(|c| c.borrow().type_id()).collect();

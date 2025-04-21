@@ -157,6 +157,8 @@ impl RenderState {
             view_formats: vec![],
             desired_maximum_frame_latency: 2
         };
+        surface.configure(&device, &surface_configuration);
+
         let mut render_state: RenderState = Self {
             surface: Some(surface),
             device: Some(device),
