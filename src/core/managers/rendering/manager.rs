@@ -315,16 +315,6 @@ impl RenderState {
 
     pub(crate) fn input(&mut self, window_event: &WindowEvent) -> bool {
         match window_event {
-            WindowEvent::CursorMoved { device_id: _, position: _ } => {
-                /*let color: Color = Color {
-                    r: position.x / self.physical_size.width as f64,
-                    g: position.y / self.physical_size.height as f64,
-                    b: 0.1,
-                    a: 1.0
-                };
-                self.color = color;*/
-                return true;
-            },
             _ =>  { return false; }
         }
     }

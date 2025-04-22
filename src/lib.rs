@@ -162,4 +162,5 @@ pub use cgmath::*;
 pub use kira::*;
 pub use pollster::block_on;
 pub use winit::keyboard::{KeyCode, PhysicalKey};
+pub use winit::event::MouseButton;
 pub use winit::window::WindowButtons;

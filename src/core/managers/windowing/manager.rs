@@ -241,6 +241,7 @@ impl ApplicationHandler for Application {
             Arc::new(event_loop.create_window(Window::default_attributes()).unwrap())
         };
         self.window = Some(window.clone());
+        self.window.as_ref().unwrap().focus_window();
 
         let world: World = World::new();
         let mut render_state: RenderState = pollster::block_on(RenderState::new(window));
@@ -278,19 +279,19 @@ impl ApplicationHandler for Application {
                         input.pressed_keys.remove(&event.physical_key);
                     }
                 },
-                WindowEvent::MouseInput { device_id: _, state, button } => {
-                    let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
-
-                    if ElementState::Pressed == state {
-                        input.pressed_mouse_buttons.insert(button);
-                    } else if ElementState::Released == state {
-                        input.pressed_mouse_buttons.remove(&button);
-                    }
-                },
                 WindowEvent::CursorMoved { device_id: _, position } => {
                     let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
                     input.mouse_position.0 = position.x as f32;
                     input.mouse_position.1 = position.y as f32;
+                },
+                WindowEvent::MouseInput { device_id: _, state, button } => {
+                    let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+
+                    if ElementState::Pressed == state {                        
+                        input.pressed_mouse_buttons.insert(button);
+                    } else if ElementState::Released == state {
+                        input.pressed_mouse_buttons.remove(&button);
+                    }
                 },
                 WindowEvent::RedrawRequested => {
                     render_state.window().request_redraw();

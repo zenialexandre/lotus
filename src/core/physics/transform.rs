@@ -98,6 +98,14 @@ impl Transform {
         }
     }
 
+    /// Set the position on initialization.
+    pub fn position(self, position: Position) -> Self {
+        return Self {
+            position,
+            ..self
+        };
+    }
+
     /// Set the current position and sends it to the buffer.
     pub fn set_position(&mut self, render_state: &RenderState, position: Vector2<f32>) {
         self.position.x = position.x;
@@ -122,6 +130,14 @@ impl Transform {
         return Vector2::new(self.position.x, self.position.y);
     }
 
+    /// Set the rotation on initialization.
+    pub fn rotation(self, rotation: f32) -> Self {
+        return Self {
+            rotation,
+            ..self
+        };
+    }
+
     /// Set the current rotation and sends it to the buffer.
     pub fn set_rotation(&mut self, render_state: &RenderState, rotation: f32) {
         self.rotation = rotation;
@@ -131,6 +147,14 @@ impl Transform {
     /// Get the current rotation.
     pub fn get_rotation(&self) -> f32 {
         return self.rotation;
+    }
+
+    /// Set the scale on initialization.
+    pub fn scale(self, scale: Vector2<f32>) -> Self {
+        return Self {
+            scale,
+            ..self
+        };
     }
 
     /// Set the current scale and sends it to the buffer.
