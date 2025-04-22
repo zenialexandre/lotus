@@ -287,7 +287,7 @@ impl ApplicationHandler for Application {
                 WindowEvent::MouseInput { device_id: _, state, button } => {
                     let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
 
-                    if ElementState::Pressed == state {                        
+                    if ElementState::Pressed == state {
                         input.pressed_mouse_buttons.insert(button);
                     } else if ElementState::Released == state {
                         input.pressed_mouse_buttons.remove(&button);
