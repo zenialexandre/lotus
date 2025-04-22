@@ -103,7 +103,7 @@ impl World {
         }
     }
 
-    pub fn show_fps(&mut self, render_state: &mut RenderState, current_fps: u32) {
+    pub fn show_fps(&mut self, render_state: &mut RenderState, current_fps: u32, color: Color) {
         let mut query: Query = Query::new(&self).with::<Fps>();
 
         if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
@@ -114,7 +114,7 @@ impl World {
             let fps_text: Text = Text::new(
                 Font::new(Fonts::RobotoMono.get_path(), 20.0),
                 Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
-                Color::BLACK,
+                color,
                 current_fps.to_string()
             );
             self.spawn(render_state, vec![Box::new(fps_text), Box::new(DrawOrder(9999)), Box::new(Fps())]);
@@ -454,8 +454,8 @@ impl Commands {
     }
 
     /// # Show the current FPS value.
-    pub fn show_fps(&mut self, current_fps: u32) {
-        self.commands.push(Command::ShowFps(current_fps));
+    pub fn show_fps(&mut self, current_fps: u32, color: Color) {
+        self.commands.push(Command::ShowFps(current_fps, color));
     }
 
     /// Take the commands memory reference.
@@ -481,8 +481,8 @@ impl Commands {
                 Command::AddResources(resources) => {
                     world.add_resources(resources);
                 },
-                Command::ShowFps(current_fps) => {
-                    world.show_fps(render_state, current_fps);
+                Command::ShowFps(current_fps, color) => {
+                    world.show_fps(render_state, current_fps, color);
                 }
             }
         }
@@ -495,5 +495,5 @@ pub enum Command {
     Despawn(Entity),
     AddResource(Box<dyn Resource>),
     AddResources(Vec<Box<dyn Resource>>),
-    ShowFps(u32)
+    ShowFps(u32, Color)
 }
