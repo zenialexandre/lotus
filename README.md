@@ -3,7 +3,12 @@
 
 Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.  
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
-Heavily inspired by awesome open-source projects like [`Bevy`](https://github.com/bevyengine/bevy), [`Comfy`](https://github.com/darthdeus/comfy) and [`LÖVE`](https://github.com/love2d/love).
+Heavily inspired by awesome open-source projects like [`Bevy`](https://github.com/bevyengine/bevy), [`Comfy`](https://github.com/darthdeus/comfy) and [`LÖVE`](https://github.com/love2d/love).<br>
+
+First full game made with Lotus, by [`Maurício Mafra Monnerat`](https://github.com/maumafra):<br>
+Repository: [`CyberLancer: Neon Rush`](https://github.com/maumafra/cyberlancer).<br>
+
+![cyberlancer](https://github.com/user-attachments/assets/ef3869d5-a7e5-4d89-bb94-c9dd56bfeb05)
 
 ----------------
 
