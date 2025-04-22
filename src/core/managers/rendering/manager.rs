@@ -472,6 +472,7 @@ impl RenderState {
         let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
             Some(entity),
             transform,
+            None,
             camera2d
         );
         let (vertex_buffer, index_buffer) = self.get_vertex_and_index_buffers(
@@ -522,6 +523,7 @@ impl RenderState {
         let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
             entity,
             transform,
+            Some(texture),
             camera2d
         );
         let (vertex_buffer, index_buffer) = self.get_vertex_and_index_buffers(
@@ -543,6 +545,7 @@ impl RenderState {
         &mut self,
         entity: Option<&Entity>,
         transform: Option<&Transform>,
+        texture: Option<&texture::texture::Texture>,
         camera2d: &Camera2d
     ) -> (BindGroup, Buffer, Buffer) {
         let projection_buffer: Buffer = self.get_projection_buffer(entity, camera2d);
@@ -550,15 +553,25 @@ impl RenderState {
 
         if let Some(transform_unwrapped) = transform {
             let mut transform_cloned: Transform = transform_unwrapped.clone();
+            let physical_size: &PhysicalSize<u32> = self.physical_size.as_ref().unwrap();
+            let aspect_ratio: f32 = physical_size.width as f32 / physical_size.height as f32;
 
             if transform_cloned.position.strategy == Strategy::Pixelated {
-                let physical_size: &PhysicalSize<u32> = self.physical_size.as_ref().unwrap();
-                let aspect_ratio: f32 = physical_size.width as f32 / physical_size.height as f32;
                 let pixelated_x: f32 = transform_cloned.position.x / physical_size.width as f32 * 2.0 * aspect_ratio - aspect_ratio;
                 let pixelated_y: f32 = -(transform_cloned.position.y / physical_size.height as f32 * 2.0 - 1.0);
 
                 transform_cloned.position.x = pixelated_x;
                 transform_cloned.position.y = pixelated_y;
+            }
+
+            if let Some(texture) = texture {
+                let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
+                let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
+                let world_width: f32 = (width_in_pixels / self.physical_size.as_ref().unwrap().width as f32) * 2.0 * aspect_ratio;
+                let world_height: f32 = (height_in_pixels / self.physical_size.as_ref().unwrap().height as f32) * 2.0;
+
+                transform_cloned.scale.x *= world_width;
+                transform_cloned.scale.y *= world_height;
             }
             let transform_unwrapped: [[f32; 4]; 4] = *transform_cloned.to_matrix().as_ref();
             let transform_buffer: Buffer = self.get_transform_buffer(entity, transform_unwrapped);
