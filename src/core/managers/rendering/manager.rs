@@ -567,8 +567,8 @@ impl RenderState {
             if let Some(texture) = texture {
                 let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
                 let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
-                let world_width: f32 = (width_in_pixels / self.physical_size.as_ref().unwrap().width as f32) * 1.0 * aspect_ratio;
-                let world_height: f32 = (height_in_pixels / self.physical_size.as_ref().unwrap().height as f32) * 1.0;
+                let world_width: f32 = (width_in_pixels / physical_size.width as f32) * 1.0 * aspect_ratio;
+                let world_height: f32 = (height_in_pixels / physical_size.height as f32) * 1.0;
 
                 transform_cloned.scale.x *= world_width;
                 transform_cloned.scale.y *= world_height;

@@ -10,9 +10,11 @@ use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use cgmath::{Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
 use uuid::Uuid;
+use winit::dpi::PhysicalSize;
 
 use super::{
     super::{
+        texture::sprite::Sprite,
         color::Color,
         camera::camera2d::Camera2d,
         input::Input,
@@ -182,20 +184,54 @@ impl World {
     }
 
     /// Synchronizes the transformation matrices with the collision objects.
-    pub fn synchronize_transformations_with_collisions(&mut self) {
+    pub fn synchronize_transformations_with_collisions(&mut self, render_state: &mut RenderState) {
+        let physical_size: &PhysicalSize<u32> = render_state.physical_size.as_ref().unwrap();
+        let aspect_ratio: f32 = physical_size.width as f32 / physical_size.height as f32;
+
         for archetype in self.archetypes.values_mut() {
             if let (Some(transforms), Some(collisions)) = (
                 archetype.components.get(&TypeId::of::<Transform>()),
                 archetype.components.get(&TypeId::of::<Collision>())
             ) {
-                for (transform, collision) in transforms.iter().zip(collisions) {
+                let has_sprites: bool = archetype.components.contains_key(&TypeId::of::<Sprite>());
+                let sprites: Option<std::slice::Iter<'_, AtomicRefCell<Box<dyn Component>>>> = if has_sprites {
+                    archetype.components.get(&TypeId::of::<Sprite>()).map(|s| s.iter())
+                } else {
+                    None
+                };
+
+                for (index, (transform, collision)) in transforms.iter().zip(collisions).enumerate() {
                     let transform: AtomicRef<'_, Box<dyn Component>> = transform.borrow();
                     let mut collision: AtomicRefMut<'_, Box<dyn Component>> = collision.borrow_mut();
 
                     if let Some(collision) = collision.as_any_mut().downcast_mut::<Collision>() {
-                        let transform: &Transform = transform.as_any().downcast_ref::<Transform>().unwrap();
-                        collision.collider.position = transform.get_position();
-                        collision.collider.scale = transform.get_scale();
+                        let mut transform_cloned: Transform = transform.as_any().downcast_ref::<Transform>().unwrap().clone();
+
+                        if transform_cloned.position.strategy == Strategy::Pixelated {
+                            let pixelated_x: f32 = transform_cloned.position.x / physical_size.width as f32 * 2.0 * aspect_ratio - aspect_ratio;
+                            let pixelated_y: f32 = -(transform_cloned.position.y / physical_size.height as f32 * 2.0 - 1.0);
+
+                            transform_cloned.position.x = pixelated_x;
+                            transform_cloned.position.y = pixelated_y;
+                        }
+
+                        if has_sprites {
+                            if let Some(sprite) = sprites.as_ref().and_then(|s| s.clone().nth(index)) {
+                                if let Some(sprite_ref) = sprite.borrow().as_any().downcast_ref::<Sprite>() {
+                                    if let Some(texture) = render_state.texture_cache.get_texture(sprite_ref.path.clone()) {
+                                        let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
+                                        let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
+                                        let world_width: f32 = (width_in_pixels / physical_size.width as f32) * 1.0 * aspect_ratio;
+                                        let world_height: f32 = (height_in_pixels / physical_size.height as f32) * 1.0;
+
+                                        transform_cloned.scale.x *= world_width;
+                                        transform_cloned.scale.y *= world_height;
+                                    }
+                                }
+                            }
+                        }
+                        collision.collider.position = transform_cloned.position.to_vec();
+                        collision.collider.scale = transform_cloned.scale;
                     }
                 }
             }

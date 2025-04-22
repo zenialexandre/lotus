@@ -53,10 +53,10 @@ impl GameLoop {
         context.delta = self.get_delta_as_seconds();
         context.commands.flush_commands(&mut context.world, &mut context.render_state);
         context.world.synchronize_camera_with_target(&mut context.render_state);
+        context.world.synchronize_transformations_with_collisions(&mut context.render_state);
         (self.update)(context);
 
         self.render(&mut context.render_state, &mut context.world, event_loop);
-        context.world.synchronize_transformations_with_collisions();
 
         let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
         input.update_hashes();
