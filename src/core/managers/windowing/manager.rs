@@ -6,7 +6,6 @@ use winit::{
     dpi::{Size, Position, LogicalSize, LogicalPosition}
 };
 use std::sync::Arc;
-use sysinfo::System;
 
 use super::super::{
     rendering::manager::RenderState,
@@ -189,7 +188,6 @@ impl WindowConfiguration {
 }
 
 struct Application {
-    system_info: System,
     window: Option<Arc<Window>>,
     window_configuration: Option<WindowConfiguration>,
     context: Option<Context>,
@@ -303,9 +301,6 @@ impl ApplicationHandler for Application {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        self.system_info.refresh_all();
-        //eprintln!("CPU Usage: {:?}", self.system_info.global_cpu_usage());
-        //eprintln!("Total Memory: {:?} | Memory Usage: {:?} | Avalilable Memory: {:?}", self.system_info.total_memory(), self.system_info.used_memory(), self.system_info.free_memory());
         self.window.as_mut().unwrap().set_visible(true);
         self.game_loop.run(self.context.as_mut().unwrap(), event_loop);
     }
@@ -318,15 +313,12 @@ pub async fn initialize_application(
     update: fn(context: &mut Context)
 ) {
     env_logger::init();
-    let mut system_info: System = System::new_all();
-    system_info.refresh_all();
 
     let event_loop: EventLoop<()> = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
 
     let mut application: Application = if let Some(window_configuration_unwrapped) = window_configuration {
         Application {
-            system_info,
             window: None,
             context: None,
             window_configuration: Some(window_configuration_unwrapped),
@@ -334,7 +326,6 @@ pub async fn initialize_application(
         }
     } else {
         Application {
-            system_info,
             window: None,
             context: None,
             window_configuration: None,

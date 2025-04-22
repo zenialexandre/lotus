@@ -117,7 +117,7 @@ impl World {
                 Color::BLACK,
                 current_fps.to_string()
             );
-            self.spawn(render_state, vec![Box::new(fps_text), Box::new(Fps())]);
+            self.spawn(render_state, vec![Box::new(fps_text), Box::new(DrawOrder(9999)), Box::new(Fps())]);
         }
     }
 
