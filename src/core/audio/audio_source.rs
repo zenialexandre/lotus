@@ -1,5 +1,6 @@
 use std::{collections::HashMap, path::Path};
 use anyhow::Ok;
+use cpal::{traits::HostTrait, Host};
 use kira::{
     sound::{
         static_sound::{StaticSoundData, StaticSoundSettings},
@@ -18,6 +19,7 @@ use kira::{
     Tween,
     Value
 };
+use log::warn;
 use lotus_proc_macros::Resource;
 use super::{
     super::asset_loader::AssetLoader,
@@ -147,7 +149,7 @@ impl AudioSettings {
 /// Struct to represent the audio resource that the end-user will use.
 #[derive(Resource)]
 pub struct AudioSource {
-    pub audio_manager: AudioManager,
+    pub audio_manager: Option<AudioManager>,
     pub static_sounds: HashMap<String, StaticSoundData>,
     pub streaming_sounds: HashMap<String, StreamingSoundData<FromFileError>>,
     pub streaming_handles: HashMap<String, StreamingSoundHandle<FromFileError>>
@@ -159,14 +161,27 @@ unsafe impl Sync for AudioSource {}
 impl AudioSource {
     /// Create a new audio source.
     pub fn new() -> Result<Self, AudioError> {
-        let audio_manager: AudioManager = AudioManager::new(AudioManagerSettings::default()).map_err(AudioError::from)?;
+        let cpal_host: Host = cpal::default_host();
 
-        return Ok(Self {
-            audio_manager,
-            static_sounds: HashMap::new(),
-            streaming_sounds: HashMap::new(),
-            streaming_handles: HashMap::new()
-        }).map_err(AudioError::from);
+        if let std::result::Result::Ok(_output_devices) = cpal_host.output_devices() {
+            let audio_manager: AudioManager = AudioManager::new(AudioManagerSettings::default()).map_err(AudioError::from)?;
+
+            return Ok(Self {
+                audio_manager: Some(audio_manager),
+                static_sounds: HashMap::new(),
+                streaming_sounds: HashMap::new(),
+                streaming_handles: HashMap::new()
+            }).map_err(AudioError::from);
+        } else {
+            warn!("No output device was found when trying to create the Audio Manager.\nAn empty Audio Source will be created and no sound will be made.");
+
+            return Ok(Self {
+                audio_manager: None,
+                static_sounds: HashMap::new(),
+                streaming_sounds: HashMap::new(),
+                streaming_handles: HashMap::new()
+            }).map_err(AudioError::from);  
+        }
     }
 
     /// Check the audio source file format.
@@ -185,8 +200,7 @@ impl AudioSource {
 
     /// Loads a static sound to the audio source.
     pub fn load_static_sound(&mut self, name: impl Into<String>, path: impl AsRef<Path>, audio_settings: AudioSettings) -> Result<(), AudioError> {
-        self.check_sound_file_format(&path)?;
-        
+        self.check_sound_file_format(&path)?;        
 
         let static_sound_data: StaticSoundData = StaticSoundData::from_file(
             AssetLoader::get_path(path.as_ref().to_str().unwrap())
@@ -209,7 +223,9 @@ impl AudioSource {
     /// Plays a static sound from the audio source.
     pub fn play_static_sound(&mut self, name: String) -> Result<(), AudioError> {
         if let Some(static_sound_data) = self.static_sounds.get(&name) {
-            self.audio_manager.play(static_sound_data.clone()).map_err(AudioError::from)?;
+            if let Some(audio_manager) = &mut self.audio_manager {
+                audio_manager.play(static_sound_data.clone()).map_err(AudioError::from)?;
+            }
         }
         return Ok(()).map_err(AudioError::from);
     }
@@ -217,10 +233,12 @@ impl AudioSource {
     /// Plays a streaming sound from the audio source.
     pub fn play_streaming_sound(&mut self, name: String) -> Result<(), AudioError> {
         if let Some(streaming_sound_data) = self.streaming_sounds.remove(&name) {
-            let stremaing_sound_handle: StreamingSoundHandle<FromFileError> = self.audio_manager
-                .play::<StreamingSoundData<FromFileError>>(streaming_sound_data)
-                .map_err(AudioError::from_play_sound_error)?;
-            self.streaming_handles.insert(name.clone(), stremaing_sound_handle);
+            if let Some(audio_manager) = &mut self.audio_manager {
+                let stremaing_sound_handle: StreamingSoundHandle<FromFileError> = audio_manager
+                    .play::<StreamingSoundData<FromFileError>>(streaming_sound_data)
+                    .map_err(AudioError::from_play_sound_error)?;
+                self.streaming_handles.insert(name.clone(), stremaing_sound_handle);
+            }
         }
         return Ok(()).map_err(AudioError::from);
     }

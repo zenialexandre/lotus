@@ -78,7 +78,7 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    context.commands.show_fps(context.game_loop_listener.current_fps, Color::YELLOW);
+    context.commands.show_fps(context.game_loop_listener.current_fps, Color::BLACK);
 
     let mut query: Query = Query::new(&context.world).with::<Shape>();
     let entities: Vec<Entity> = query.entities_with_components().unwrap();

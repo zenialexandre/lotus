@@ -1341,12 +1341,13 @@ dependencies = [
 
 [[package]]
 name = "lotus_engine"
-version = "0.1.28"
+version = "0.1.29"
 dependencies = [
  "anyhow",
  "atomic_refcell",
  "bytemuck",
  "cgmath",
+ "cpal",
  "env_logger",
  "image",
  "kira",

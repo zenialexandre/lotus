@@ -95,7 +95,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(-1.0, 0.23), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.25, 0.25)
+                Vector2::new(0.55, 0.55)
             )),
             Box::new(Racket()),
             Box::new(GrayRacket()),
@@ -110,7 +110,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(1.0, 0.25), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.25, 0.25)
+                Vector2::new(0.55, 0.55)
             )),
             Box::new(Racket()),
             Box::new(PinkRacket()),
@@ -125,7 +125,7 @@ fn setup(context: &mut Context) {
             Box::new(Transform::new(
                 Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.25, 0.25)
+                Vector2::new(0.55, 0.55)
             )),
             Box::new(PongBall()),
             Box::new(Velocity::new(Vector2::new(1.0, 1.0))),
