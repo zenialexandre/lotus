@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::Path};
 use anyhow::Ok;
-use cpal::{traits::HostTrait, Host};
+use cpal::{traits::{DeviceTrait, HostTrait}, Host};
 use kira::{
     sound::{
         static_sound::{StaticSoundData, StaticSoundSettings},
@@ -163,25 +163,26 @@ impl AudioSource {
     pub fn new() -> Result<Self, AudioError> {
         let cpal_host: Host = cpal::default_host();
 
-        if let std::result::Result::Ok(_output_devices) = cpal_host.output_devices() {
-            let audio_manager: AudioManager = AudioManager::new(AudioManagerSettings::default()).map_err(AudioError::from)?;
+        if let Some(default_output_device) = cpal_host.default_output_device() {
+            if default_output_device.default_output_config().is_ok() {
+                let audio_manager: AudioManager = AudioManager::new(AudioManagerSettings::default()).map_err(AudioError::from)?;
 
-            return Ok(Self {
-                audio_manager: Some(audio_manager),
-                static_sounds: HashMap::new(),
-                streaming_sounds: HashMap::new(),
-                streaming_handles: HashMap::new()
-            }).map_err(AudioError::from);
-        } else {
-            warn!("No output device was found when trying to create the Audio Manager.\nAn empty Audio Source will be created and no sound will be made.");
-
-            return Ok(Self {
-                audio_manager: None,
-                static_sounds: HashMap::new(),
-                streaming_sounds: HashMap::new(),
-                streaming_handles: HashMap::new()
-            }).map_err(AudioError::from);  
+                return Ok(Self {
+                    audio_manager: Some(audio_manager),
+                    static_sounds: HashMap::new(),
+                    streaming_sounds: HashMap::new(),
+                    streaming_handles: HashMap::new()
+                }).map_err(AudioError::from);
+            }
         }
+        warn!("No output device was found when trying to create the Audio Manager.\nAn empty Audio Source will be created and no sound will be made.");
+
+        return Ok(Self {
+            audio_manager: None,
+            static_sounds: HashMap::new(),
+            streaming_sounds: HashMap::new(),
+            streaming_handles: HashMap::new()
+        }).map_err(AudioError::from);
     }
 
     /// Check the audio source file format.
