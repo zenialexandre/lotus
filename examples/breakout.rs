@@ -47,7 +47,7 @@ your_game!(
     WindowConfiguration {
         icon_path: "textures/lotus_pink_256x256.png".to_string(),
         title: "Breakout Game :)".to_string(),
-        background_color: Some(Color::CYAN),
+        background_color: Some(Color::LIGHTGRAY),
         background_image_path: None,
         width: 725.0,
         height: 695.0,
@@ -68,13 +68,19 @@ fn setup(context: &mut Context) {
     let little_ball: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.2)), Color::BLACK);
     let start_text: Text = Text::new(
         Font::new(Fonts::RobotoMonoItalic.get_path(), 40.0),
-        Position::new(Vector2::new(0.10, 0.50), Strategy::Normalized),
-        Color::PURPLE,
-        "Press 'Enter' to start the game!".to_string()
+        Position::new(Vector2::new(298.0, 380.0), Strategy::Pixelated),
+        Color::BLACK,
+        "> enter <".to_string()
     );
 
     let mut thread_rng: ThreadRng = rand::rng();
-    let random_x_direction: f32 = thread_rng.random_range(-0.8..0.8);
+    let random_direction: bool = thread_rng.random_bool(1.0 / 3.0);
+ 
+    let velocity_x: f32 = if random_direction {
+        1.2
+    } else {
+        -1.2
+    };
 
     context.commands.add_resources(vec![
         Box::new(LittleBallRespawnTimer::new()),
@@ -105,13 +111,13 @@ fn setup(context: &mut Context) {
                 0.0,
                 Vector2::new(0.10, 0.10)
             )),
-            Box::new(Velocity::new(Vector2::new(random_x_direction, -0.5))),
+            Box::new(Velocity::new(Vector2::new(velocity_x, -0.5))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
 
-    spawn_border(context, Vector2::new(1.1, 0.));
-    spawn_border(context, Vector2::new(-1.1, 0.));
+    spawn_border(context, Vector2::new(1.05, 0.0));
+    spawn_border(context, Vector2::new(-1.05, 0.0));
     spawn_targets(context);
 }
 
@@ -120,11 +126,15 @@ fn update(context: &mut Context) {
         let input_ref: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
         input_ref.clone()
     };
+    let is_hover: bool = input.mouse_position.0 >= 298.0 && (input.mouse_position.1 > 380.0 && input.mouse_position.1 < 416.0);
 
-    if input.is_key_released(PhysicalKey::Code(KeyCode::Enter)) {
+    if
+        input.is_key_released(PhysicalKey::Code(KeyCode::Enter)) ||
+        (input.is_mouse_button_released(MouseButton::Left) && is_hover)
+    {
         let mut next_state: ResourceRefMut<'_, NextState> = context.world.get_resource_mut::<NextState>().unwrap();
         next_state.0 = GameState::Running;
-        
+
         let mut query: Query = Query::new(&context.world).with::<Text>();
         if let Some(entity) = query.entities_with_components().unwrap().first() {
             context.commands.despawn(entity.clone());
@@ -239,18 +249,23 @@ fn check_player_little_ball_collision(context: &mut Context, player_entity: Enti
     let player_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&player_entity).unwrap();
 
     if Collision::check(CollisionAlgorithm::Aabb, &player_collision, &little_ball_collision) {
-        let relative_collision_position: Vector2<f32> = little_ball_collision.collider.position - player_collision.collider.position;
+        let velocity_magnitude: f32 = little_ball_velocity.to_vec().magnitude();
+        let collision_point: f32 = (
+            (little_ball_collision.collider.position.x - player_collision.collider.position.x) / 
+            (player_collision.collider.scale.x * 0.5)
+        ).clamp(-1.0, 1.0);
         
-        let rebound_direction: Vector2<f32> = if relative_collision_position.y > 0.0 {
-            Vector2::new(relative_collision_position.x, 1.0)
-        } else {
-            Vector2::new(relative_collision_position.x, -1.0)
-        };
-        let rebound_vector: Vector2<f32> = (rebound_direction + Vector2::new(random_factor, 0.0)).normalize();
-        let little_ball_new_velocity: Vector2<f32> = rebound_vector * little_ball_velocity.to_vec().magnitude();
+        let mut new_direction: Vector2<f32> = Vector2::new(
+            collision_point * 1.5,
+            1.0 - collision_point.abs() * 0.3
+        ).normalize();
 
-        little_ball_velocity.x = little_ball_new_velocity.x; little_ball_velocity.y = little_ball_new_velocity.y;
-        little_ball_transform.position.y += rebound_direction.y * 0.02;
+        new_direction.x += random_factor * 0.15;
+        new_direction = new_direction.normalize();
+
+        little_ball_velocity.x = new_direction.x * velocity_magnitude;
+        little_ball_velocity.y = new_direction.y * velocity_magnitude;
+        little_ball_transform.position.y += 0.03;
     }
 }
 
@@ -266,19 +281,28 @@ fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity
         let border_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &little_ball_collision, &border_collision) {
-            if border_collision.collider.position.x > 0.0 {
-                let little_ball_new_velocity: Vector2<f32> =
-                    Vector2::new(-1.0 + random_factor, little_ball_velocity.y.signum()).normalize() * little_ball_velocity.to_vec().magnitude();
+            let velocity_magnitude: f32 = little_ball_velocity.to_vec().magnitude();
+            let collision_normal: Vector2<f32> = if border_collision.collider.position.x > 0.0 {
+                Vector2::new(-1.0, 0.0)
+            } else {
+                Vector2::new(1.0, 0.0)
+            };
 
-                little_ball_velocity.x = little_ball_new_velocity.x; little_ball_velocity.y = little_ball_new_velocity.y;
-                little_ball_transform.position.x -= 0.1;
-            } else if border_collision.collider.position.x < 0.0 {
-                let little_ball_new_velocity: Vector2<f32> =
-                    Vector2::new(1.0 + random_factor, little_ball_velocity.y.signum()).normalize() * little_ball_velocity.to_vec().magnitude();
+            let new_direction: Vector2<f32> = (
+                little_ball_velocity.to_vec().normalize() - 2.0 *
+                little_ball_velocity.to_vec().normalize().dot(collision_normal) * collision_normal
+            ).normalize();
+            
+            let randomized_direction: Vector2<f32> = Vector2::new(
+                new_direction.x + random_factor * 0.3,
+                new_direction.y
+            ).normalize();
 
-                little_ball_velocity.x = little_ball_new_velocity.x; little_ball_velocity.y = little_ball_new_velocity.y;
-                little_ball_transform.position.x += 0.1;
-            }
+            little_ball_velocity.x = randomized_direction.x * velocity_magnitude;
+            little_ball_velocity.y = randomized_direction.y * velocity_magnitude;
+
+            let collision_offset: Vector2<f32> = collision_normal * 0.02;
+            little_ball_transform.position.x += collision_offset.x;
         }
     }
 }
@@ -295,11 +319,21 @@ fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity:
         let target_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(target).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &little_ball_collision, &target_collision) {
-            let little_ball_new_velocity: Vector2<f32> =
-                Vector2::new(little_ball_velocity.x.signum(), -1.0 + random_factor).normalize() * little_ball_velocity.to_vec().magnitude();
+            let velocity_magnitude: f32 = little_ball_velocity.to_vec().magnitude();
+            let impact_vector: Vector2<f32> = (target_collision.collider.position - little_ball_collision.collider.position).normalize();
 
-            little_ball_velocity.x = little_ball_new_velocity.x; little_ball_velocity.y = little_ball_new_velocity.y;
-            little_ball_transform.position.y -= 0.1;
+            let mut new_direction: Vector2<f32> = Vector2::new(
+                -impact_vector.x * 0.8 + random_factor * 0.2,
+                -impact_vector.y * 0.8 + random_factor * 0.2
+            ).normalize();
+
+            new_direction.y = new_direction.y.signum() * new_direction.y.abs().max(0.3);
+
+            little_ball_velocity.x = new_direction.x * velocity_magnitude;
+            little_ball_velocity.y = new_direction.y * velocity_magnitude;
+
+            little_ball_transform.position.x -= impact_vector.x * 0.05;
+            little_ball_transform.position.y -= impact_vector.y * 0.05;
             context.commands.despawn(target.clone());
         }
     }

@@ -105,21 +105,22 @@ impl World {
         }
     }
 
+    /// Create a text showing the current application FPS.
     pub fn show_fps(&mut self, render_state: &mut RenderState, current_fps: u32, color: Color) {
         let mut query: Query = Query::new(&self).with::<Fps>();
 
         if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
-            if let Some(text_renderer) = self.text_renderers.get_mut(&fps_entity.0) {
-                text_renderer.update_brush(current_fps.to_string(), render_state.queue.clone(), render_state.physical_size);
+            if let Some(text_renderer) = self.get_text_renderer_mut(&fps_entity) {
+                text_renderer.update_content(current_fps.to_string(), render_state.queue.clone(), render_state.physical_size);
             }
         } else {
             let fps_text: Text = Text::new(
-                Font::new(Fonts::RobotoMono.get_path(), 20.0),
-                Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+                Font::new(Fonts::RobotoMono.get_path(), 21.0),
+                Position::new(Vector2::new(0.0, 0.0), Strategy::Pixelated),
                 color,
                 current_fps.to_string()
             );
-            self.spawn(render_state, vec![Box::new(fps_text), Box::new(DrawOrder(9999)), Box::new(Fps())]);
+            self.spawn(render_state, vec![Box::new(fps_text), Box::new(DrawOrder(99999)), Box::new(Fps())]);
         }
     }
 
@@ -298,6 +299,18 @@ impl World {
             type_id.hash(&mut default_hasher);
         }
         return default_hasher.finish();
+    }
+
+    /// Returns the text renderer based on its entity.
+    /// Use this function when you need to access data of a text that was rendered.
+    pub fn get_text_renderer(&self, entity: &Entity) -> Option<&TextRenderer> {
+        return self.text_renderers.get(&entity.0);
+    }
+
+    /// Returns the text renderer based on its entity.
+    /// Use this function when you need to mutate data of a text that was rendered.
+    pub fn get_text_renderer_mut(&mut self, entity: &Entity) -> Option<&mut TextRenderer> {
+        return self.text_renderers.get_mut(&entity.0);
     }
 
     /// Return an immutable reference to the specified resource

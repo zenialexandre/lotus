@@ -2,6 +2,7 @@ use std::time::Duration;
 use lotus_proc_macros::Component;
 use super::super::{time::timer::Timer, physics::transform::Transform, engine::Context};
 
+/// This is a work in progress!
 /// Struct to represent a sprite sheet.
 /// An entity can have multiple sprite sheets to do multiple animations.
 #[derive(Clone, Component)]

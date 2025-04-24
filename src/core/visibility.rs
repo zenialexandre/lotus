@@ -1,6 +1,6 @@
 use lotus_proc_macros::Component;
 
-/// Struct to represent an entity visibility on the world.
+/// Struct to represent an entity visibility in the world.
 #[derive(Clone, Component)]
 pub struct Visibility(pub bool);
 

@@ -22,7 +22,7 @@ fn setup(context: &mut Context) {
 
     let codystar_light: Text = Text::new(
         Font::new(Fonts::CodystarLight.get_path(), 80.0),
-        Position::new(Vector2::new(0.10, 0.25), Strategy::Normalized),
+        Position::new(Vector2::new(0.0, 0.25), Strategy::Normalized),
         Color::BLUE,
         "Hello Text!".to_string()
     );
@@ -30,7 +30,7 @@ fn setup(context: &mut Context) {
 
     let codystar_regular: Text = Text::new(
         Font::new(Fonts::CodystarRegular.get_path(), 80.0),
-        Position::new(Vector2::new(0.10, 0.45), Strategy::Normalized),
+        Position::new(Vector2::new(0.0, 0.45), Strategy::Normalized),
         Color::MAGENTA,
         "Hello Text!".to_string()
     );
@@ -38,7 +38,7 @@ fn setup(context: &mut Context) {
 
     let roboto_mono: Text = Text::new(
         Font::new(Fonts::RobotoMono.get_path(), 80.0),
-        Position::new(Vector2::new(0.10, 0.65), Strategy::Normalized),
+        Position::new(Vector2::new(0.0, 0.65), Strategy::Normalized),
         Color::BROWN,
         "Hello Text!".to_string()
     );
@@ -46,7 +46,7 @@ fn setup(context: &mut Context) {
 
     let roboto_mono_italic: Text = Text::new(
         Font::new(Fonts::RobotoMonoItalic.get_path(), 80.0),
-        Position::new(Vector2::new(0.10, 0.85), Strategy::Normalized),
+        Position::new(Vector2::new(0.0, 0.85), Strategy::Normalized),
         Color::RED,
         "Hello Text!".to_string()
     );

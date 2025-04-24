@@ -262,4 +262,4 @@ fn update(context: &mut Context) {
 
 Thank you for reading until here! <br>
 To learn more about the engine, please look into our examples [`here`](https://github.com/zenialexandre/lotus/tree/main/examples). <br>
-Happy coding!! 👾
+Happy coding! 👾

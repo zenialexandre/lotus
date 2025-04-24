@@ -425,7 +425,7 @@ impl RenderState {
         for entity in self.entities_to_render.clone() {
             if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
                 if let Some(text_renderer) = world.text_renderers.get_mut(&entity.0) {
-                    let (x, y): (f32, f32) = text_renderer.text.get_position_as_pixels(&self.physical_size.as_ref().unwrap());
+                    let (x, y): (f32, f32) = text_renderer.text.get_position_by_strategy(&self.physical_size.as_ref().unwrap());
 
                     text_renderer.text_brush.queue(
                         self.device.as_ref().unwrap(),
@@ -795,7 +795,7 @@ impl RenderState {
         }
     }
 
-    fn get_render_pipeline(&self, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
+    pub(crate) fn get_render_pipeline(&self, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
         let shader_module: ShaderModule = self.device.as_ref().unwrap().create_shader_module(ShaderModuleDescriptor {
             label: Some("Shader Module"),
             source: ShaderSource::Wgsl(shader_source.into())

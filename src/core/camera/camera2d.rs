@@ -2,7 +2,7 @@ use cgmath::{Matrix4, SquareMatrix};
 use lotus_proc_macros::Resource;
 use super::super::{ecs::entity::Entity, physics::transform::Transform};
 
-/// Struct to represent the global 2D camera resource in our world.
+/// Struct to represent the global 2D camera resource in the world.
 #[derive(Clone, Resource)]
 pub struct Camera2d {
     pub transform: Transform,

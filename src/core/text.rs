@@ -2,7 +2,7 @@ use lotus_proc_macros::Component;
 use wgpu::Queue;
 use wgpu_text::{glyph_brush::ab_glyph::FontArc, BrushBuilder, TextBrush};
 use winit::dpi::PhysicalSize;
-use super::{physics::transform::Position, color::Color, asset_loader::AssetLoader, managers::rendering::manager::RenderState};
+use super::{physics::transform::{Position, Strategy}, color::Color, asset_loader::AssetLoader, managers::rendering::manager::RenderState};
 
 const UNDERDOG_REGULAR_PATH: &str = "../../assets/fonts/Underdog-Regular.ttf";
 const CODYSTAR_LIGHT_PATH: &str = "../../assets/fonts/Codystar-Light.ttf";
@@ -30,11 +30,18 @@ impl Text {
         };
     }
 
-    /// Returns the text position as pixels.
-    pub fn get_position_as_pixels(&self, physical_size: &PhysicalSize<u32>) -> (f32, f32) {
-        let x: f32 = self.position.x * physical_size.width as f32;
-        let y: f32 = self.position.y * physical_size.height as f32;
-        return (x, y);
+    /// Returns the text position by the strategy.
+    pub fn get_position_by_strategy(&self, physical_size: &PhysicalSize<u32>) -> (f32, f32) {
+        let aspect_ratio: f32 = physical_size.width as f32 / physical_size.height as f32;
+
+        if self.position.strategy == Strategy::Normalized {
+            let x_normalized: f32 = self.position.x / aspect_ratio;
+            let x: f32 = ((x_normalized + 1.0) / 2.0) * physical_size.width as f32;
+            let y: f32 = ((1.0 - self.position.y) / 2.0) * physical_size.height as f32;
+            return (x, y);
+        } else {
+            return (self.position.x, self.position.y);
+        }
     }
 }
 
@@ -134,6 +141,60 @@ impl TextRenderer {
         };
     }
 
+    /// Updates the text rendering context with the new font.
+    pub fn update_font(&mut self, font: Font, queue: Option<Queue>, physical_size: Option<PhysicalSize<u32>>) {
+        self.text.font = font;
+
+        self.text_brush.update_matrix(
+            wgpu_text::ortho(physical_size.as_ref().unwrap().width as f32, physical_size.as_ref().unwrap().height as f32),
+            queue.as_ref().unwrap()
+        );
+    }
+
+    /// Updates the text rendering context with the new position.
+    pub fn update_position(&mut self, position: Position, queue: Option<Queue>, physical_size: Option<PhysicalSize<u32>>) {
+        self.text.position = position;
+
+        self.text_brush.update_matrix(
+            wgpu_text::ortho(physical_size.as_ref().unwrap().width as f32, physical_size.as_ref().unwrap().height as f32),
+            queue.as_ref().unwrap()
+        );
+    }
+
+    /// Updates the text rendering context with the new content.
+    pub fn update_content(&mut self, content: String, queue: Option<Queue>, physical_size: Option<PhysicalSize<u32>>) {
+        self.text.content = content;
+
+        self.text_brush.update_matrix(
+            wgpu_text::ortho(physical_size.as_ref().unwrap().width as f32, physical_size.as_ref().unwrap().height as f32),
+            queue.as_ref().unwrap()
+        );
+    }
+
+    /// Updates the text rendering context with the new color.
+    pub fn update_color(&mut self, color: Color, queue: Option<Queue>, physical_size: Option<PhysicalSize<u32>>) {
+        self.text.color = color;
+
+        self.text_brush.update_matrix(
+            wgpu_text::ortho(physical_size.as_ref().unwrap().width as f32, physical_size.as_ref().unwrap().height as f32),
+            queue.as_ref().unwrap()
+        );
+    }
+
+    /// Updates the text rendering context with a new text struct.
+    pub fn update_text_data(&mut self, text: &Text, queue: Option<Queue>, physical_size: Option<PhysicalSize<u32>>) {
+        self.text = text.clone();
+
+        self.text_brush.update_matrix(
+            wgpu_text::ortho(physical_size.as_ref().unwrap().width as f32, physical_size.as_ref().unwrap().height as f32),
+            queue.as_ref().unwrap()
+        );
+    }
+
+    #[deprecated(
+        since = "0.1.31",
+        note = "Use the `update_content` function instead."
+    )]
     /// Updates the text rendering context with the new content.
     pub fn update_brush(&mut self, content: String, queue: Option<Queue>, physical_size: Option<PhysicalSize<u32>>) {
         self.text.content = content;

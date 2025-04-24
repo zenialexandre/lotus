@@ -160,6 +160,7 @@ unsafe impl Sync for AudioSource {}
 
 impl AudioSource {
     /// Create a new audio source.
+    /// Note: if none output audio device are found, the engine will not reproduce sounds.
     pub fn new() -> Result<Self, AudioError> {
         let cpal_host: Host = cpal::default_host();
 

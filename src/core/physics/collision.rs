@@ -1,6 +1,5 @@
 use cgmath::Vector2;
 use lotus_proc_macros::Component;
-
 use super::super::shape::GeometryType;
 
 /// Struct to represent the real collider of the object.
