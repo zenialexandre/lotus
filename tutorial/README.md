@@ -183,6 +183,9 @@ fn update(context: &mut Context) {
 
     // Here we use the 'set_rotation' function of the Transform component.
     // At each frame, the rotation of our shape will be updated with our variable.
+    // Note that we are accessing the 'render state' field.
+    // Its the main struct related to the rendering, it can be useful and its needed in some functions.
+    // Keep in mind some fields that can be accessed through this sctruct like 'queue' and 'device'.
     transform.set_rotation(&context.render_state, my_rotation);
 }
 ```
@@ -230,7 +233,7 @@ fn setup(context: &mut Context) {
 
 fn update(context: &mut Context) {
     // Using our component on the query.
-    // With a filter like this, it can be much easier to find an entity.
+    // With a filter like this, it can be easier to find an entity.
     let mut query: Query = Query::new(&context.world).with::<JustAComponent>();
     let my_entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&my_entity).unwrap();
@@ -250,7 +253,7 @@ fn update(context: &mut Context) {
         transform.set_rotation(&context.render_state, my_rotation);
     }
 
-    // Every time the X key is released, the resource value will be updated and printed.
+    // Every time the X key is released, the resource value will be updated and printed out.
     if input.is_key_released(PhysicalKey::Code(KeyCode::KeyX)) {
         just_a_resource.0 += 1;
         eprintln!("Resource Value: {:?}", just_a_resource.0);
