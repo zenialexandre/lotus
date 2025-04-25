@@ -263,9 +263,9 @@ fn update(context: &mut Context) {
 
 ### How About Some Physics?
 
-The Lotus engine supports collision detection using the AABB algorithm. <br>
+Lotus supports collision detection using the AABB algorithm. <br>
 And the concept of gravity can be enabled using our Gravity global resource! <br>
-Let's create an small example of collision detection between two entities and enable force of gravity.
+Let's create an small example of collision detection between two entities and enable the force of gravity.
 
 ```rust
 use lotus_engine::*;
@@ -277,7 +277,7 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    // Start by creating two objects.
+    // Start off by creating two objects.
     // One will be static and will serve as a table.
     // The other will be our main entity.
     let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::BLACK);
