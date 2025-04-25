@@ -1,7 +1,7 @@
 use cgmath::Vector2;
 use lotus_proc_macros::Component;
 
-/// Struct to represent the acceleration/force of gravity.
+/// Struct to represent the acceleration.
 #[derive(Clone, Component)]
 pub struct Acceleration {
     pub x: f32,

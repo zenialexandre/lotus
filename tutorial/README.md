@@ -261,6 +261,118 @@ fn update(context: &mut Context) {
 }
 ```
 
+### How About Some Physics?
+
+The Lotus engine supports collision detection using the AABB algorithm. <br>
+And the concept of gravity can be enabled using our Gravity global resource! <br>
+Let's create an small example of collision detection between two entities and enable force of gravity.
+
+```rust
+use lotus_engine::*;
+
+your_game!(
+    WindowConfiguration::default(),
+    setup,
+    update
+);
+
+fn setup(context: &mut Context) {
+    // Start by creating two objects.
+    // One will be static and will serve as a table.
+    // The other will be our main entity.
+    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::BLACK);
+    let sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
+
+    context.commands.spawn(vec![
+        Box::new(table),
+        Box::new(Transform::new(
+            Position::new(Vector2::new(0.0, -0.70), Strategy::Normalized),
+            0.0,
+            Vector2::new(0.90, 0.10)
+        )),
+        // Our table Collision.
+        Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
+    ]);
+
+    // The spawn of our main entity will have two new components: 'Collision' and 'RigidBody'.
+    // The Collision component will tell our world that this entity collides!
+    // The posisiton and the scale of our collider is the same as its entity.
+    //
+    // The RigidBody component will tell our world that this entity CAN be affected by the forces of gravity.
+    // Keep in mind that the gravity will only affect entities with 'Dynamic' rigid bodies and velocity. 
+    context.commands.spawn(vec![
+        Box::new(sprite),
+        Box::new(Transform::new(
+            Position::new(Vector2::new(400.0, 100.0), Strategy::Pixelated),
+            0.0,
+            Vector2::new(0.50, 0.50)
+        )),
+        Box::new(Collision::new(Collider::new_simple(GeometryType::Square))),
+        Box::new(Velocity::new(Vector2::new(0.2, 0.2))),
+        // The first parameter is the type of the body, in this case: Dynamic.
+        // The next parameter is the mass of the body (it will affect gravity).
+        // The third parameter is the restitution factor (it can affect movement after collisions).
+        // The last parameter is the friction factor (it will affect gravity).
+        Box::new(RigidBody::new(BodyType::Dynamic, 0.1, 0.9, 1.0))
+    ]);
+}
+
+fn update(context: &mut Context) {
+    let input: Input = {
+        let input_ref: ResourceRef<'_, Input> = context.world.get_resource::<Input>().unwrap();
+        input_ref.clone()
+    };
+
+    // Gravity is a global resource in our world.
+    // It starts disabled and with 9.8 as its value of force (default value of Earth).
+    // So if you want it to act, enable it!
+    if input.is_key_released(PhysicalKey::Code(KeyCode::Enter)) {
+        let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
+        gravity.enable();
+    }
+
+    // As you can see, you can control the gravity acting state freely.
+    if input.is_key_released(PhysicalKey::Code(KeyCode::Escape)) {
+        let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
+        gravity.disable();
+    }
+
+    // This is our helper function to check collisions!
+    check_table_object_collision(context);
+}
+
+fn check_table_object_collision(context: &mut Context) {
+    // Start of by querying our entities.
+    // Here I use the RigidBody as the main filter.
+    let mut table_query: Query = Query::new(&context.world).with::<RigidBody>();
+    let mut object_query: Query = Query::new(&context.world).with::<RigidBody>();
+
+    let table: Entity = table_query.entities_without_components().unwrap().first().unwrap().clone();
+    let object: Entity = object_query.entities_with_components().unwrap().first().unwrap().clone();
+
+    // For collision checking purposes, you need to get the Collisions components.
+    let table_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&table).unwrap();
+
+    let (object_collision, mut object_transform, mut object_velocity, object_rigid_body) = (
+        context.world.get_entity_component::<Collision>(&object).unwrap(),
+        context.world.get_entity_component_mut::<Transform>(&object).unwrap(),
+        context.world.get_entity_component_mut::<Velocity>(&object).unwrap(),
+        context.world.get_entity_component::<RigidBody>(&object).unwrap()
+    );
+
+    // Here we can use the 'check' function to search for a collision between two colliders.
+    // In this case we are using the AABB algorithm.
+    if Collision::check(CollisionAlgorithm::Aabb, &table_collision, &object_collision) {
+        // Now this is the calculus for the 'bounce' effect in our object.
+        // Note the use of the restitution value here!
+        // It serves as a 'consequence' of the collisions, by decreasing our vertical velocity.
+        object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
+        let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
+        object_transform.set_position_y(&context.render_state, y);
+    }
+}
+```
+
 ### Now Its Up To You
 
 Thank you for reading until here! <br>

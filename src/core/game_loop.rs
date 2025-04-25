@@ -53,6 +53,7 @@ impl GameLoop {
         context.delta = self.get_delta_as_seconds();
         context.commands.flush_commands(&mut context.world, &mut context.render_state);
         context.world.synchronize_camera_with_target(&mut context.render_state);
+        context.world.synchronize_gravity_with_dynamic_bodies(&mut context.render_state, context.delta);
         context.world.synchronize_transformations_with_collisions(&mut context.render_state);
         (self.update)(context);
 

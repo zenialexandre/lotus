@@ -9,3 +9,9 @@ pub mod velocity;
 
 /// Acceleration related features.
 pub mod acceleration;
+
+/// Gravity related features.
+pub mod gravity;
+
+/// Rigid Body related features.
+pub mod rigid_body;

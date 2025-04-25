@@ -38,6 +38,15 @@ impl Circle {
     }
 }
 
+impl Default for Circle {
+    fn default() -> Self {
+        return Self {
+            number_of_segments: 64,
+            radius: 0.5
+        };
+    }
+}
+
 /// Enumerator that represent the orientation of the geometric form.
 #[derive(Clone, Debug)]
 pub enum Orientation {

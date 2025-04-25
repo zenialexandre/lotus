@@ -147,6 +147,8 @@ pub use core::physics::transform::*;
 pub use core::physics::acceleration::*;
 pub use core::physics::collision::*;
 pub use core::physics::velocity::*;
+pub use core::physics::gravity::*;
+pub use core::physics::rigid_body::*;
 pub use core::time::timer::*;
 pub use core::draw_order::*;
 pub use core::audio::audio_source::*;

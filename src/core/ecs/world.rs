@@ -22,7 +22,7 @@ use super::{
         visibility::Visibility,
         text::{Text, TextRenderer, Font, Fonts},
         managers::rendering::manager::RenderState,
-        physics::{collision::Collision, transform::{Transform, Position, Strategy}}
+        physics::{collision::Collision, velocity::Velocity, transform::{Transform, Position, Strategy}, gravity::Gravity, rigid_body::{RigidBody, BodyType}}
     },
     query::Query,
     entity::Entity,
@@ -77,6 +77,7 @@ impl World {
         let mut resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>> = HashMap::new();
         resources.insert(TypeId::of::<Input>(), Arc::new(AtomicRefCell::new(Box::new(Input::default()))));
         resources.insert(TypeId::of::<Camera2d>(), Arc::new(AtomicRefCell::new(Box::new(Camera2d::default()))));
+        resources.insert(TypeId::of::<Gravity>(), Arc::new(AtomicRefCell::new(Box::new(Gravity::default()))));
 
         return Self {
             archetypes: HashMap::new(),
@@ -180,6 +181,41 @@ impl World {
                 }
                 archetype.entities.remove(index);
                 break;
+            }
+        }
+    }
+
+    /// Synchronizes the gravity with dynamic bodies.
+    pub fn synchronize_gravity_with_dynamic_bodies(&mut self, render_state: &mut RenderState, delta: f32) {
+        let gravity: Gravity = match self.get_resource::<Gravity>() {
+            Some(g) => g.clone(),
+            None => return
+        };
+
+        if !gravity.enabled || gravity.value == 0.0 {
+            return;
+        }
+
+        let mut query: Query<'_> = Query::new(self).with::<Transform>()
+            .with::<Velocity>()
+            .with::<RigidBody>();
+
+        for entity in query.entities_with_components().unwrap() {
+            if let (Some(mut transform), Some(mut velocity), Some(rigid_body)) = (
+                self.get_entity_component_mut::<Transform>(&entity),
+                self.get_entity_component_mut::<Velocity>(&entity),
+                self.get_entity_component::<RigidBody>(&entity)
+            ) {
+                if rigid_body.body_type == BodyType::Dynamic {
+                    if transform.position.strategy == Strategy::Pixelated {
+                        let gravity_factor_pixelated: f32 = gravity.value * render_state.physical_size.unwrap().height as f32;
+                        velocity.y += gravity_factor_pixelated * rigid_body.mass * rigid_body.friction * delta;
+                    } else {
+                        velocity.y -= gravity.value * rigid_body.mass * rigid_body.friction * delta;
+                    }
+                    let new_y: f32 = transform.position.y + velocity.y * delta;
+                    transform.set_position_y(render_state, new_y);
+                }
             }
         }
     }
