@@ -1,3 +1,4 @@
+// DEPRECATED
 // This is the shader that will be used to render objects with color.
 
 struct VertexInput {

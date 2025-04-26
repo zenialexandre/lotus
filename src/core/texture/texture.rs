@@ -102,6 +102,63 @@ impl Texture {
             sampler
         });
     }
+
+    pub(crate) fn dummy(
+        device: &Device,
+        queue: &Queue,
+        label: Option<&str>
+    ) -> Result<Self> {
+        let color: [u8; 4] = [1.0 as u8, 1.0 as u8, 1.0 as u8, 1.0 as u8];
+        let size: Extent3d = Extent3d {
+            width: 1,
+            height: 1,
+            depth_or_array_layers: 1
+        };
+
+        let texture: wgpu::Texture = device.create_texture(&TextureDescriptor {
+            label,
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Rgba8UnormSrgb,
+            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+
+        queue.write_texture(
+            TexelCopyTextureInfo {
+                aspect: TextureAspect::All,
+                texture: &texture,
+                mip_level: 0,
+                origin: Origin3d::ZERO,
+            },
+            &color,
+            TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(4),
+                rows_per_image: Some(1),
+            },
+            size,
+        );
+
+        let texture_view: TextureView = texture.create_view(&TextureViewDescriptor::default());
+        let sampler: Sampler = device.create_sampler(&SamplerDescriptor {
+            address_mode_u: AddressMode::ClampToEdge,
+            address_mode_v: AddressMode::ClampToEdge,
+            address_mode_w: AddressMode::ClampToEdge,
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Linear,
+            mipmap_filter: FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        return Ok(Self {
+            wgpu_texture: texture,
+            texture_view,
+            sampler,
+        });
+    }
 }
 
 /// Struct to represent the textures current on the application cache.
@@ -110,6 +167,8 @@ pub struct TextureCache {
 }
 
 impl TextureCache {
+    pub(crate) const DUMMY_TEXTURE: &str = "dummy_texture";
+
     /// Create a new texture cache cleaned.
     pub fn new() -> Self {
         return Self {
@@ -125,8 +184,14 @@ impl TextureCache {
     /// Add a texture to the cache and returns it afterwards.
     pub fn load_texture(&mut self, key: String, device: &Device, queue: &Queue) -> Option<Arc<Texture>> {
         if !self.textures.contains_key(&key) {
-            let image: DynamicImage = image::load_from_memory(&AssetLoader::load_bytes(&key).ok().unwrap()).unwrap();
-            let texture: Texture = Texture::from_image(device, queue, &image, Some(&key)).unwrap();
+            let texture: Texture;
+
+            if key != TextureCache::DUMMY_TEXTURE.to_string() {
+                let image: DynamicImage = image::load_from_memory(&AssetLoader::load_bytes(&key).ok().unwrap()).unwrap();
+                texture = Texture::from_image(device, queue, &image, Some(&key)).unwrap();
+            } else {
+                texture = Texture::dummy(device, queue, Some(&key)).unwrap();
+            }
             let texture_arc: Arc<Texture> = Arc::new(texture);
             self.textures.insert(key.clone(), Arc::clone(&texture_arc));
             return Some(texture_arc);
