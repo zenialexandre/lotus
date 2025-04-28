@@ -208,10 +208,10 @@ impl World {
             ) {
                 if rigid_body.body_type == BodyType::Dynamic {
                     if transform.position.strategy == Strategy::Pixelated {
-                        let gravity_factor_pixelated: f32 = gravity.value * render_state.physical_size.unwrap().height as f32;
-                        velocity.y += gravity_factor_pixelated * rigid_body.mass * rigid_body.friction * delta;
+                        let gravity_factor_pixelated: f32 = gravity.value * (render_state.physical_size.unwrap().height/2) as f32;
+                        velocity.y += gravity_factor_pixelated * rigid_body.friction * delta;
                     } else {
-                        velocity.y -= gravity.value * rigid_body.mass * rigid_body.friction * delta;
+                        velocity.y -= gravity.value * rigid_body.friction * delta;
                     }
                     let new_y: f32 = transform.position.y + velocity.y * delta;
                     transform.set_position_y(render_state, new_y);
