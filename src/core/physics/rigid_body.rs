@@ -18,7 +18,7 @@ pub struct RigidBody {
     /// The type of the rigid body.
     pub body_type: BodyType,
     /// The mass of the body.
-    /// It will affect the gravity factor.
+    /// It will affect the restitution factor.
     pub mass: f32,
     /// The restitution factor.
     /// It will affect the effects of a collision. 

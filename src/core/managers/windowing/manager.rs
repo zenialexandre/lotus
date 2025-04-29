@@ -1,3 +1,4 @@
+use wgpu::PresentMode;
 use winit::{
     application::ApplicationHandler,
     event::{WindowEvent, ElementState},
@@ -36,7 +37,8 @@ pub struct WindowConfiguration {
     pub transparent: bool,
     //pub visible: bool,
     pub active: bool,
-    pub enabled_buttons: WindowButtons
+    pub enabled_buttons: WindowButtons,
+    pub present_mode: PresentMode
 }
 
 impl Default for WindowConfiguration {
@@ -56,7 +58,8 @@ impl Default for WindowConfiguration {
             transparent: true,
             //visible: false,
             active: true,
-            enabled_buttons: WindowButtons::all()
+            enabled_buttons: WindowButtons::all(),
+            present_mode: PresentMode::AutoNoVsync
         };
     }
 }
@@ -173,7 +176,15 @@ impl WindowConfiguration {
             ..self
         };
     }
-    
+
+    /// Returns the window configuration with the present mode.
+    pub fn present_mode(self, present_mode: PresentMode) -> Self {
+        return Self {
+            present_mode,
+            ..self
+        };
+    }
+
     /// Returns a icon by its relative bytes.
     pub fn get_icon_by_bytes(icon_as_bytes: Vec<u8>) -> Option<Icon> {
         if let Ok(image) = image::load_from_memory(&icon_as_bytes) {
@@ -198,6 +209,7 @@ impl ApplicationHandler for Application {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let mut color: Option<Color> = None;
         let mut background_image_path: Option<String> = None;
+        let mut present_mode: PresentMode = PresentMode::AutoNoVsync;
 
         let window: Arc<Window> = if let Some(window_configuration) = &self.window_configuration {
             let mut window_attributes: WindowAttributes = Window::default_attributes();
@@ -216,6 +228,7 @@ impl ApplicationHandler for Application {
             window_attributes.visible = false; // Trick to appear the icon on the taskbar.
             window_attributes.active = window_configuration.active;
             window_attributes.enabled_buttons = window_configuration.enabled_buttons;
+            present_mode = window_configuration.present_mode;
 
             if window_configuration.icon_path.is_empty() {
                 window_attributes.window_icon = WindowConfiguration::get_icon_by_bytes(
@@ -242,7 +255,7 @@ impl ApplicationHandler for Application {
         self.window.as_ref().unwrap().focus_window();
 
         let world: World = World::new();
-        let mut render_state: RenderState = pollster::block_on(RenderState::new(window));
+        let mut render_state: RenderState = pollster::block_on(RenderState::new(window, present_mode));
         render_state.color = color;
         render_state.background_image_path = background_image_path;
 
@@ -279,8 +292,8 @@ impl ApplicationHandler for Application {
                 },
                 WindowEvent::CursorMoved { device_id: _, position } => {
                     let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
-                    input.mouse_position.0 = position.x as f32;
-                    input.mouse_position.1 = position.y as f32;
+                    input.mouse_position.x = position.x as f32;
+                    input.mouse_position.y = position.y as f32;
                 },
                 WindowEvent::MouseInput { device_id: _, state, button } => {
                     let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();

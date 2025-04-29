@@ -56,7 +56,8 @@ your_game!(
         decorations: true,
         transparent: false,
         active: true,
-        enabled_buttons: WindowButtons::CLOSE | WindowButtons::MINIMIZE
+        enabled_buttons: WindowButtons::CLOSE | WindowButtons::MINIMIZE,
+        present_mode: PresentMode::AutoNoVsync
     },
     setup,
     update
@@ -179,11 +180,11 @@ fn move_gray_racket(context: &mut Context, input: Input) {
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(gray_racket_entity).unwrap();
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(gray_racket_entity).unwrap();
 
-    if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyW)) {
+    if input.is_key_pressed(KeyCode::KeyW) {
         transform.position.y += velocity.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
-    } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyS)) {
+    } else if input.is_key_pressed(KeyCode::KeyS) {
         transform.position.y -= velocity.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
@@ -198,11 +199,11 @@ fn move_pink_racket(context: &mut Context, input: Input) {
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pink_racket_entity).unwrap();
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(pink_racket_entity).unwrap();
     
-    if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowUp)) {
+    if input.is_key_pressed(KeyCode::ArrowUp) {
         transform.position.y += velocity.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
-    } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowDown)) {
+    } else if input.is_key_pressed(KeyCode::ArrowDown) {
         transform.position.y -= velocity.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);

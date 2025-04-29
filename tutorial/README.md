@@ -248,13 +248,13 @@ fn update(context: &mut Context) {
     let mut just_a_resource: ResourceRefMut<'_, JustAResource> = context.world.get_resource_mut::<JustAResource>().unwrap();
 
     // While we are pressing the X key, our shape will be rotated.
-    if input.is_key_pressed(PhysicalKey::Code(KeyCode::KeyX)) {
+    if input.is_key_pressed(KeyCode::KeyX) {
         let my_rotation: f32 = transform.rotation + 100.0 * context.delta;
         transform.set_rotation(&context.render_state, my_rotation);
     }
 
     // Every time the X key is released, the resource value will be updated and printed out.
-    if input.is_key_released(PhysicalKey::Code(KeyCode::KeyX)) {
+    if input.is_key_released(KeyCode::KeyX) {
         just_a_resource.0 += 1;
         eprintln!("Resource Value: {:?}", just_a_resource.0);
     }
@@ -310,7 +310,7 @@ fn setup(context: &mut Context) {
         Box::new(Collision::new(Collider::new_simple(GeometryType::Square))),
         Box::new(Velocity::new(Vector2::new(0.2, 0.2))),
         // The first parameter is the type of the body, in this case: Dynamic.
-        // The next parameter is the mass of the body (it will affect gravity).
+        // The next parameter is the mass of the body (it will affect the restitution factor).
         // The third parameter is the restitution factor (it can affect movement after collisions).
         // The last parameter is the friction factor (it will affect gravity).
         Box::new(RigidBody::new(BodyType::Dynamic, 0.1, 0.9, 1.0))
@@ -326,13 +326,13 @@ fn update(context: &mut Context) {
     // Gravity is a global resource in our world.
     // It starts disabled and with 9.8 as its value of force (default value of Earth).
     // So if you want it to act, enable it!
-    if input.is_key_released(PhysicalKey::Code(KeyCode::Enter)) {
+    if input.is_key_released(KeyCode::Enter) {
         let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
         gravity.enable();
     }
 
     // As you can see, you can control the gravity acting state freely.
-    if input.is_key_released(PhysicalKey::Code(KeyCode::Escape)) {
+    if input.is_key_released(KeyCode::Escape) {
         let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
         gravity.disable();
     }
@@ -366,7 +366,7 @@ fn check_table_object_collision(context: &mut Context) {
         // Now this is the calculus for the 'bounce' effect in our object.
         // Note the use of the restitution value here!
         // It serves as a 'consequence' of the collisions, by decreasing our vertical velocity.
-        object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
+        object_velocity.y = -object_velocity.y * object_rigid_body.restitution + object_rigid_body.mass;
         let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
         object_transform.set_position_y(&context.render_state, y);
     }

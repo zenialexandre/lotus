@@ -62,10 +62,10 @@ fn update(context: &mut Context) {
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(&player_entity).unwrap();
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&player_entity).unwrap();
 
-    if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowRight)) {
+    if input.is_key_pressed(KeyCode::ArrowRight) {
         let x: f32 = transform.position.x + velocity.x * context.delta;
         transform.set_position_x(&context.render_state, x);
-    } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowLeft)) {
+    } else if input.is_key_pressed(KeyCode::ArrowLeft) {
         let x: f32 = transform.position.x - velocity.x * context.delta;
         transform.set_position_x(&context.render_state, x);
     }

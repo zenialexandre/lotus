@@ -9,11 +9,12 @@ use std::{collections::HashMap, sync::Arc};
 use super::cache::{self, BufferCache, BindGroupCache};
 use super::super::super::{
     color,
-    shape::{Orientation, Shape},
+    shape::{Orientation, Shape, GeometryType},
     physics::transform::{Transform, Strategy},
     draw_order::DrawOrder,
     texture,
-    texture::{texture::TextureCache, sprite::Sprite},
+    texture::{texture::TextureCache, sprite::Sprite, sprite_sheet::SpriteSheet},
+    animation::Animation,
     text::TextRenderer,
     camera::camera2d::Camera2d,
     ecs::{entity::Entity, world::World, component::Component, resource::ResourceRef}
@@ -103,7 +104,7 @@ impl RenderState {
     }
 
     /// Create a new asynchronous rendering state for the window.
-    pub async fn new(window: Arc<Window>) -> Self {
+    pub async fn new(window: Arc<Window>, present_mode: PresentMode) -> Self {
         let physical_size: PhysicalSize<u32> = window.inner_size();
         let instance: Instance = Instance::new(&InstanceDescriptor{
             backends: Backends::PRIMARY,
@@ -139,7 +140,7 @@ impl RenderState {
             format: surface_format,
             width: physical_size.width,
             height: physical_size.height,
-            present_mode: PresentMode::AutoNoVsync,
+            present_mode,
             alpha_mode: surface_capabilities.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2
@@ -370,7 +371,15 @@ impl RenderState {
             if let Some(background_image_path) = &self.background_image_path {
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
                 render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                self.setup_rendering_2d(None, Some(&background_sprite), None, None, &camera2d, true);
+                self.setup_rendering_2d(
+                    None,
+                    Some(&background_sprite),
+                    None,
+                    None,
+                    None,
+                    &camera2d,
+                    true
+                );
                 self.apply_render_pass_with_values(&mut render_pass);
             }
 
@@ -384,24 +393,53 @@ impl RenderState {
             for entity in entities_to_render_sorted.clone() {
                 if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
                     let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
+                    let transform: Option<&Transform> = components.iter().find_map(
+                        |component| component.as_any().downcast_ref::<Transform>()
+                    );
+                    let animation: Option<&Animation> = components.iter().find_map(
+                        |component| component.as_any().downcast_ref::<Animation>()
+                    );
 
-                    if let Some(sprite) = components.iter()
-                        .find_map(|component| component.as_any().downcast_ref::<Sprite>()) 
-                    {
-                        let transform: Option<&Transform> = components.iter()
-                            .find_map(|component| component.as_any().downcast_ref::<Transform>()
-                        );
+                    if let Some(animation) = animation {
+                        if animation.is_some_playing {
+                            render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
+                            self.setup_rendering_2d(
+                                Some(&entity),
+                                None,
+                                None,
+                                transform,
+                                Some(animation),
+                                &camera2d,
+                                false
+                            );
+                            self.apply_render_pass_with_values(&mut render_pass);
+                            continue;
+                        }
+                    }
+
+                    if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
                         render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                        self.setup_rendering_2d(Some(&entity), Some(sprite), None, transform, &camera2d, false);
+                        self.setup_rendering_2d(
+                            Some(&entity),
+                            Some(sprite),
+                            None,
+                            transform,
+                            animation,
+                            &camera2d,
+                            false
+                        );
                         self.apply_render_pass_with_values(&mut render_pass);
-                    } else if let Some(shape) = components.iter()
-                        .find_map(|component| component.as_any().downcast_ref::<Shape>())
-                    {
-                        let transform: Option<&Transform> = components.iter()
-                            .find_map(|component| component.as_any().downcast_ref::<Transform>()
-                        );
+                    } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
                         render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                        self.setup_rendering_2d(Some(&entity), None, Some(shape), transform, &camera2d, false);
+                        self.setup_rendering_2d(
+                            Some(&entity),
+                            None,
+                            Some(shape),
+                            transform,
+                            None,
+                            &camera2d,
+                            false
+                        );
                         self.apply_render_pass_with_values(&mut render_pass);
                     } else if let Some(text_renderer) = world.text_renderers.get(&entity.0) {
                         text_renderer.text_brush.draw(&mut render_pass);
@@ -454,11 +492,26 @@ impl RenderState {
         sprite: Option<&Sprite>,
         shape: Option<&Shape>,
         transform: Option<&Transform>,
+        animation: Option<&Animation>,
         camera2d: &Camera2d,
         is_background: bool
     ) {
         if let Some(sprite) = sprite {
-            self.setup_sprite_rendering(entity, sprite, transform, camera2d, is_background);
+            self.setup_sprite_rendering(
+                entity,
+                sprite,
+                transform,
+                camera2d,
+                is_background
+            );
+        } else if let Some(animation) = animation {
+            self.setup_animation_rendering(
+                entity,
+                animation,
+                transform,
+                camera2d,
+                is_background
+            );
         } else if let Some(shape) = shape {
             self.setup_shape_rendering(entity, shape, transform, camera2d);
         }
@@ -476,7 +529,11 @@ impl RenderState {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
                 texture_from_cache
             } else {
-                self.texture_cache.load_texture(sprite.path.clone(), &self.device.as_ref().unwrap(), &self.queue.as_ref().unwrap()).unwrap()
+                self.texture_cache.load_texture(
+                    sprite.path.clone(),
+                    &self.device.as_ref().unwrap(),
+                    &self.queue.as_ref().unwrap()
+                ).unwrap()
             }
         };
         let is_background_buffer: Buffer = self.get_conditional_buffer(cache::IS_BACKGROUND, entity, if is_background { 1 } else { 0 });
@@ -489,9 +546,11 @@ impl RenderState {
         let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
             entity,
             transform,
+            None,
             Some(texture.as_ref()),
             camera2d
         );
+
         let (vertex_buffer, index_buffer) = self.get_vertex_and_index_buffers(
             entity,
             &sprite.vertices,
@@ -506,6 +565,75 @@ impl RenderState {
         self.vertex_buffer = Some(vertex_buffer);
         self.index_buffer = Some(index_buffer);
         self.number_of_indices = Some(sprite.indices.len() as u32);
+    }
+
+    pub(crate) fn setup_animation_rendering(
+        &mut self,
+        entity: Option<&Entity>,
+        animation: &Animation,
+        transform: Option<&Transform>,
+        camera2d: &Camera2d,
+        is_background: bool
+    ) {
+        let sprite_sheet: Option<&SpriteSheet> = animation.get_playing_animation_now();
+
+        if let Some(sprite_sheet) = sprite_sheet {
+            let texture: Arc<texture::texture::Texture> = {
+                if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite_sheet.path.clone()) {
+                    texture_from_cache
+                } else {
+                    self.texture_cache.load_texture(
+                        sprite_sheet.path.clone(),
+                        &self.device.as_ref().unwrap(),
+                        &self.queue.as_ref().unwrap()
+                    ).unwrap()
+                }
+            };
+            let is_background_buffer: Buffer = self.get_conditional_buffer(cache::IS_BACKGROUND, entity, if is_background { 1 } else { 0 });
+            let is_texture_buffer: Buffer = self.get_conditional_buffer(cache::IS_TEXTURE, entity, 1);
+            let texture_bind_group: BindGroup = self.get_texture_bind_group_sheet(
+                entity.unwrap(),
+                sprite_sheet,
+                texture.as_ref(),
+                is_background_buffer,
+                is_texture_buffer
+            );
+
+            let color_buffer: Buffer = self.get_color_buffer(entity, None);
+            let color_bind_group: BindGroup = self.get_color_bind_group(entity, color_buffer);
+
+            let mut vertices: Vec<Vertex> = GeometryType::Square.to_vertex_array(Orientation::Horizontal);
+            let indices: Vec<u16> = GeometryType::Square.to_index_array();
+            let texure_coordinates: [f32; 8] = sprite_sheet.current_tile_texture_coordinates();
+
+            vertices[0].texture_coordinates = [texure_coordinates[0], texure_coordinates[1]];
+            vertices[1].texture_coordinates = [texure_coordinates[2], texure_coordinates[3]]; 
+            vertices[2].texture_coordinates = [texure_coordinates[4], texure_coordinates[5]];
+            vertices[3].texture_coordinates = [texure_coordinates[6], texure_coordinates[7]];
+
+            let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
+                entity,
+                transform,
+                Some((sprite_sheet.tile_size.0 as f32, sprite_sheet.tile_size.1 as f32)),
+                Some(texture.as_ref()),
+                camera2d
+            );
+
+            let (vertex_buffer, index_buffer) = self.get_vertex_and_index_buffers(
+                entity,
+                &vertices,
+                &indices
+            );
+
+            self.texture_bind_group = Some(texture_bind_group);
+            self.color_bind_group = Some(color_bind_group);
+            self.transform_bind_group = Some(transform_bind_group);
+            self.projection_buffer = Some(projection_buffer);
+            self.view_buffer = Some(view_buffer);
+            self.vertex_buffer = Some(vertex_buffer);
+            self.index_buffer = Some(index_buffer);
+            self.number_of_indices = Some(indices.len() as u32);
+        }
     }
 
     pub(crate) fn setup_shape_rendering(
@@ -536,6 +664,7 @@ impl RenderState {
         let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
             entity,
             transform,
+            None,
             None,
             camera2d
         );
@@ -572,20 +701,24 @@ impl RenderState {
         &mut self,
         entity: Option<&Entity>,
         transform: Option<&Transform>,
+        tile_sizes: Option<(f32, f32)>,
         texture: Option<&texture::texture::Texture>,
         camera2d: &Camera2d
     ) -> (BindGroup, Buffer, Buffer) {
         let projection_buffer: Buffer = self.get_projection_or_view_buffer(true, entity, camera2d);
         let view_buffer: Buffer = self.get_projection_or_view_buffer(false, entity, camera2d);
+        let (width, height): (f32, f32) = (
+            (self.physical_size.as_ref().unwrap().width as f32),
+            (self.physical_size.as_ref().unwrap().height as f32)
+        );
+        let aspect_ratio: f32 = width / height;
 
         if let Some(transform_unwrapped) = transform {
             let mut transform_cloned: Transform = transform_unwrapped.clone();
-            let physical_size: &PhysicalSize<u32> = self.physical_size.as_ref().unwrap();
-            let aspect_ratio: f32 = physical_size.width as f32 / physical_size.height as f32;
 
             if transform_cloned.position.strategy == Strategy::Pixelated {
-                let pixelated_x: f32 = transform_cloned.position.x / physical_size.width as f32 * 2.0 * aspect_ratio - aspect_ratio;
-                let pixelated_y: f32 = -(transform_cloned.position.y / physical_size.height as f32 * 2.0 - 1.0);
+                let pixelated_x: f32 = transform_cloned.position.x / width * 2.0 * aspect_ratio - aspect_ratio;
+                let pixelated_y: f32 = -(transform_cloned.position.y / height * 2.0 - 1.0);
 
                 transform_cloned.position.x = pixelated_x;
                 transform_cloned.position.y = pixelated_y;
@@ -594,9 +727,16 @@ impl RenderState {
             if let Some(texture) = texture {
                 let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
                 let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
-                let world_width: f32 = (width_in_pixels / physical_size.width as f32) * 1.0 * aspect_ratio;
-                let world_height: f32 = (height_in_pixels / physical_size.height as f32) * 1.0;
+                let world_width: f32;
+                let world_height: f32;
 
+                if let Some(tile_sizes) = tile_sizes {
+                    world_width = (tile_sizes.0 / width) * 1.0 * aspect_ratio;
+                    world_height = (tile_sizes.1 / height) * 1.0;
+                } else {
+                    world_width = (width_in_pixels / width) * 1.0 * aspect_ratio;
+                    world_height = (height_in_pixels / height) * 1.0;
+                }
                 transform_cloned.scale.x *= world_width;
                 transform_cloned.scale.y *= world_height;
             }
@@ -628,6 +768,46 @@ impl RenderState {
     ) -> BindGroup {
         let uuid: String = cache::extract_id_from_entity(entity);
         let key: (String, String) = (uuid, cache::TEXTURE_BIND_GROUP.to_string());
+
+        if let Some(texture_bind_group) = self.bind_group_cache.find(key.clone()) {
+            return texture_bind_group.clone();
+        } else {
+            let texture_bind_group: BindGroup = self.device.as_ref().unwrap().create_bind_group(&BindGroupDescriptor {
+                label: Some("Texture Bind Group"),
+                layout: &self.texture_bind_group_layout.as_ref().unwrap(),
+                entries: &[
+                    BindGroupEntry {
+                        binding: 0,
+                        resource: BindingResource::TextureView(&texture.texture_view)
+                    },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: BindingResource::Sampler(&texture.sampler)
+                    },
+                    BindGroupEntry {
+                        binding: 2,
+                        resource: BindingResource::Buffer(is_background_buffer.as_entire_buffer_binding())
+                    },
+                    BindGroupEntry {
+                        binding: 3,
+                        resource: BindingResource::Buffer(is_texture_buffer.as_entire_buffer_binding())
+                    }
+                ]
+            });
+            self.bind_group_cache.cache.insert(key, texture_bind_group.clone());
+            return texture_bind_group.clone();
+        }
+    }
+
+    pub(crate) fn get_texture_bind_group_sheet(
+        &mut self,
+        entity: &Entity,
+        sprite_sheet: &SpriteSheet,
+        texture: &texture::texture::Texture,
+        is_background_buffer: Buffer,
+        is_texture_buffer: Buffer
+    ) -> BindGroup {
+        let key: (String, String) = (entity.0.to_string(), sprite_sheet.path.to_string());
 
         if let Some(texture_bind_group) = self.bind_group_cache.find(key.clone()) {
             return texture_bind_group.clone();
@@ -744,14 +924,27 @@ impl RenderState {
         let vertex_key: (String, String) = (uuid.clone(), cache::VERTEX.to_string());
         let index_key: (String, String) = (uuid.clone(), cache::INDEX.to_string());
 
-        if let (Some(vertex_buffer_cache), Some(index_buffer_cache)) = (
+        if let (Some(vertex_buffer), Some(index_buffer)) = (
             self.buffer_cache.find(vertex_key.clone()),
             self.buffer_cache.find(index_key.clone())
         ) {
-            return (vertex_buffer_cache, index_buffer_cache);
+            self.queue.as_ref().unwrap().write_buffer(
+                &vertex_buffer,
+                0,
+                bytemuck::cast_slice(vertex_array)
+            );
+            return (vertex_buffer, index_buffer);
         } else {
-            let vertex_buffer: Buffer = self.get_vertex_buffer(vertex_array).clone();
-            let index_buffer: Buffer = self.get_index_buffer(index_array).clone();
+            let vertex_buffer: Buffer = self.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(vertex_array),
+                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST
+            });
+            let index_buffer: Buffer = self.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(index_array),
+                usage: BufferUsages::INDEX | BufferUsages::COPY_DST
+            });
 
             self.buffer_cache.cache.insert(vertex_key, vertex_buffer.clone());
             self.buffer_cache.cache.insert(index_key, index_buffer.clone());
@@ -759,34 +952,22 @@ impl RenderState {
         }
     }
 
-    pub(crate) fn get_vertex_buffer(&self, vertex_array: &[Vertex]) -> Buffer {
-        return self.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(vertex_array),
-            usage: BufferUsages::VERTEX
-        });
-    }
-
-    pub(crate) fn get_index_buffer(&self, index_array: &[u16]) -> Buffer {
-        return self.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(index_array),
-            usage: BufferUsages::INDEX
-        });
-    }
-
     pub(crate) fn get_color_buffer(&mut self, entity: Option<&Entity>, shape: Option<&Shape>) -> Buffer {
         let uuid: String = cache::extract_id_from_entity(entity);
         let key: (String, String) = (uuid, cache::COLOR_BUFFER.to_string());
+        let color: color::Color = if let Some(shape) = shape { shape.color } else { color::Color::WHITE };
 
         if let Some(color_buffer) = self.buffer_cache.find(key.clone()) {
+            self.queue.as_ref().unwrap().write_buffer(
+                &color_buffer,
+                0,
+                bytemuck::cast_slice(&color::Color::to_array(color::Color::to_wgpu(color)))
+            );
             return color_buffer.clone();
         } else {
             let color_buffer: Buffer = self.device.as_ref().unwrap().create_buffer_init(&BufferInitDescriptor {
                 label: Some("Color Buffer"),
-                contents:bytemuck::cast_slice(&color::Color::to_array(color::Color::to_wgpu(
-                    if let Some(shape) = shape { shape.color } else { color::Color::WHITE }
-                ))),
+                contents: bytemuck::cast_slice(&color::Color::to_array(color::Color::to_wgpu(color))),
                 usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST
             });
             self.buffer_cache.cache.insert(key, color_buffer.clone());

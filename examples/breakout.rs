@@ -57,7 +57,8 @@ your_game!(
         decorations: true,
         transparent: false,
         active: true,
-        enabled_buttons: WindowButtons::CLOSE | WindowButtons::MINIMIZE
+        enabled_buttons: WindowButtons::CLOSE | WindowButtons::MINIMIZE,
+        ..Default::default()
     },
     setup,
     update
@@ -126,10 +127,10 @@ fn update(context: &mut Context) {
         let input_ref: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
         input_ref.clone()
     };
-    let is_hover: bool = input.mouse_position.0 >= 298.0 && (input.mouse_position.1 > 380.0 && input.mouse_position.1 < 416.0);
+    let is_hover: bool = input.mouse_position.x >= 298.0 && (input.mouse_position.y > 380.0 && input.mouse_position.y < 416.0);
 
     if
-        input.is_key_released(PhysicalKey::Code(KeyCode::Enter)) ||
+        input.is_key_released(KeyCode::Enter) ||
         (input.is_mouse_button_released(MouseButton::Left) && is_hover)
     {
         let mut next_state: ResourceRefMut<'_, NextState> = context.world.get_resource_mut::<NextState>().unwrap();
@@ -224,10 +225,10 @@ fn move_player(context: &mut Context, input: Input, player_entity: Entity) {
     let mut player_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut(&player_entity).unwrap();
     let player_velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component(&player_entity).unwrap();
 
-    if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowRight)) {
+    if input.is_key_pressed(KeyCode::ArrowRight) {
         let x: f32 = player_transform.position.x + player_velocity.x * context.delta;
         player_transform.set_position_x(&context.render_state, x);
-    } else if input.is_key_pressed(PhysicalKey::Code(KeyCode::ArrowLeft)) {
+    } else if input.is_key_pressed(KeyCode::ArrowLeft) {
         let x: f32 = player_transform.position.x - player_velocity.x * context.delta;
         player_transform.set_position_x(&context.render_state, x);
     }

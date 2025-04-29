@@ -2,7 +2,7 @@ use std::time::Duration;
 use lotus_proc_macros::Resource;
 
 /// Enumerator to define the type of the timer.
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, PartialEq)]
 pub enum TimerType {
     #[default]
     Once,
@@ -46,6 +46,12 @@ impl Timer {
                 }
             }
         }
+    }
+
+    /// Resets the timer to its initial state.
+    pub fn reset(&mut self) {
+        self.is_finished = false;
+        self.elapsed = Duration::ZERO;
     }
 
     /// Returns if the timer is already finished.

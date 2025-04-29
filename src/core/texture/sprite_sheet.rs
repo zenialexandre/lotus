@@ -1,20 +1,26 @@
-use std::time::Duration;
-use lotus_proc_macros::Component;
-use super::super::{time::timer::Timer, physics::transform::Transform, engine::Context};
+use super::super::{time::timer::Timer, physics::transform::Transform};
 
-/// This is a work in progress!
+/// Enumerator for animation state mapping.
+#[derive(Clone, PartialEq)]
+pub enum AnimationState {
+    Stopped,
+    Paused,
+    Playing,
+    Finished
+}
+
 /// Struct to represent a sprite sheet.
-/// An entity can have multiple sprite sheets to do multiple animations.
-#[derive(Clone, Component)]
+#[derive(Clone)]
 pub struct SpriteSheet {
-    _path: String,
-    _transform: Transform,
-    timer: Timer,
-    _tile_size: (u32, u32),
-    _rows: u32,
-    _columns: u32,
-    indices: Vec<u32>,
-    current_index: u32
+    pub path: String,
+    pub transform: Transform,
+    pub timer: Timer,
+    pub tile_size: (u32, u32),
+    pub rows: u32,
+    pub columns: u32,
+    pub indices: Vec<u32>,
+    pub current_index: u32,
+    pub animation_state: AnimationState
 }
 
 impl SpriteSheet {
@@ -22,42 +28,68 @@ impl SpriteSheet {
     pub fn new(
         path: String,
         transform: Transform,
-        time_between_tiles: f32,
+        timer: Timer,
         tile_size: (u32, u32),
         rows: u32,
         columns: u32,
         indices: Vec<u32>
     ) -> Self {
         return Self {
-            _path: path,
-            _transform: transform,
-            timer: Timer::new(crate::TimerType::Repeat, Duration::from_secs_f32(time_between_tiles)),
-            _tile_size: tile_size,
-            _rows: rows,
-            _columns: columns,
+            path,
+            transform,
+            timer,
+            tile_size,
+            rows,
+            columns,
             indices,
-            current_index: 0
+            current_index: 0,
+            animation_state: AnimationState::Finished
         };
     }
 
-    pub fn next_frame(&mut self, delta: f32) {
-        self.timer.tick(delta);
+    pub(crate) fn current_tile_texture_coordinates(&self) -> [f32; 8] {
+        let columns: f32 = self.columns as f32;
+        let rows: f32 = self.rows as f32;
 
-        if self.timer.is_finished() {
-            self.current_index = if self.current_index == self.indices.last().unwrap().clone() {
-                self.current_index + 1
-            } else {
-                self.current_index + 1
-            };
+        let tile_index: f32 = self.indices[self.current_index as usize] as f32;
+        let column: f32 = tile_index % columns;
+        let row: f32 = (tile_index / columns).floor();
+
+        let tile_width: f32 = 1.0 / columns;
+        let tile_height: f32 = 1.0 / rows;
+
+        let left: f32 = column * tile_width;
+        let right: f32 = left + tile_width;
+        let top: f32 = row * tile_height;
+        let bottom: f32 = top + tile_height;
+
+        return [
+            left, bottom,
+            right, bottom,
+            right, top,
+            left, top
+        ];
+    }
+
+    pub(crate) fn play(&mut self) {
+        self.animation_state = AnimationState::Playing;
+        self.timer.reset();
+    }
+
+    pub(crate) fn stop(&mut self) {
+        self.animation_state = AnimationState::Stopped;
+        self.current_index = 0;
+    }
+
+    pub(crate) fn pause(&mut self) {
+        if self.animation_state == AnimationState::Playing {
+            self.animation_state = AnimationState::Paused;
         }
     }
 
-    pub fn animate(&mut self, _context: &mut Context) {
-        //..
-    }
-
-    pub fn animate_sprite() {
-        // Do animation but first set the visibility of the sprite to false.
-        // And after to visible again.
+    pub(crate) fn resume(&mut self) {
+        if self.animation_state == AnimationState::Paused {
+            self.animation_state = AnimationState::Playing;
+        }
     }
 }

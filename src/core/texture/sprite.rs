@@ -1,5 +1,4 @@
 use lotus_proc_macros::Component;
-
 use super::super::{
     managers::rendering::manager::Vertex,
     shape::{

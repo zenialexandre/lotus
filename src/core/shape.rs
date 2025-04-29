@@ -12,12 +12,26 @@ pub struct Shape {
 impl Shape {
     /// Create a new shape with parameters.
     pub fn new(orientation: Orientation, geometry_type: GeometryType, color: Color) -> Self {
-        let shape: Shape = Self {
+        return Self {
             orientation,
             geometry_type,
             color
         };
-        return shape;
+    }
+
+    /// Alter the orientation of a certain shape.
+    pub fn orientation(&mut self, orientation: Orientation) {
+        self.orientation = orientation;
+    }
+
+    /// Alter the geometry type of a certain shape.
+    pub fn geometry_type(&mut self, geometry_type: GeometryType) {
+        self.geometry_type = geometry_type;
+    }
+
+    /// Alter the color of a certain shape.
+    pub fn color(&mut self, color: Color) {
+        self.color = color;
     }
 }
 

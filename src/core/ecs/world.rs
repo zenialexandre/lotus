@@ -10,14 +10,15 @@ use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use cgmath::{Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
 use uuid::Uuid;
-use winit::dpi::PhysicalSize;
 
 use super::{
     super::{
-        texture::sprite::Sprite,
+        animation::Animation,
+        texture::{sprite::Sprite, sprite_sheet::AnimationState},
         color::Color,
         camera::camera2d::Camera2d,
         input::Input,
+        time::timer::TimerType,
         draw_order::DrawOrder,
         visibility::Visibility,
         text::{Text, TextRenderer, Font, Fonts},
@@ -185,96 +186,6 @@ impl World {
         }
     }
 
-    /// Synchronizes the gravity with dynamic bodies.
-    pub fn synchronize_gravity_with_dynamic_bodies(&mut self, render_state: &mut RenderState, delta: f32) {
-        let gravity: Gravity = match self.get_resource::<Gravity>() {
-            Some(g) => g.clone(),
-            None => return
-        };
-
-        if !gravity.enabled || gravity.value == 0.0 {
-            return;
-        }
-
-        let mut query: Query<'_> = Query::new(self).with::<Transform>()
-            .with::<Velocity>()
-            .with::<RigidBody>();
-
-        for entity in query.entities_with_components().unwrap() {
-            if let (Some(mut transform), Some(mut velocity), Some(rigid_body)) = (
-                self.get_entity_component_mut::<Transform>(&entity),
-                self.get_entity_component_mut::<Velocity>(&entity),
-                self.get_entity_component::<RigidBody>(&entity)
-            ) {
-                if rigid_body.body_type == BodyType::Dynamic {
-                    if transform.position.strategy == Strategy::Pixelated {
-                        let gravity_factor_pixelated: f32 = gravity.value * (render_state.physical_size.unwrap().height/2) as f32;
-                        velocity.y += gravity_factor_pixelated * rigid_body.friction * delta;
-                    } else {
-                        velocity.y -= gravity.value * rigid_body.friction * delta;
-                    }
-                    let new_y: f32 = transform.position.y + velocity.y * delta;
-                    transform.set_position_y(render_state, new_y);
-                }
-            }
-        }
-    }
-
-    /// Synchronizes the transformation matrices with the collision objects.
-    pub fn synchronize_transformations_with_collisions(&mut self, render_state: &mut RenderState) {
-        let physical_size: &PhysicalSize<u32> = render_state.physical_size.as_ref().unwrap();
-        let aspect_ratio: f32 = physical_size.width as f32 / physical_size.height as f32;
-
-        for archetype in self.archetypes.values_mut() {
-            if let (Some(transforms), Some(collisions)) = (
-                archetype.components.get(&TypeId::of::<Transform>()),
-                archetype.components.get(&TypeId::of::<Collision>())
-            ) {
-                let has_sprites: bool = archetype.components.contains_key(&TypeId::of::<Sprite>());
-                let sprites: Option<std::slice::Iter<'_, AtomicRefCell<Box<dyn Component>>>> = if has_sprites {
-                    archetype.components.get(&TypeId::of::<Sprite>()).map(|s| s.iter())
-                } else {
-                    None
-                };
-
-                for (index, (transform, collision)) in transforms.iter().zip(collisions).enumerate() {
-                    let transform: AtomicRef<'_, Box<dyn Component>> = transform.borrow();
-                    let mut collision: AtomicRefMut<'_, Box<dyn Component>> = collision.borrow_mut();
-
-                    if let Some(collision) = collision.as_any_mut().downcast_mut::<Collision>() {
-                        let mut transform_cloned: Transform = transform.as_any().downcast_ref::<Transform>().unwrap().clone();
-
-                        if transform_cloned.position.strategy == Strategy::Pixelated {
-                            let pixelated_x: f32 = transform_cloned.position.x / physical_size.width as f32 * 2.0 * aspect_ratio - aspect_ratio;
-                            let pixelated_y: f32 = -(transform_cloned.position.y / physical_size.height as f32 * 2.0 - 1.0);
-
-                            transform_cloned.position.x = pixelated_x;
-                            transform_cloned.position.y = pixelated_y;
-                        }
-
-                        if has_sprites {
-                            if let Some(sprite) = sprites.as_ref().and_then(|s| s.clone().nth(index)) {
-                                if let Some(sprite_ref) = sprite.borrow().as_any().downcast_ref::<Sprite>() {
-                                    if let Some(texture) = render_state.texture_cache.get_texture(sprite_ref.path.clone()) {
-                                        let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
-                                        let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
-                                        let world_width: f32 = (width_in_pixels / physical_size.width as f32) * 1.0 * aspect_ratio;
-                                        let world_height: f32 = (height_in_pixels / physical_size.height as f32) * 1.0;
-
-                                        transform_cloned.scale.x *= world_width;
-                                        transform_cloned.scale.y *= world_height;
-                                    }
-                                }
-                            }
-                        }
-                        collision.collider.position = transform_cloned.position.to_vec();
-                        collision.collider.scale = transform_cloned.scale;
-                    }
-                }
-            }
-        }
-    }
-
     /// Synchronizes the camera with its target.
     pub fn synchronize_camera_with_target(&mut self, render_state: &mut RenderState) {
         let (target_entity, target_position) = {
@@ -317,6 +228,126 @@ impl World {
                     0,
                     bytemuck::cast_slice(&[view_matrix_unwrapped])
                 );
+            }
+        }
+    }
+
+    /// Synchronizes the animation of entities sprite sheets.
+    pub fn synchronize_animations_of_entities(&mut self, delta: f32) {
+        let mut query: Query<'_> = Query::new(&self).with::<Animation>();
+        let mut is_some_playing: bool = true;
+
+        for entity in query.entities_with_components().unwrap() {
+            if let Some(mut animation) = self.get_entity_component_mut::<Animation>(&entity) {
+                for (_, sprite_sheet) in animation.sprite_sheets.iter_mut() {
+                    if sprite_sheet.animation_state != AnimationState::Playing {
+                        continue;
+                    }
+
+                    sprite_sheet.timer.tick(delta);
+                    if sprite_sheet.timer.is_finished() {
+                        sprite_sheet.current_index = (sprite_sheet.current_index + 1) % sprite_sheet.indices.len() as u32;
+
+                        if sprite_sheet.current_index == 0 && sprite_sheet.timer.timer_type != TimerType::Repeat {
+                            sprite_sheet.animation_state = AnimationState::Finished;
+                            is_some_playing = false;
+                        }
+                    }
+                }
+                if !is_some_playing { animation.is_some_playing = false; }
+            }
+        }
+    }
+
+    /// Synchronizes the gravity with dynamic bodies.
+    pub fn synchronize_gravity_with_dynamic_bodies(&mut self, render_state: &mut RenderState, delta: f32) {
+        let gravity: Gravity = match self.get_resource::<Gravity>() {
+            Some(g) => g.clone(),
+            None => return
+        };
+
+        if !gravity.enabled || gravity.value == 0.0 {
+            return;
+        }
+
+        let mut query: Query<'_> = Query::new(self).with::<Transform>()
+            .with::<Velocity>()
+            .with::<RigidBody>();
+
+        for entity in query.entities_with_components().unwrap() {
+            if let (Some(mut transform), Some(mut velocity), Some(rigid_body)) = (
+                self.get_entity_component_mut::<Transform>(&entity),
+                self.get_entity_component_mut::<Velocity>(&entity),
+                self.get_entity_component::<RigidBody>(&entity)
+            ) {
+                if rigid_body.body_type == BodyType::Dynamic {
+                    if transform.position.strategy == Strategy::Pixelated {
+                        let gravity_factor_pixelated: f32 = gravity.value * (render_state.physical_size.unwrap().height/2) as f32;
+                        velocity.y += gravity_factor_pixelated * rigid_body.friction * delta;
+                    } else {
+                        velocity.y -= gravity.value * rigid_body.friction * delta;
+                    }
+                    let new_y: f32 = transform.position.y + velocity.y * delta;
+                    transform.set_position_y(render_state, new_y);
+                }
+            }
+        }
+    }
+
+    /// Synchronizes the transformation matrices with the collision objects.
+    pub fn synchronize_transformations_with_collisions(&mut self, render_state: &mut RenderState) {
+        let (width, height): (f32, f32) = (
+            (render_state.physical_size.as_ref().unwrap().width as f32),
+            (render_state.physical_size.as_ref().unwrap().height as f32)
+        );
+        let aspect_ratio: f32 = width / height;
+
+        for archetype in self.archetypes.values_mut() {
+            if let (Some(transforms), Some(collisions)) = (
+                archetype.components.get(&TypeId::of::<Transform>()),
+                archetype.components.get(&TypeId::of::<Collision>())
+            ) {
+                let has_sprites: bool = archetype.components.contains_key(&TypeId::of::<Sprite>());
+                let sprites: Option<std::slice::Iter<'_, AtomicRefCell<Box<dyn Component>>>> = if has_sprites {
+                    archetype.components.get(&TypeId::of::<Sprite>()).map(|s| s.iter())
+                } else {
+                    None
+                };
+
+                for (index, (transform, collision)) in transforms.iter().zip(collisions).enumerate() {
+                    let transform: AtomicRef<'_, Box<dyn Component>> = transform.borrow();
+                    let mut collision: AtomicRefMut<'_, Box<dyn Component>> = collision.borrow_mut();
+
+                    if let Some(collision) = collision.as_any_mut().downcast_mut::<Collision>() {
+                        let mut transform_cloned: Transform = transform.as_any().downcast_ref::<Transform>().unwrap().clone();
+
+                        if transform_cloned.position.strategy == Strategy::Pixelated {
+                            let pixelated_x: f32 = transform_cloned.position.x / width * 2.0 * aspect_ratio - aspect_ratio;
+                            let pixelated_y: f32 = -(transform_cloned.position.y / height * 2.0 - 1.0);
+
+                            transform_cloned.position.x = pixelated_x;
+                            transform_cloned.position.y = pixelated_y;
+                        }
+
+                        if has_sprites {
+                            if let Some(sprite) = sprites.as_ref().and_then(|s| s.clone().nth(index)) {
+                                if let Some(sprite_ref) = sprite.borrow().as_any().downcast_ref::<Sprite>() {
+                                    if let Some(texture) = render_state.texture_cache.get_texture(sprite_ref.path.clone()) {
+                                        let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
+                                        let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
+                                        let world_width: f32 = (width_in_pixels / width) * 1.0 * aspect_ratio;
+                                        let world_height: f32 = (height_in_pixels / height) * 1.0;
+
+                                        transform_cloned.scale.x *= world_width;
+                                        transform_cloned.scale.y *= world_height;
+                                    }
+                                }
+                            }
+                        }
+                        collision.collider.position = transform_cloned.position.to_vec();
+                        collision.collider.scale = transform_cloned.scale;
+                    }
+                }
             }
         }
     }

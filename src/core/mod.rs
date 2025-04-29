@@ -48,3 +48,6 @@ pub mod visibility;
 
 /// Draw ordering related features.
 pub mod draw_order;
+
+/// Animation related features.
+pub mod animation;

@@ -34,7 +34,7 @@ fn setup(context: &mut Context) {
         )),
         Box::new(Collision::new(Collider::new_simple(GeometryType::Square))),
         Box::new(Velocity::new(Vector2::new(0.2, 0.2))),
-        Box::new(RigidBody::new(BodyType::Dynamic, 0.1, 0.9, 1.0))
+        Box::new(RigidBody::new(BodyType::Dynamic, 1.0, 0.9, 1.0))
     ]);
 }
 
@@ -44,12 +44,12 @@ fn update(context: &mut Context) {
         input_ref.clone()
     };
 
-    if input.is_key_released(PhysicalKey::Code(KeyCode::Enter)) {
+    if input.is_key_released(KeyCode::Enter) {
         let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
         gravity.enable();
     }
 
-    if input.is_key_released(PhysicalKey::Code(KeyCode::Escape)) {
+    if input.is_key_released(KeyCode::Escape) {
         let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
         gravity.disable();
     }
@@ -72,8 +72,8 @@ fn check_table_object_collision(context: &mut Context) {
         context.world.get_entity_component::<RigidBody>(&object).unwrap()
     );
 
-    if Collision::check(CollisionAlgorithm::Aabb, &table_collision, &object_collision) {
-        object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
+    if Collision::check(CollisionAlgorithm::Aabb, &table_collision, &object_collision) {        
+        object_velocity.y = -object_velocity.y * object_rigid_body.restitution + object_rigid_body.mass;
         let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
         object_transform.set_position_y(&context.render_state, y);
     }
