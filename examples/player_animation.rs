@@ -5,7 +5,7 @@
 //! The player can be animated by movement or by pressing a specific keyboard key for attacking.
 
 use lotus_engine::*;
-use std::{collections::HashMap, time::Duration};
+use std::collections::HashMap;
 
 your_game!(
     WindowConfiguration::default()
@@ -21,8 +21,9 @@ fn setup(context: &mut Context) {
     let idle: SpriteSheet = SpriteSheet::new(
         "textures/animations/player/idle.png".to_string(),
         Transform::default(),
-        Timer::new(TimerType::Repeat, Duration::from_secs_f32(0.1)),
-        (512, 512),
+        LoopingState::Repeat,
+        Vector2::new(512.0, 512.0),
+        0.1,
         1,
         10,
         (0..=9).collect()
@@ -30,8 +31,9 @@ fn setup(context: &mut Context) {
     let attack: SpriteSheet = SpriteSheet::new(
         "textures/animations/player/attack.png".to_string(),
         Transform::default(),
-        Timer::new(TimerType::Repeat, Duration::from_secs_f32(0.1)),
-        (512, 512),
+        LoopingState::Repeat,
+        Vector2::new(512.0, 512.0),
+        0.1,
         1,
         7,
         (0..=6).collect()
@@ -39,8 +41,9 @@ fn setup(context: &mut Context) {
     let walk: SpriteSheet = SpriteSheet::new(
         "textures/animations/player/walk.png".to_string(),
         Transform::default(),
-        Timer::new(TimerType::Repeat, Duration::from_secs_f32(0.1)),
-        (512, 512),
+        LoopingState::Repeat,
+        Vector2::new(512.0, 512.0),
+        0.1,
         1,
         16,
         (0..=15).collect()

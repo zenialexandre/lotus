@@ -5,7 +5,6 @@
 //! In this example, a looped animation can be controlled by the keyboard keys.
 
 use lotus_engine::*;
-use std::time::Duration;
 
 your_game!(
     WindowConfiguration::default().title("Simple Animation".to_string()),
@@ -18,8 +17,9 @@ fn setup(context: &mut Context) {
     let scarfy_sprite_sheet: SpriteSheet = SpriteSheet::new(
         "textures/animations/scarfy.png".to_string(),
         Transform::default(),
-        Timer::new(TimerType::Repeat, Duration::from_secs_f32(0.1)),
-        (124, 124),
+        LoopingState::Once,
+        Vector2::new(124.0, 124.0),
+        2.0,
         1,
         6,
         vec![0, 1, 2, 3, 4, 5]

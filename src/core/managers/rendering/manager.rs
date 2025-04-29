@@ -1,5 +1,5 @@
 use atomic_refcell::AtomicRefMut;
-use cgmath::{ortho, Matrix4, SquareMatrix};
+use cgmath::{ortho, Matrix4, SquareMatrix, Vector2};
 use uuid::Uuid;
 use wgpu_text::glyph_brush::Section;
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
@@ -401,7 +401,7 @@ impl RenderState {
                     );
 
                     if let Some(animation) = animation {
-                        if animation.is_some_playing {
+                        if !animation.playing_stack.is_empty() {
                             render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                             self.setup_rendering_2d(
                                 Some(&entity),
@@ -614,7 +614,7 @@ impl RenderState {
             let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
                 entity,
                 transform,
-                Some((sprite_sheet.tile_size.0 as f32, sprite_sheet.tile_size.1 as f32)),
+                Some(sprite_sheet.tile_size),
                 Some(texture.as_ref()),
                 camera2d
             );
@@ -701,7 +701,7 @@ impl RenderState {
         &mut self,
         entity: Option<&Entity>,
         transform: Option<&Transform>,
-        tile_sizes: Option<(f32, f32)>,
+        tile_sizes: Option<Vector2<f32>>,
         texture: Option<&texture::texture::Texture>,
         camera2d: &Camera2d
     ) -> (BindGroup, Buffer, Buffer) {
@@ -731,8 +731,8 @@ impl RenderState {
                 let world_height: f32;
 
                 if let Some(tile_sizes) = tile_sizes {
-                    world_width = (tile_sizes.0 / width) * 1.0 * aspect_ratio;
-                    world_height = (tile_sizes.1 / height) * 1.0;
+                    world_width = (tile_sizes.x / width) * 1.0 * aspect_ratio;
+                    world_height = (tile_sizes.y / height) * 1.0;
                 } else {
                     world_width = (width_in_pixels / width) * 1.0 * aspect_ratio;
                     world_height = (height_in_pixels / height) * 1.0;

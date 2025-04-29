@@ -14,11 +14,10 @@ use uuid::Uuid;
 use super::{
     super::{
         animation::Animation,
-        texture::{sprite::Sprite, sprite_sheet::AnimationState},
+        texture::{sprite::Sprite, sprite_sheet::{AnimationState, LoopingState}},
         color::Color,
         camera::camera2d::Camera2d,
         input::Input,
-        time::timer::TimerType,
         draw_order::DrawOrder,
         visibility::Visibility,
         text::{Text, TextRenderer, Font, Fonts},
@@ -235,26 +234,30 @@ impl World {
     /// Synchronizes the animation of entities sprite sheets.
     pub fn synchronize_animations_of_entities(&mut self, delta: f32) {
         let mut query: Query<'_> = Query::new(&self).with::<Animation>();
-        let mut is_some_playing: bool = true;
 
         for entity in query.entities_with_components().unwrap() {
             if let Some(mut animation) = self.get_entity_component_mut::<Animation>(&entity) {
-                for (_, sprite_sheet) in animation.sprite_sheets.iter_mut() {
+                let mut to_remove_from_stack: Vec<String> = Vec::new();
+
+                for (title, sprite_sheet) in animation.sprite_sheets.iter_mut() {
                     if sprite_sheet.animation_state != AnimationState::Playing {
                         continue;
                     }
-
                     sprite_sheet.timer.tick(delta);
+
                     if sprite_sheet.timer.is_finished() {
                         sprite_sheet.current_index = (sprite_sheet.current_index + 1) % sprite_sheet.indices.len() as u32;
 
-                        if sprite_sheet.current_index == 0 && sprite_sheet.timer.timer_type != TimerType::Repeat {
+                        if &sprite_sheet.current_index == sprite_sheet.indices.last().unwrap() && sprite_sheet.looping_state != LoopingState::Repeat {
                             sprite_sheet.animation_state = AnimationState::Finished;
-                            is_some_playing = false;
+                            to_remove_from_stack.push(title.clone());
                         }
                     }
                 }
-                if !is_some_playing { animation.is_some_playing = false; }
+
+                for title in to_remove_from_stack {
+                    animation.playing_stack.retain(|t| *t != title);
+                }
             }
         }
     }

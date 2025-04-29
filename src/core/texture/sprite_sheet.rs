@@ -1,4 +1,6 @@
-use super::super::{time::timer::Timer, physics::transform::Transform};
+use std::time::Duration;
+use cgmath::Vector2;
+use super::super::{time::timer::{Timer, TimerType}, physics::transform::Transform};
 
 /// Enumerator for animation state mapping.
 #[derive(Clone, PartialEq)]
@@ -9,18 +11,26 @@ pub enum AnimationState {
     Finished
 }
 
+/// Enumerator for animation loop mapping.
+#[derive(Clone, PartialEq)]
+pub enum LoopingState {
+    Repeat,
+    Once
+}
+
 /// Struct to represent a sprite sheet.
 #[derive(Clone)]
 pub struct SpriteSheet {
     pub path: String,
     pub transform: Transform,
     pub timer: Timer,
-    pub tile_size: (u32, u32),
+    pub tile_size: Vector2<f32>,
     pub rows: u32,
     pub columns: u32,
     pub indices: Vec<u32>,
     pub current_index: u32,
-    pub animation_state: AnimationState
+    pub animation_state: AnimationState,
+    pub looping_state: LoopingState
 }
 
 impl SpriteSheet {
@@ -28,8 +38,9 @@ impl SpriteSheet {
     pub fn new(
         path: String,
         transform: Transform,
-        timer: Timer,
-        tile_size: (u32, u32),
+        looping_state: LoopingState,
+        tile_size: Vector2<f32>,
+        time_between_tiles: f32,
         rows: u32,
         columns: u32,
         indices: Vec<u32>
@@ -37,13 +48,14 @@ impl SpriteSheet {
         return Self {
             path,
             transform,
-            timer,
+            timer: Timer::new(TimerType::Repeat, Duration::from_secs_f32(time_between_tiles)),
             tile_size,
             rows,
             columns,
             indices,
             current_index: 0,
-            animation_state: AnimationState::Finished
+            animation_state: AnimationState::Finished,
+            looping_state
         };
     }
 

@@ -6,7 +6,6 @@ use super::texture::sprite_sheet::{SpriteSheet, AnimationState};
 #[derive(Clone, Component)]
 pub struct Animation {
     pub sprite_sheets: HashMap<String, SpriteSheet>,
-    pub is_some_playing: bool,
     pub playing_stack: VecDeque<String>
 }
 
@@ -15,7 +14,6 @@ impl Animation {
     pub fn new(sprite_sheets: HashMap<String, SpriteSheet>) -> Self {
         return Self {
             sprite_sheets,
-            is_some_playing: false,
             playing_stack: VecDeque::new()
         };
     }
@@ -63,7 +61,6 @@ impl Animation {
 
         if let Some(sprite_sheet) = self.sprite_sheets.get_mut(&title) {
             sprite_sheet.play();
-            self.is_some_playing = true;
             self.playing_stack.retain(|t| t != &title);
             self.playing_stack.push_front(title);
         }
@@ -74,7 +71,6 @@ impl Animation {
         if let Some(sprite_sheet) = self.sprite_sheets.get_mut(&title) {
             sprite_sheet.stop();
             self.playing_stack.retain(|t| t != &title);
-            self.is_some_playing = !self.playing_stack.is_empty();        
         }
     }
 
@@ -97,7 +93,6 @@ impl Default for Animation {
     fn default() -> Self {
         return Self {
             sprite_sheets: HashMap::new(),
-            is_some_playing: false,
             playing_stack: VecDeque::new()
         };
     }
