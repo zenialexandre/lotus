@@ -1,5 +1,4 @@
 use std::time::Duration;
-use cgmath::Vector2;
 use super::super::{time::timer::{Timer, TimerType}, physics::transform::Transform};
 
 /// Enumerator for animation state mapping.
@@ -24,7 +23,8 @@ pub struct SpriteSheet {
     pub path: String,
     pub transform: Transform,
     pub timer: Timer,
-    pub tile_size: Vector2<f32>,
+    pub tile_width: f32,
+    pub tile_height: f32,
     pub rows: u32,
     pub columns: u32,
     pub indices: Vec<u32>,
@@ -39,7 +39,7 @@ impl SpriteSheet {
         path: String,
         transform: Transform,
         looping_state: LoopingState,
-        tile_size: Vector2<f32>,
+        tile_size: (f32, f32),
         time_between_tiles: f32,
         rows: u32,
         columns: u32,
@@ -49,7 +49,8 @@ impl SpriteSheet {
             path,
             transform,
             timer: Timer::new(TimerType::Repeat, Duration::from_secs_f32(time_between_tiles)),
-            tile_size,
+            tile_width: tile_size.0,
+            tile_height: tile_size.1,
             rows,
             columns,
             indices,

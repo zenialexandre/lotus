@@ -310,7 +310,7 @@ fn setup(context: &mut Context) {
         Box::new(Collision::new(Collider::new_simple(GeometryType::Square))),
         Box::new(Velocity::new(Vector2::new(0.2, 0.2))),
         // The first parameter is the type of the body, in this case: Dynamic.
-        // The next parameter is the mass of the body (it will affect the restitution factor).
+        // The next parameter is the mass of the body (it will affect movement after collisions with other objects with mass).
         // The third parameter is the restitution factor (it can affect movement after collisions).
         // The last parameter is the friction factor (it will affect gravity).
         Box::new(RigidBody::new(BodyType::Dynamic, 0.1, 0.9, 1.0))
@@ -366,7 +366,7 @@ fn check_table_object_collision(context: &mut Context) {
         // Now this is the calculus for the 'bounce' effect in our object.
         // Note the use of the restitution value here!
         // It serves as a 'consequence' of the collisions, by decreasing our vertical velocity.
-        object_velocity.y = -object_velocity.y * object_rigid_body.restitution + object_rigid_body.mass;
+        object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
         let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
         object_transform.set_position_y(&context.render_state, y);
     }

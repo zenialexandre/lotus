@@ -1,6 +1,6 @@
 [package]
 name = "lotus_engine"
-version = "0.1.35"
+version = "0.1.36"
 authors = ["Alexandre Zeni <zenialexandre123@gmail.com>"]
 description = "Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games."
 license = "MPL-2.0"

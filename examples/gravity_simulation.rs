@@ -73,7 +73,7 @@ fn check_table_object_collision(context: &mut Context) {
     );
 
     if Collision::check(CollisionAlgorithm::Aabb, &table_collision, &object_collision) {        
-        object_velocity.y = -object_velocity.y * object_rigid_body.restitution + object_rigid_body.mass;
+        object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
         let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
         object_transform.set_position_y(&context.render_state, y);
     }

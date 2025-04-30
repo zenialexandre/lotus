@@ -18,7 +18,7 @@ fn setup(context: &mut Context) {
         "textures/animations/scarfy.png".to_string(),
         Transform::default(),
         LoopingState::Once,
-        Vector2::new(124.0, 124.0),
+        (124.0, 124.0),
         2.0,
         1,
         6,

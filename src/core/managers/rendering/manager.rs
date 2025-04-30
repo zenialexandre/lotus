@@ -1,5 +1,5 @@
 use atomic_refcell::AtomicRefMut;
-use cgmath::{ortho, Matrix4, SquareMatrix, Vector2};
+use cgmath::{ortho, Matrix4, SquareMatrix};
 use uuid::Uuid;
 use wgpu_text::glyph_brush::Section;
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
@@ -547,6 +547,7 @@ impl RenderState {
             entity,
             transform,
             None,
+            None,
             Some(texture.as_ref()),
             camera2d
         );
@@ -614,7 +615,8 @@ impl RenderState {
             let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
                 entity,
                 transform,
-                Some(sprite_sheet.tile_size),
+                Some(sprite_sheet.tile_width),
+                Some(sprite_sheet.tile_height),
                 Some(texture.as_ref()),
                 camera2d
             );
@@ -666,6 +668,7 @@ impl RenderState {
             transform,
             None,
             None,
+            None,
             camera2d
         );
         let (vertex_buffer, index_buffer) = self.get_vertex_and_index_buffers(
@@ -701,7 +704,8 @@ impl RenderState {
         &mut self,
         entity: Option<&Entity>,
         transform: Option<&Transform>,
-        tile_sizes: Option<Vector2<f32>>,
+        tile_width: Option<f32>,
+        tile_height: Option<f32>,
         texture: Option<&texture::texture::Texture>,
         camera2d: &Camera2d
     ) -> (BindGroup, Buffer, Buffer) {
@@ -730,9 +734,9 @@ impl RenderState {
                 let world_width: f32;
                 let world_height: f32;
 
-                if let Some(tile_sizes) = tile_sizes {
-                    world_width = (tile_sizes.x / width) * 1.0 * aspect_ratio;
-                    world_height = (tile_sizes.y / height) * 1.0;
+                if let (Some(tile_width), Some(tile_height)) = (tile_width, tile_height) {
+                    world_width = (tile_width / width) * 1.0 * aspect_ratio;
+                    world_height = (tile_height / height) * 1.0;
                 } else {
                     world_width = (width_in_pixels / width) * 1.0 * aspect_ratio;
                     world_height = (height_in_pixels / height) * 1.0;
