@@ -13,7 +13,7 @@ your_game!(
 
 fn setup(context: &mut Context) {
     let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::BLACK);
-    let sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
+    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()), Color::BLUE);
 
     context.commands.spawn(vec![
         Box::new(table),
@@ -26,7 +26,7 @@ fn setup(context: &mut Context) {
     ]);
 
     context.commands.spawn(vec![
-        Box::new(sprite),
+        Box::new(object),
         Box::new(Transform::new(
             Position::new(Vector2::new(400.0, 100.0), Strategy::Pixelated),
             0.0,
@@ -65,16 +65,21 @@ fn check_table_object_collision(context: &mut Context) {
 
     let table_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&table).unwrap();
 
-    let (object_collision, mut object_transform, mut object_velocity, object_rigid_body) = (
+    let (object_collision, mut object_transform, mut object_velocity, mut object_rigid_body) = (
         context.world.get_entity_component::<Collision>(&object).unwrap(),
         context.world.get_entity_component_mut::<Transform>(&object).unwrap(),
         context.world.get_entity_component_mut::<Velocity>(&object).unwrap(),
-        context.world.get_entity_component::<RigidBody>(&object).unwrap()
+        context.world.get_entity_component_mut::<RigidBody>(&object).unwrap()
     );
 
-    if Collision::check(CollisionAlgorithm::Aabb, &table_collision, &object_collision) {        
-        object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
-        let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
-        object_transform.set_position_y(&context.render_state, y);
+    if Collision::check(CollisionAlgorithm::Aabb, &table_collision, &object_collision) {
+        if object_velocity.y < -0.001 {
+            object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
+            let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
+            object_transform.set_position_y(&context.render_state, y);
+        } else {
+            object_velocity.y = 0.0;
+            object_rigid_body.rest = true;
+        }
     }
 }

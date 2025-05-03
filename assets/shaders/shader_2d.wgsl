@@ -25,13 +25,13 @@ struct VertexOutput {
 fn vs_main(model: VertexInput) -> VertexOutput {
     var out: VertexOutput;
 
-    if (is_background == 1) {
+    if (is_background == 1u) {
         out.clip_position = vec4<f32>(model.position, 1.0);
     } else {
         out.clip_position = projection * view * transform * vec4<f32>(model.position, 1.0);
     }
 
-    if (is_texture == 1) {
+    if (is_texture == 1u) {
         out.texture_coordinates = model.texture_coordinates;   
     }
     return out;
@@ -39,7 +39,7 @@ fn vs_main(model: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    if (is_texture == 1) {
+    if (is_texture == 1u) {
         return textureSample(texture, texture_sampler, in.texture_coordinates);
     }
     return vec4(color[0], color[1], color[2], 1.0); // Applying Blending::REPLACE.

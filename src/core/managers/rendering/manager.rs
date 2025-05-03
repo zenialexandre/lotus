@@ -9,6 +9,7 @@ use std::{collections::HashMap, sync::Arc};
 use super::cache::{self, BufferCache, BindGroupCache};
 use super::super::super::{
     color,
+    event_dispatcher::{EventDispatcher, Event, EventType},
     shape::{Orientation, Shape, GeometryType},
     physics::transform::{Transform, Strategy},
     draw_order::DrawOrder,
@@ -17,7 +18,7 @@ use super::super::super::{
     animation::Animation,
     text::TextRenderer,
     camera::camera2d::Camera2d,
-    ecs::{entity::Entity, world::World, component::Component, resource::ResourceRef}
+    ecs::{entity::Entity, world::World, component::Component, resource::{ResourceRef, ResourceRefMut}}
 };
 use crate::utils::constants::shader::SHADER_2D;
 
@@ -294,16 +295,7 @@ impl RenderState {
             self.surface_configuration.as_mut().unwrap().height = new_size.height;
             self.surface.as_ref().unwrap().configure(&self.device.as_ref().unwrap(), &self.surface_configuration.as_ref().unwrap());
 
-            let projection_matrix: Matrix4<f32> = self.get_projection_matrix(camera2d);
-            let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
-
-            if let Some(projection_buffer) = self.projection_buffer.as_ref() {
-                self.queue.as_mut().unwrap().write_buffer(
-                    projection_buffer,
-                    0,
-                    bytemuck::cast_slice(&[projection_matrix_unwrapped])
-                );
-            }
+            let _ = &self.get_projection_or_view_buffer(true, None, camera2d);
 
             if !text_renderers.is_empty() {
                 for text_renderer in text_renderers {
@@ -345,6 +337,7 @@ impl RenderState {
 
         {
             let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
+            let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = world.get_resource_mut::<EventDispatcher>().unwrap();
             let mut render_pass: RenderPass<'_> = command_encoder.begin_render_pass(&RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(RenderPassColorAttachment {
@@ -372,6 +365,7 @@ impl RenderState {
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
                 render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                 self.setup_rendering_2d(
+                    &mut event_dispatcher,
                     None,
                     Some(&background_sprite),
                     None,
@@ -404,6 +398,7 @@ impl RenderState {
                         if !animation.playing_stack.is_empty() {
                             render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                             self.setup_rendering_2d(
+                                &mut event_dispatcher,
                                 Some(&entity),
                                 None,
                                 None,
@@ -420,6 +415,7 @@ impl RenderState {
                     if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
                         render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                         self.setup_rendering_2d(
+                            &mut event_dispatcher,
                             Some(&entity),
                             Some(sprite),
                             None,
@@ -432,6 +428,7 @@ impl RenderState {
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
                         render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                         self.setup_rendering_2d(
+                            &mut event_dispatcher,
                             Some(&entity),
                             None,
                             Some(shape),
@@ -488,6 +485,7 @@ impl RenderState {
 
     pub(crate) fn setup_rendering_2d(
         &mut self,
+        event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
         sprite: Option<&Sprite>,
         shape: Option<&Shape>,
@@ -498,6 +496,7 @@ impl RenderState {
     ) {
         if let Some(sprite) = sprite {
             self.setup_sprite_rendering(
+                event_dispatcher,
                 entity,
                 sprite,
                 transform,
@@ -506,6 +505,7 @@ impl RenderState {
             );
         } else if let Some(animation) = animation {
             self.setup_animation_rendering(
+                event_dispatcher,
                 entity,
                 animation,
                 transform,
@@ -513,12 +513,19 @@ impl RenderState {
                 is_background
             );
         } else if let Some(shape) = shape {
-            self.setup_shape_rendering(entity, shape, transform, camera2d);
+            self.setup_shape_rendering(
+                event_dispatcher,
+                entity,
+                shape,
+                transform,
+                camera2d
+            );
         }
     }
 
     pub(crate) fn setup_sprite_rendering(
         &mut self,
+        event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
         sprite: &Sprite,
         transform: Option<&Transform>,
@@ -544,6 +551,7 @@ impl RenderState {
         let color_bind_group: BindGroup = self.get_color_bind_group(entity, color_buffer);
 
         let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
+            event_dispatcher,
             entity,
             transform,
             None,
@@ -570,6 +578,7 @@ impl RenderState {
 
     pub(crate) fn setup_animation_rendering(
         &mut self,
+        event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
         animation: &Animation,
         transform: Option<&Transform>,
@@ -613,6 +622,7 @@ impl RenderState {
             vertices[3].texture_coordinates = [texure_coordinates[6], texure_coordinates[7]];
 
             let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
+                event_dispatcher,
                 entity,
                 transform,
                 Some(sprite_sheet.tile_width),
@@ -640,6 +650,7 @@ impl RenderState {
 
     pub(crate) fn setup_shape_rendering(
         &mut self,
+        event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
         shape: &Shape,
         transform: Option<&Transform>,
@@ -664,6 +675,7 @@ impl RenderState {
         let texture_bind_group: BindGroup = self.get_texture_bind_group(entity, &texture, is_background_buffer, is_texture_buffer);
 
         let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
+            event_dispatcher,
             entity,
             transform,
             None,
@@ -702,6 +714,7 @@ impl RenderState {
 
     pub(crate) fn get_transform_bindings(
         &mut self,
+        event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
         transform: Option<&Transform>,
         tile_width: Option<f32>,
@@ -720,30 +733,37 @@ impl RenderState {
         if let Some(transform_unwrapped) = transform {
             let mut transform_cloned: Transform = transform_unwrapped.clone();
 
-            if transform_cloned.position.strategy == Strategy::Pixelated {
+            if transform_cloned.position.strategy == Strategy::Pixelated && transform_cloned.dirty_position {
                 let pixelated_x: f32 = transform_cloned.position.x / width * 2.0 * aspect_ratio - aspect_ratio;
                 let pixelated_y: f32 = -(transform_cloned.position.y / height * 2.0 - 1.0);
 
                 transform_cloned.position.x = pixelated_x;
                 transform_cloned.position.y = pixelated_y;
+
+                event_dispatcher.send(Event::new(*entity.unwrap(), EventType::UpdatePixelatedPosition, transform_cloned.position.to_vec()));
             }
 
             if let Some(texture) = texture {
-                let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
-                let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
-                let world_width: f32;
-                let world_height: f32;
+                if transform_cloned.dirty_scale {
+                    let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
+                    let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
+                    let world_width: f32;
+                    let world_height: f32;
 
-                if let (Some(tile_width), Some(tile_height)) = (tile_width, tile_height) {
-                    world_width = (tile_width / width) * 1.0 * aspect_ratio;
-                    world_height = (tile_height / height) * 1.0;
-                } else {
-                    world_width = (width_in_pixels / width) * 1.0 * aspect_ratio;
-                    world_height = (height_in_pixels / height) * 1.0;
+                    if let (Some(tile_width), Some(tile_height)) = (tile_width, tile_height) {
+                        world_width = (tile_width / width) * 1.0 * aspect_ratio;
+                        world_height = (tile_height / height) * 1.0;
+                    } else {
+                        world_width = (width_in_pixels / width) * 1.0 * aspect_ratio;
+                        world_height = (height_in_pixels / height) * 1.0;
+                    }
+                    transform_cloned.scale.x *= world_width;
+                    transform_cloned.scale.y *= world_height;
+
+                    event_dispatcher.send(Event::new(*entity.unwrap(), EventType::UpdatePixelatedScale, transform_cloned.scale));
                 }
-                transform_cloned.scale.x *= world_width;
-                transform_cloned.scale.y *= world_height;
             }
+
             let transform_unwrapped: [[f32; 4]; 4] = *transform_cloned.to_matrix().as_ref();
             let transform_buffer: Buffer = self.get_transform_buffer(entity, transform_unwrapped);
             self.transform_buffer = Some(transform_buffer);

@@ -25,7 +25,10 @@ pub struct RigidBody {
     pub restitution: f32,
     /// The friction factor.
     /// It can be used to affect movement.
-    pub friction: f32
+    pub friction: f32,
+    /// The rest factor.
+    /// It can be used to flag a body in the state of rest.
+    pub rest: bool
 }
 
 impl RigidBody {
@@ -35,7 +38,8 @@ impl RigidBody {
             body_type,
             mass,
             restitution,
-            friction
+            friction,
+            rest: false
         };
     }
 
@@ -45,7 +49,8 @@ impl RigidBody {
             body_type,
             mass,
             restitution: 1.0,
-            friction: 1.0
+            friction: 1.0,
+            rest: false
         };
     }
 }
