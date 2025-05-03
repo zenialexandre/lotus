@@ -13,6 +13,12 @@ fn setup(context: &mut Context) {
     let player: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
     let secondary_sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
     let shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BURGUNDY);
+    let text: Text = Text::new(
+        Font::new(Fonts::RobotoMono.get_path(), 30.0),
+        Position::new(Vector2::new(0.0, 0.0), Strategy::Pixelated),
+        Color::BLACK,
+        "Boiler Plate".to_string()
+    );
 
     context.commands.spawn(
         vec![
@@ -41,11 +47,17 @@ fn setup(context: &mut Context) {
         vec![
             Box::new(shape),
             Box::new(Transform::new(
-                Position::new(Vector2::new(-0.50, 0.0), Strategy::Normalized),
+                Position::new(Vector2::new(-0.75, 0.0), Strategy::Normalized),
                 0.0,
                 Vector2::new(0.25, 0.25)
             )),
             Box::new(Velocity::new(Vector2::new(1.0, 1.0)))
+        ]
+    );
+
+    context.commands.spawn(
+        vec![
+            Box::new(text)
         ]
     );
 }

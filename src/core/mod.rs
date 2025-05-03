@@ -51,3 +51,6 @@ pub mod draw_order;
 
 /// Animation related features.
 pub mod animation;
+
+/// Event dispatching related features;
+pub(crate) mod event_dispatcher;

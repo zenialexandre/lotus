@@ -281,7 +281,7 @@ fn setup(context: &mut Context) {
     // One will be static and will serve as a table.
     // The other will be our main entity.
     let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::BLACK);
-    let sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
+    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()), Color::BLUE);
 
     context.commands.spawn(vec![
         Box::new(table),
@@ -301,7 +301,7 @@ fn setup(context: &mut Context) {
     // The RigidBody component will tell our world that this entity CAN be affected by the forces of gravity.
     // Keep in mind that the gravity will only affect entities with 'Dynamic' rigid bodies and velocity. 
     context.commands.spawn(vec![
-        Box::new(sprite),
+        Box::new(object),
         Box::new(Transform::new(
             Position::new(Vector2::new(400.0, 100.0), Strategy::Pixelated),
             0.0,
@@ -353,22 +353,30 @@ fn check_table_object_collision(context: &mut Context) {
     // For collision checking purposes, you need to get the Collisions components.
     let table_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&table).unwrap();
 
-    let (object_collision, mut object_transform, mut object_velocity, object_rigid_body) = (
+    let (object_collision, mut object_transform, mut object_velocity, mut object_rigid_body) = (
         context.world.get_entity_component::<Collision>(&object).unwrap(),
         context.world.get_entity_component_mut::<Transform>(&object).unwrap(),
         context.world.get_entity_component_mut::<Velocity>(&object).unwrap(),
-        context.world.get_entity_component::<RigidBody>(&object).unwrap()
+        context.world.get_entity_component_mut::<RigidBody>(&object).unwrap()
     );
 
     // Here we can use the 'check' function to search for a collision between two colliders.
     // In this case we are using the AABB algorithm.
     if Collision::check(CollisionAlgorithm::Aabb, &table_collision, &object_collision) {
-        // Now this is the calculus for the 'bounce' effect in our object.
-        // Note the use of the restitution value here!
-        // It serves as a 'consequence' of the collisions, by decreasing our vertical velocity.
-        object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
-        let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
-        object_transform.set_position_y(&context.render_state, y);
+        // This is our 'magic' number to tell when the object stopped boucing.
+        if object_velocity.y < -0.001 {
+            // Now this is the calculus for the 'bounce' effect in our object.
+            // Note the use of the restitution value here!
+            // It serves as a 'consequence' of the collisions, by decreasing our vertical velocity.
+            object_velocity.y = -object_velocity.y * object_rigid_body.restitution;
+            let y: f32 = object_transform.position.y + object_velocity.y * context.delta;
+            object_transform.set_position_y(&context.render_state, y);
+        } else {
+            // When there is no need to bounce anymore, the object will have velocity equal to zero.
+            // And we can use the rest parameter of our rigid body.
+            object_velocity.y = 0.0;
+            object_rigid_body.rest = true;
+        }
     }
 }
 ```

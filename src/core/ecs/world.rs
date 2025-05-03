@@ -13,8 +13,9 @@ use uuid::Uuid;
 
 use super::{
     super::{
+        event_dispatcher::{EventDispatcher, EventType},
         animation::Animation,
-        texture::{sprite::Sprite, sprite_sheet::{AnimationState, LoopingState}},
+        texture::sprite_sheet::{AnimationState, LoopingState},
         color::Color,
         camera::camera2d::Camera2d,
         input::Input,
@@ -75,6 +76,7 @@ impl World {
     /// Create a new world.
     pub fn new() -> Self {
         let mut resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>> = HashMap::new();
+        resources.insert(TypeId::of::<EventDispatcher>(), Arc::new(AtomicRefCell::new(Box::new(EventDispatcher::new()))));
         resources.insert(TypeId::of::<Input>(), Arc::new(AtomicRefCell::new(Box::new(Input::default()))));
         resources.insert(TypeId::of::<Camera2d>(), Arc::new(AtomicRefCell::new(Box::new(Camera2d::default()))));
         resources.insert(TypeId::of::<Gravity>(), Arc::new(AtomicRefCell::new(Box::new(Gravity::default()))));
@@ -185,6 +187,24 @@ impl World {
         }
     }
 
+    pub(crate) fn synchronize_events(&mut self) {
+        let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = self.get_resource_mut::<EventDispatcher>().unwrap();
+
+        for event in event_dispatcher.drain() {
+            let mut transform: ComponentRefMut<'_, Transform> = self.get_entity_component_mut::<Transform>(&event.entity).unwrap();
+
+            if event.event_type == EventType::UpdatePixelatedPosition {
+                transform.position.x = event.value.x;
+                transform.position.y = event.value.y;
+                transform.dirty_position = false;
+            } else if event.event_type == EventType::UpdatePixelatedScale {
+                transform.scale.x = event.value.x;
+                transform.scale.y = event.value.y;
+                transform.dirty_scale = false;
+            }
+        }
+    }
+
     /// Synchronizes the camera with its target.
     pub fn synchronize_camera_with_target(&mut self, render_state: &mut RenderState) {
         let (target_entity, target_position) = {
@@ -201,7 +221,7 @@ impl World {
             }
         };
 
-        if let (Some(_), Some(position)) = (target_entity, target_position) {
+        if let (Some(entity), Some(position)) = (target_entity, target_position) {
             let mut camera2d: ResourceRefMut<'_, Camera2d> = self.get_resource_mut::<Camera2d>().unwrap();
             camera2d.transform.position = position.clone();
             camera2d.view_matrix = Matrix4::from_translation(Vector3::new(
@@ -209,25 +229,8 @@ impl World {
                 -position.y,
                 0.0
             ));
-            let view_matrix_unwrapped: [[f32; 4]; 4] = *camera2d.view_matrix.as_ref();
-            let projection_matrix: Matrix4<f32> = render_state.get_projection_matrix(&camera2d);
-            let projection_matrix_unwrapped: [[f32; 4]; 4] = *projection_matrix.as_ref();
-    
-            if let Some(projection_buffer) = render_state.projection_buffer.as_ref() {
-                render_state.queue.as_mut().unwrap().write_buffer(
-                    projection_buffer,
-                    0,
-                    bytemuck::cast_slice(&[projection_matrix_unwrapped])
-                );
-            }
-
-            if let Some(view_buffer) = render_state.view_buffer.as_ref() {
-                render_state.queue.as_mut().unwrap().write_buffer(
-                    view_buffer,
-                    0,
-                    bytemuck::cast_slice(&[view_matrix_unwrapped])
-                );
-            }
+            let _ = render_state.get_projection_or_view_buffer(true, Some(&entity), &camera2d);
+            let _ = render_state.get_projection_or_view_buffer(false, Some(&entity), &camera2d);
         }
     }
 
@@ -283,13 +286,8 @@ impl World {
                 self.get_entity_component_mut::<Velocity>(&entity),
                 self.get_entity_component::<RigidBody>(&entity)
             ) {
-                if rigid_body.body_type == BodyType::Dynamic {
-                    if transform.position.strategy == Strategy::Pixelated {
-                        let gravity_factor_pixelated: f32 = gravity.value * (render_state.physical_size.unwrap().height/2) as f32;
-                        velocity.y += gravity_factor_pixelated * rigid_body.friction * delta;
-                    } else {
-                        velocity.y -= gravity.value * rigid_body.friction * delta;
-                    }
+                if rigid_body.body_type == BodyType::Dynamic && rigid_body.rest == false {
+                    velocity.y -= gravity.value * rigid_body.friction * delta;
                     let new_y: f32 = transform.position.y + velocity.y * delta;
                     transform.set_position_y(render_state, new_y);
                 }
@@ -298,57 +296,22 @@ impl World {
     }
 
     /// Synchronizes the transformation matrices with the collision objects.
-    pub fn synchronize_transformations_with_collisions(&mut self, render_state: &mut RenderState) {
-        let (width, height): (f32, f32) = (
-            (render_state.physical_size.as_ref().unwrap().width as f32),
-            (render_state.physical_size.as_ref().unwrap().height as f32)
-        );
-        let aspect_ratio: f32 = width / height;
-
+    pub fn synchronize_transformations_with_collisions(&mut self) {
         for archetype in self.archetypes.values_mut() {
             if let (Some(transforms), Some(collisions)) = (
                 archetype.components.get(&TypeId::of::<Transform>()),
                 archetype.components.get(&TypeId::of::<Collision>())
             ) {
-                let has_sprites: bool = archetype.components.contains_key(&TypeId::of::<Sprite>());
-                let sprites: Option<std::slice::Iter<'_, AtomicRefCell<Box<dyn Component>>>> = if has_sprites {
-                    archetype.components.get(&TypeId::of::<Sprite>()).map(|s| s.iter())
-                } else {
-                    None
-                };
+                for (transform, collision) in transforms.iter().zip(collisions) {
+                    let transform_ref: AtomicRef<'_, Box<dyn Component>> = transform.borrow();
+                    let mut collision_ref: AtomicRefMut<'_, Box<dyn Component>> = collision.borrow_mut();
 
-                for (index, (transform, collision)) in transforms.iter().zip(collisions).enumerate() {
-                    let transform: AtomicRef<'_, Box<dyn Component>> = transform.borrow();
-                    let mut collision: AtomicRefMut<'_, Box<dyn Component>> = collision.borrow_mut();
-
-                    if let Some(collision) = collision.as_any_mut().downcast_mut::<Collision>() {
-                        let mut transform_cloned: Transform = transform.as_any().downcast_ref::<Transform>().unwrap().clone();
-
-                        if transform_cloned.position.strategy == Strategy::Pixelated {
-                            let pixelated_x: f32 = transform_cloned.position.x / width * 2.0 * aspect_ratio - aspect_ratio;
-                            let pixelated_y: f32 = -(transform_cloned.position.y / height * 2.0 - 1.0);
-
-                            transform_cloned.position.x = pixelated_x;
-                            transform_cloned.position.y = pixelated_y;
-                        }
-
-                        if has_sprites {
-                            if let Some(sprite) = sprites.as_ref().and_then(|s| s.clone().nth(index)) {
-                                if let Some(sprite_ref) = sprite.borrow().as_any().downcast_ref::<Sprite>() {
-                                    if let Some(texture) = render_state.texture_cache.get_texture(sprite_ref.path.clone()) {
-                                        let width_in_pixels: f32 = texture.wgpu_texture.size().width as f32;
-                                        let height_in_pixels: f32 = texture.wgpu_texture.size().height as f32;
-                                        let world_width: f32 = (width_in_pixels / width) * 1.0 * aspect_ratio;
-                                        let world_height: f32 = (height_in_pixels / height) * 1.0;
-
-                                        transform_cloned.scale.x *= world_width;
-                                        transform_cloned.scale.y *= world_height;
-                                    }
-                                }
-                            }
-                        }
-                        collision.collider.position = transform_cloned.position.to_vec();
-                        collision.collider.scale = transform_cloned.scale;
+                    if let (Some(transform), Some(collision)) = (
+                        transform_ref.as_any().downcast_ref::<Transform>(),
+                        collision_ref.as_any_mut().downcast_mut::<Collision>()
+                    ) {
+                        collision.collider.position = transform.position.to_vec();
+                        collision.collider.scale = transform.scale;
                     }
                 }
             }

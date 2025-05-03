@@ -45,7 +45,9 @@ impl Position {
 pub struct Transform {
     pub position: Position,
     pub rotation: f32,
-    pub scale: Vector2<f32>
+    pub scale: Vector2<f32>,
+    pub(crate) dirty_position: bool,
+    pub(crate) dirty_scale: bool,
 }
 
 impl Default for Transform {
@@ -54,7 +56,9 @@ impl Default for Transform {
         return Self {
             position: Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
             rotation: 0.0,
-            scale: Vector2::new(1.0, 1.0)
+            scale: Vector2::new(1.0, 1.0),
+            dirty_position: true,
+            dirty_scale: true
         };
     }
 }
@@ -65,7 +69,9 @@ impl Transform {
         return Self {
             position,
             rotation,
-            scale
+            scale,
+            dirty_position: true,
+            dirty_scale: true
         };
     }
 
