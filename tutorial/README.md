@@ -265,7 +265,8 @@ fn update(context: &mut Context) {
 
 Lotus supports collision detection using the AABB algorithm. <br>
 And the concept of gravity can be enabled using our Gravity global resource! <br>
-Let's create an small example of collision detection between two entities and enable the force of gravity.
+Let's create an small example of collision detection between two entities and enable the force of gravity. <br>
+This example also uses sprites. To make it work, be sure to download [lotus_pink_256x256.png](https://github.com/zenialexandre/lotus/blob/main/assets/textures/lotus_pink_256x256.png) and place in the `/assets/textures` folder
 
 ```rust
 use lotus_engine::*;
