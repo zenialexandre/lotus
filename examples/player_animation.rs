@@ -20,7 +20,6 @@ fn setup(context: &mut Context) {
 
     let idle: SpriteSheet = SpriteSheet::new(
         "textures/animations/player/idle.png".to_string(),
-        Transform::default(),
         LoopingState::Repeat,
         (512.0, 512.0),
         0.1,
@@ -30,7 +29,6 @@ fn setup(context: &mut Context) {
     );
     let attack: SpriteSheet = SpriteSheet::new(
         "textures/animations/player/attack.png".to_string(),
-        Transform::default(),
         LoopingState::Repeat,
         (512.0, 512.0),
         0.1,
@@ -40,7 +38,6 @@ fn setup(context: &mut Context) {
     );
     let walk: SpriteSheet = SpriteSheet::new(
         "textures/animations/player/walk.png".to_string(),
-        Transform::default(),
         LoopingState::Repeat,
         (512.0, 512.0),
         0.1,

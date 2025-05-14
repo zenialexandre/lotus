@@ -1,5 +1,5 @@
 use std::time::Duration;
-use super::super::{time::timer::{Timer, TimerType}, physics::transform::Transform};
+use super::super::{time::timer::{Timer, TimerType}};
 
 /// Enumerator for animation state mapping.
 #[derive(Clone, PartialEq)]
@@ -21,7 +21,6 @@ pub enum LoopingState {
 #[derive(Clone)]
 pub struct SpriteSheet {
     pub path: String,
-    pub transform: Transform,
     pub timer: Timer,
     pub tile_width: f32,
     pub tile_height: f32,
@@ -37,7 +36,6 @@ impl SpriteSheet {
     /// Creates a new sprite sheet struct.
     pub fn new(
         path: String,
-        transform: Transform,
         looping_state: LoopingState,
         tile_size: (f32, f32),
         time_between_tiles: f32,
@@ -47,7 +45,6 @@ impl SpriteSheet {
     ) -> Self {
         return Self {
             path,
-            transform,
             timer: Timer::new(TimerType::Repeat, Duration::from_secs_f32(time_between_tiles)),
             tile_width: tile_size.0,
             tile_height: tile_size.1,

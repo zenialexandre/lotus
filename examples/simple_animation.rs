@@ -16,10 +16,9 @@ fn setup(context: &mut Context) {
     let dummy: Sprite = Sprite::new("textures/lotus_pink_128x128.png".to_string());
     let scarfy_sprite_sheet: SpriteSheet = SpriteSheet::new(
         "textures/animations/scarfy.png".to_string(),
-        Transform::default(),
         LoopingState::Once,
         (124.0, 124.0),
-        2.0,
+        0.5,
         1,
         6,
         vec![0, 1, 2, 3, 4, 5]

@@ -5,7 +5,6 @@ use wgpu_text::glyph_brush::Section;
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 use wgpu::{*, util::{BufferInitDescriptor, DeviceExt}};
 use std::{collections::HashMap, sync::Arc};
-
 use super::cache::{self, BufferCache, BindGroupCache};
 use super::super::super::{
     color,
