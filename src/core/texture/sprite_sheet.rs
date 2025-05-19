@@ -57,6 +57,7 @@ impl SpriteSheet {
         };
     }
 
+    /// Returns the current tile UV (texture coordinates).
     pub(crate) fn current_tile_texture_coordinates(&self) -> [f32; 8] {
         let columns: f32 = self.columns as f32;
         let rows: f32 = self.rows as f32;
@@ -81,22 +82,26 @@ impl SpriteSheet {
         ];
     }
 
+    /// Play the current animation while reseting the timer.
     pub(crate) fn play(&mut self) {
         self.animation_state = AnimationState::Playing;
         self.timer.reset();
     }
 
+    /// Stops the current animation and set its current index to 0.
     pub(crate) fn stop(&mut self) {
         self.animation_state = AnimationState::Stopped;
         self.current_index = 0;
     }
 
+    /// Pauses the current animation if its already playing.
     pub(crate) fn pause(&mut self) {
         if self.animation_state == AnimationState::Playing {
             self.animation_state = AnimationState::Paused;
         }
     }
 
+    /// Resumes the current animation if its already paused.
     pub(crate) fn resume(&mut self) {
         if self.animation_state == AnimationState::Paused {
             self.animation_state = AnimationState::Playing;

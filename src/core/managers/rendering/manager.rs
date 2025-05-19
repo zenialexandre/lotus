@@ -325,6 +325,16 @@ impl RenderState {
         }
     }
 
+    /// Helper function to clean the Buffer cache related to the entity.
+    pub(crate) fn clean_entity_buffer_cache(&mut self, entity: &Entity) {
+        self.buffer_cache.clean(entity.0.to_string());
+    }
+
+    /// Helper function to clean the Bind Group cache related to the entity.
+    pub(crate) fn clean_entity_bind_group_cache(&mut self, entity: &Entity) {
+        self.bind_group_cache.clean(entity.0.to_string());
+    }
+
     /// Execute the rendering process.
     pub fn render(&mut self, world: &mut World) -> Result<(), SurfaceError> {
         let surface_texture: SurfaceTexture = self.surface.as_ref().unwrap().get_current_texture()?;

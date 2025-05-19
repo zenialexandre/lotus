@@ -15,41 +15,51 @@ pub const COLOR_BUFFER: &str = "color_buffer";
 pub const COLOR_BIND_GROUP: &str = "color_bind_group";
 pub const TEXTURE_BIND_GROUP: &str = "texture_bind_group";
 
-/// Struct for caching buffers.
+/// Struct for caching Buffers.
 pub struct BufferCache {
     pub cache: HashMap<(String, String), Buffer>
 }
 
 impl BufferCache {
-    /// Create a new caching for buffers.
+    /// Create a new caching for Buffers.
     pub fn new() -> Self {
         return Self {
             cache: HashMap::new()
         };
     }
 
-    /// Find the cached buffer by the key.
+    /// Find the cached Buffer by the key.
     pub fn find(&self, key: (String, String)) -> Option<Buffer> {
         return self.cache.get(&key).cloned();
     }
+
+    /// Clean the cached Buffer data related to a certain entity if its found.
+    pub fn clean(&mut self, entity_id: String) {
+        self.cache.retain(|(entity_id_from_map, _), _| entity_id_from_map != &entity_id);
+    }
 }
 
-/// Struct for caching bind groups.
+/// Struct for caching Bind Groups.
 pub struct BindGroupCache {
     pub cache: HashMap<(String, String), BindGroup>
 }
 
 impl BindGroupCache {
-    /// Create a new caching for bind groups.
+    /// Create a new caching for Bind Groups.
     pub fn new() -> Self {
         return Self {
             cache: HashMap::new()
         };
     }
 
-    /// Find the cached bind group by the key.
+    /// Find the cached Bind Group by the key.
     pub fn find(&self, key: (String, String)) -> Option<BindGroup> {
         return self.cache.get(&key).cloned();
+    }
+
+    /// Clean the cached Bind Group data related to a certain entity if its found.
+    pub fn clean(&mut self, entity_id: String) {
+        self.cache.retain(|(entity_id_from_map, _), _| entity_id_from_map != &entity_id);
     }
 }
 

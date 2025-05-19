@@ -127,7 +127,7 @@ impl World {
         }
     }
 
-    /// # Spawn a new entity on the world.
+    /// Spawn a new entity on the world.
     /// The entity can be rendered on the fly, if its a shape or a sprite.
     pub(crate) fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
@@ -169,10 +169,12 @@ impl World {
         return entity;
     }
 
-    /// # Despawn a specific entity from the world.
-    /// The entity can be removed from the rendering flow on the fly, if its necessary. 
+    /// Despawn a specific entity from the world.
+    /// The entity is removed from the rendering flow and its related cached data is cleaned. 
     pub(crate) fn despawn(&mut self, render_state: &mut RenderState, entity: &Entity) {
         render_state.remove_entity_to_render(entity);
+        render_state.clean_entity_buffer_cache(entity);
+        render_state.clean_entity_bind_group_cache(entity);
 
         for archetype in self.archetypes.values_mut() {
             if let Some(index) = archetype.entities.iter().position(|e| e.0 == entity.0) {
@@ -187,6 +189,7 @@ impl World {
         }
     }
 
+    /// Synchronizes events that were dispatched in another process.
     pub(crate) fn synchronize_events(&mut self) {
         let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = self.get_resource_mut::<EventDispatcher>().unwrap();
 
@@ -513,29 +516,29 @@ impl Commands {
         };
     }
 
-    /// # Spawn a new entity on the world.
+    /// Spawn a new entity on the world.
     /// The entity can be rendered on the fly, if its a shape or a sprite.
     pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) {
         self.commands.push(Command::Spawn(components));
     }
 
-    /// # Despawn a specific entity from the world.
+    /// Despawn a specific entity from the world.
     /// The entity can be removed from the rendering flow on the fly, if its necessary. 
     pub fn despawn(&mut self, entity: Entity) {
         self.commands.push(Command::Despawn(entity));
     }
 
-    /// # Add a new resource to the world.
+    /// Add a new resource to the world.
     pub fn add_resource(&mut self, resource: Box<dyn Resource>) {
         self.commands.push(Command::AddResource(resource));
     }
 
-    /// # Add a list of resources to the world.
+    /// Add a list of resources to the world.
     pub fn add_resources(&mut self, resources: Vec<Box<dyn Resource>>) {
         self.commands.push(Command::AddResources(resources));
     }
 
-    /// # Show the current FPS value.
+    /// Show the current FPS value.
     pub fn show_fps(&mut self, current_fps: u32, color: Color) {
         self.commands.push(Command::ShowFps(current_fps, color));
     }
