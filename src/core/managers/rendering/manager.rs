@@ -394,7 +394,8 @@ impl RenderState {
             }
 
             for entity in entities_to_render_sorted.clone() {
-                if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
+                if world.is_entity_alive(entity) {
+                    let is_entity_visible: bool = world.is_entity_visible(entity);
                     let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
                     let transform: Option<&Transform> = components.iter().find_map(
                         |component| component.as_any().downcast_ref::<Transform>()
@@ -416,7 +417,8 @@ impl RenderState {
                                 &camera2d,
                                 false
                             );
-                            self.apply_render_pass_with_values(&mut render_pass);
+
+                            if is_entity_visible { self.apply_render_pass_with_values(&mut render_pass); }
                             continue;
                         }
                     }
@@ -433,7 +435,8 @@ impl RenderState {
                             &camera2d,
                             false
                         );
-                        self.apply_render_pass_with_values(&mut render_pass);
+
+                        if is_entity_visible { self.apply_render_pass_with_values(&mut render_pass); }
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
                         render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                         self.setup_rendering_2d(
@@ -446,9 +449,10 @@ impl RenderState {
                             &camera2d,
                             false
                         );
-                        self.apply_render_pass_with_values(&mut render_pass);
+
+                        if is_entity_visible { self.apply_render_pass_with_values(&mut render_pass); }
                     } else if let Some(text_renderer) = world.text_renderers.get(&entity.0) {
-                        text_renderer.text_brush.draw(&mut render_pass);
+                        if is_entity_visible { text_renderer.text_brush.draw(&mut render_pass); }
                     }
                 }
             }
