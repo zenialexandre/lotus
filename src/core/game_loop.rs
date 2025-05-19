@@ -2,7 +2,6 @@ use std::time::{Duration, Instant};
 use lotus_proc_macros::Resource;
 use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
-
 use super::{
     engine::Context,
     input::Input,
@@ -72,7 +71,6 @@ impl GameLoop {
             self.frame_count = 0;
             self.last_fps_update = Instant::now();
             context.game_loop_listener.current_fps = self.current_fps;
-            //println!("FPS: {}", self.current_fps);
         }
 
         // Optional FPS capping.

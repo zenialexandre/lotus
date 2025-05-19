@@ -7,7 +7,6 @@ use winit::{
     dpi::{Size, Position, LogicalSize, LogicalPosition}
 };
 use std::sync::Arc;
-
 use super::super::{
     rendering::manager::RenderState,
     super::{

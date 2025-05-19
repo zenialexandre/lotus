@@ -10,7 +10,6 @@ use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use cgmath::{Matrix4, Vector2, Vector3};
 use lotus_proc_macros::Component;
 use uuid::Uuid;
-
 use super::{
     super::{
         event_dispatcher::{EventDispatcher, EventType},
@@ -64,6 +63,8 @@ impl Archetype {
 }
 
 /// Struct to represent the World of the Entity-Component-System architecture.
+///
+/// The World uses normalized coordinates at its core.
 pub struct World {
     pub archetypes: HashMap<u64, Archetype>,
     pub resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>>,
@@ -128,6 +129,7 @@ impl World {
     }
 
     /// Spawn a new entity on the world.
+    ///
     /// The entity can be rendered on the fly, if its a shape or a sprite.
     pub(crate) fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
@@ -170,7 +172,8 @@ impl World {
     }
 
     /// Despawn a specific entity from the world.
-    /// The entity is removed from the rendering flow and its related cached data is cleaned. 
+    ///
+    /// The entity is removed from the rendering flow and its related cached data is cleaned.
     pub(crate) fn despawn(&mut self, render_state: &mut RenderState, entity: &Entity) {
         render_state.remove_entity_to_render(entity);
         render_state.clean_entity_buffer_cache(entity);
@@ -517,13 +520,15 @@ impl Commands {
     }
 
     /// Spawn a new entity on the world.
-    /// The entity can be rendered on the fly, if its a shape or a sprite.
+    ///
+    /// The entity will be rendered as its type demands.
     pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) {
         self.commands.push(Command::Spawn(components));
     }
 
     /// Despawn a specific entity from the world.
-    /// The entity can be removed from the rendering flow on the fly, if its necessary. 
+    ///
+    /// The entity is removed from the rendering flow and its related cached data is cleaned.
     pub fn despawn(&mut self, entity: Entity) {
         self.commands.push(Command::Despawn(entity));
     }
