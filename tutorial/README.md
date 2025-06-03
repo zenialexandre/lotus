@@ -15,7 +15,7 @@ If everything went well, this command should give you the version of the rustc t
 rustc --version
 ```
 
-If you are on Windows, make sure you have the <str>Microsoft C++ Build Tools</str> installed or the <str>Visual Studio Code</str>.
+If you are on Windows, make sure you have the <str>Microsoft C++ Build Tools</str> installed or the <str>Visual Studio Code</str>.<br>
 The following can be found [`here`](https://learn.microsoft.com/en-us/windows/dev-environment/rust/setup).<br>
 
 ### Project Initialization
