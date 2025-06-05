@@ -1,3 +1,4 @@
+use cgmath::Vector2;
 use lotus_proc_macros::Component;
 use wgpu::Queue;
 use wgpu_text::{glyph_brush::ab_glyph::FontArc, BrushBuilder, TextBrush};
@@ -16,31 +17,42 @@ pub struct Text {
     pub font: Font,
     pub position: Position,
     pub color: Color,
-    pub content: String
+    pub content: String,
+    pub(crate) original_resolution: Vector2<f32>
 }
 
 impl Text {
     /// Create a new text struct.
-    pub fn new(font: Font, position: Position, color: Color, content: String) -> Self {
+    pub fn new(render_state: &mut RenderState, font: Font, position: Position, color: Color, content: String) -> Self {
         return Self {
             font,
             position,
             color,
-            content
+            content,
+            original_resolution: Vector2::new(
+                render_state.physical_size.as_ref().unwrap().width as f32,
+                render_state.physical_size.as_ref().unwrap().height as f32
+            )
         };
     }
 
     /// Returns the text position by the strategy.
     pub fn get_position_by_strategy(&self, physical_size: &PhysicalSize<u32>) -> (f32, f32) {
-        let aspect_ratio: f32 = physical_size.width as f32 / physical_size.height as f32;
+        // TODO: Positioning became out of hand. Necessity to stop using wgpu_text and use my own wrapper.
+
+        let width: f32 = physical_size.width as f32;
+        let height: f32 = physical_size.height as f32;
+        let aspect_ratio: f32 = width / height;
 
         if self.position.strategy == Strategy::Normalized {
-            let x_normalized: f32 = self.position.x / aspect_ratio;
-            let x: f32 = ((x_normalized + 1.0) / 2.0) * physical_size.width as f32;
-            let y: f32 = ((1.0 - self.position.y) / 2.0) * physical_size.height as f32;
+            let x_ratio: f32 = self.position.x / aspect_ratio;
+            let x: f32 = ((x_ratio + 1.0) / 2.0) * width;
+            let y: f32 = ((1.0 - self.position.y) / 2.0) * height;
             return (x, y);
         } else {
-            return (self.position.x, self.position.y);
+            let scaled_pixelated_x: f32 = width / self.original_resolution.x;
+            let scaled_pixelated_y: f32 = height / self.original_resolution.y;
+            return (self.position.x * scaled_pixelated_x, self.position.y * scaled_pixelated_y)
         }
     }
 }

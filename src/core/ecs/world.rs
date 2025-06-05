@@ -119,6 +119,7 @@ impl World {
             }
         } else {
             let fps_text: Text = Text::new(
+                render_state,
                 Font::new(Fonts::RobotoMono.get_path(), 21.0),
                 Position::new(Vector2::new(0.0, 0.0), Strategy::Pixelated),
                 color,

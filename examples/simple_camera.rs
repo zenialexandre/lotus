@@ -14,6 +14,7 @@ fn setup(context: &mut Context) {
     let secondary_sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
     let shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BURGUNDY);
     let text: Text = Text::new(
+        &mut context.render_state,
         Font::new(Fonts::RobotoMono.get_path(), 30.0),
         Position::new(Vector2::new(0.0, 0.0), Strategy::Pixelated),
         Color::BLACK,

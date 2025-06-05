@@ -13,6 +13,7 @@ your_game!(
 
 fn setup(context: &mut Context) {
     let underdog_regular: Text = Text::new(
+        &mut context.render_state,
         Font::new(Fonts::UnderdogRegular.get_path(), 80.0),
         Position::new(Vector2::new(-0.30, 0.0), Strategy::Normalized),
         Color::BLACK,
@@ -21,6 +22,7 @@ fn setup(context: &mut Context) {
     context.commands.spawn(vec![Box::new(underdog_regular)]);
 
     let codystar_light: Text = Text::new(
+        &mut context.render_state,
         Font::new(Fonts::CodystarLight.get_path(), 80.0),
         Position::new(Vector2::new(-0.30, 0.25), Strategy::Normalized),
         Color::BLUE,
@@ -29,6 +31,7 @@ fn setup(context: &mut Context) {
     context.commands.spawn(vec![Box::new(codystar_light)]);
 
     let codystar_regular: Text = Text::new(
+        &mut context.render_state,
         Font::new(Fonts::CodystarRegular.get_path(), 80.0),
         Position::new(Vector2::new(-0.30, 0.45), Strategy::Normalized),
         Color::MAGENTA,
@@ -37,6 +40,7 @@ fn setup(context: &mut Context) {
     context.commands.spawn(vec![Box::new(codystar_regular)]);
 
     let roboto_mono: Text = Text::new(
+        &mut context.render_state,
         Font::new(Fonts::RobotoMono.get_path(), 80.0),
         Position::new(Vector2::new(-0.30, 0.65), Strategy::Normalized),
         Color::BROWN,
@@ -45,6 +49,7 @@ fn setup(context: &mut Context) {
     context.commands.spawn(vec![Box::new(roboto_mono)]);
 
     let roboto_mono_italic: Text = Text::new(
+        &mut context.render_state,
         Font::new(Fonts::RobotoMonoItalic.get_path(), 80.0),
         Position::new(Vector2::new(-0.30, 0.85), Strategy::Normalized),
         Color::RED,

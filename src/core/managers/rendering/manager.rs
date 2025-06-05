@@ -467,13 +467,15 @@ impl RenderState {
             if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
                 if let Some(text_renderer) = world.text_renderers.get_mut(&entity.0) {
                     let (x, y): (f32, f32) = text_renderer.text.get_position_by_strategy(&self.physical_size.as_ref().unwrap());
+                    let width: f32 = self.physical_size.as_ref().unwrap().width as f32;
+                    let height: f32 = self.physical_size.as_ref().unwrap().height as f32;
 
                     text_renderer.text_brush.queue(
                         self.device.as_ref().unwrap(),
                         self.queue.as_ref().unwrap(),
                         vec![Section {
                             screen_position: (x, y),
-                            bounds: (self.physical_size.as_ref().unwrap().width as f32, self.physical_size.as_ref().unwrap().height as f32),
+                            bounds: (width, height),
                             text: vec![
                                 wgpu_text::glyph_brush::Text::new(&text_renderer.text.content)
                                     .with_color(text_renderer.text.color.to_rgba())
@@ -747,11 +749,11 @@ impl RenderState {
             let mut transform_cloned: Transform = transform_unwrapped.clone();
 
             if transform_cloned.position.strategy == Strategy::Pixelated && transform_cloned.dirty_position {
-                let pixelated_x: f32 = transform_cloned.position.x / width * 2.0 * aspect_ratio - aspect_ratio;
-                let pixelated_y: f32 = -(transform_cloned.position.y / height * 2.0 - 1.0);
+                let normalized_x: f32 = transform_cloned.position.x / width * 2.0 * aspect_ratio - aspect_ratio;
+                let normalized_y: f32 = -(transform_cloned.position.y / height * 2.0 - 1.0);
 
-                transform_cloned.position.x = pixelated_x;
-                transform_cloned.position.y = pixelated_y;
+                transform_cloned.position.x = normalized_x;
+                transform_cloned.position.y = normalized_y;
 
                 event_dispatcher.send(Event::new(*entity.unwrap(), EventType::UpdatePixelatedPosition, transform_cloned.position.to_vec()));
             }

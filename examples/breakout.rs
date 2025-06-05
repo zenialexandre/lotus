@@ -68,6 +68,7 @@ fn setup(context: &mut Context) {
     let player: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::PURPLE);
     let little_ball: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.2)), Color::BLACK);
     let start_text: Text = Text::new(
+        &mut context.render_state,
         Font::new(Fonts::RobotoMonoItalic.get_path(), 40.0),
         Position::new(Vector2::new(298.0, 380.0), Strategy::Pixelated),
         Color::BLACK,

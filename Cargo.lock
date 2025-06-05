@@ -1226,9 +1226,9 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "kira"
-version = "0.10.6"
+version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "315cbdaa382944922b0d19a78890d0344396d7ed840044e4ed9c93dfff9aafe7"
+checksum = "d81e60d2bb61f3e156e9acfbbec417eaeed08330155a143ec82dccba4d2917c3"
 dependencies = [
  "atomic-arena",
  "cpal",
@@ -1341,7 +1341,7 @@ dependencies = [
 
 [[package]]
 name = "lotus_engine"
-version = "0.1.41"
+version = "0.1.42"
 dependencies = [
  "anyhow",
  "atomic_refcell",
@@ -2872,11 +2872,13 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.16.0"
+version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "458f7a779bf54acc9f347480ac654f68407d3aab21269a6e3c9f922acd9e2da9"
+checksum = "3cf4199d1e5d15ddd86a694e4d0dffa9c323ce759fea589f00fef9d81cc1931d"
 dependencies = [
  "getrandom 0.3.1",
+ "js-sys",
+ "wasm-bindgen",
 ]
 
 [[package]]
