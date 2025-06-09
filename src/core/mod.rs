@@ -16,8 +16,8 @@ pub mod macros;
 /// Entity-Component-System related features and architecture.
 pub mod ecs;
 
-/// Engine related data stored for the end-user.
-pub mod engine;
+/// Engine context related data stored for the end-user.
+pub mod context;
 
 /// Input related features.
 pub mod input;

@@ -134,7 +134,7 @@ pub use core::managers::rendering::manager::*;
 pub use core::managers::windowing::manager::*;
 pub use core::game_loop::*;
 pub use core::asset_loader::AssetLoader;
-pub use core::engine::*;
+pub use core::context::*;
 pub use core::color::*;
 pub use core::visibility::*;
 pub use core::shape::*;

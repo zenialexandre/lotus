@@ -3,7 +3,7 @@ use lotus_proc_macros::Resource;
 use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
 use super::{
-    engine::Context,
+    context::Context,
     input::Input,
     camera::camera2d::Camera2d,
     managers::rendering::manager::RenderState,

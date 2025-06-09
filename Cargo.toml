@@ -10,15 +10,15 @@ documentation = "https://docs.rs/lotus_engine"
 
 [dependencies]
 lotus_proc_macros = { path = "lotus_proc_macros", version = "0.1.1" }
-winit = { version = "0.30", features = ["rwh_05"] }
-wgpu = "25.0.0"
+winit = { version = "0.30.11", features = ["rwh_05"] }
+wgpu = "25.0.2"
 kira = "0.10.7"
-cpal = "0.15.3"
+cpal = "0.16.0"
 wgpu_text = "0.9.3"
 cgmath = "0.18"
 image = { version = "0.25.6", features = ["png", "jpeg"] }
 pollster = "0.4"
-bytemuck = { version = "1.23.0", features = [ "derive" ] }
+bytemuck = { version = "1.23.1", features = [ "derive" ] }
 anyhow = "1.0.98"
 uuid = { version = "1.17.0", features = ["v4"] }
 rand = "0.9.1"
