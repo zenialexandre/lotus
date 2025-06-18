@@ -1,6 +1,6 @@
 [package]
 name = "lotus_engine"
-version = "0.1.42"
+version = "0.1.43"
 authors = ["Alexandre Zeni <zenialexandre123@gmail.com>"]
 description = "Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games."
 license = "MPL-2.0"
@@ -12,9 +12,10 @@ documentation = "https://docs.rs/lotus_engine"
 lotus_proc_macros = { path = "lotus_proc_macros", version = "0.1.1" }
 winit = { version = "0.30.11", features = ["rwh_05"] }
 wgpu = "25.0.2"
-kira = "0.10.7"
+kira = "0.10.8"
 cpal = "0.16.0"
 wgpu_text = "0.9.3"
+glyph_brush = "0.7.12"
 cgmath = "0.18"
 image = { version = "0.25.6", features = ["png", "jpeg"] }
 pollster = "0.4"

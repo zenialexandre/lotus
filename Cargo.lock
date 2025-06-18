@@ -1276,9 +1276,9 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "kira"
-version = "0.10.7"
+version = "0.10.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d81e60d2bb61f3e156e9acfbbec417eaeed08330155a143ec82dccba4d2917c3"
+checksum = "6e7f96b236a2d8b1ecebcd0e4e81462405392699e261f852cf930ea150f15abd"
 dependencies = [
  "atomic-arena",
  "cpal 0.15.3",
@@ -1391,7 +1391,7 @@ dependencies = [
 
 [[package]]
 name = "lotus_engine"
-version = "0.1.42"
+version = "0.1.43"
 dependencies = [
  "anyhow",
  "atomic_refcell",
@@ -1399,6 +1399,7 @@ dependencies = [
  "cgmath",
  "cpal 0.16.0",
  "env_logger",
+ "glyph_brush",
  "image",
  "kira",
  "log",
