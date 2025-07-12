@@ -3,3 +3,6 @@ pub mod manager;
 
 /// Rendering cache related features.
 pub mod cache;
+
+/// Rendering type related features.
+pub(crate) mod rendering_type;

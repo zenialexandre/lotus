@@ -2,18 +2,18 @@ use wgpu::*;
 use std::collections::HashMap;
 use super::super::super::ecs::entity::Entity;
 
-pub const FIXED_UUID: &str = "fixed_uuid";
-pub const VERTEX: &str = "vertex";
-pub const INDEX: &str = "index";
-pub const IS_BACKGROUND: &str = "is_background";
-pub const IS_TEXTURE: &str = "is_texture";
-pub const PROJECTION: &str = "projection";
-pub const VIEW: &str = "view";
-pub const TRANSFORM_BUFFER: &str = "transform_buffer";
-pub const TRANSFORM_BIND_GROUP: &str = "transform_bind_group";
-pub const COLOR_BUFFER: &str = "color_buffer";
-pub const COLOR_BIND_GROUP: &str = "color_bind_group";
-pub const TEXTURE_BIND_GROUP: &str = "texture_bind_group";
+pub(crate) const FIXED_UUID: &str = "fixed_uuid";
+pub(crate) const VERTEX: &str = "vertex";
+pub(crate) const INDEX: &str = "index";
+pub(crate) const PROJECTION: &str = "projection";
+pub(crate) const VIEW: &str = "view";
+pub(crate) const COLOR_BUFFER: &str = "color_buffer";
+pub(crate) const TRANSFORM_BUFFER: &str = "transform_buffer";
+pub(crate) const RENDERING_TYPE_BUFFER: &str = "rendering_type_buffer";
+pub(crate) const TEXTURE_BIND_GROUP: &str = "texture_bind_group";
+pub(crate) const COLOR_BIND_GROUP: &str = "color_bind_group";
+pub(crate) const TRANSFORM_BIND_GROUP: &str = "transform_bind_group";
+pub(crate) const RENDERING_TYPE_BIND_GROUP: &str = "rendering_type_bind_group";
 
 /// Struct for caching Buffers.
 pub struct BufferCache {
