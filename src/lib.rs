@@ -142,6 +142,8 @@ pub use core::texture::sprite::*;
 pub use core::texture::sprite_sheet::*;
 pub use core::input::*;
 pub use core::text::*;
+pub use core::text::text::*;
+pub use core::text::font::*;
 pub use core::animation::*;
 pub use core::camera::camera2d::*;
 pub use core::physics::transform::Transform;

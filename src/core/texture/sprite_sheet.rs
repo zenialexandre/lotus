@@ -58,7 +58,7 @@ impl SpriteSheet {
     }
 
     /// Returns the current tile UV (texture coordinates).
-    pub(crate) fn current_tile_texture_coordinates(&self) -> [f32; 8] {
+    pub(crate) fn current_tile_uv_coordinates(&self) -> [f32; 8] {
         let columns: f32 = self.columns as f32;
         let rows: f32 = self.rows as f32;
 

@@ -83,48 +83,48 @@ impl GeometryType {
         match self {
             GeometryType::Triangle => {
                 vec![
-                    Vertex { position: [0.0, 0.5, 0.0], texture_coordinates: [0.0, 0.0] },    // Top
-                    Vertex { position: [-0.5, -0.5, 0.0], texture_coordinates: [0.0, 0.0] },  // Left Down
-                    Vertex { position: [0.5, -0.5, 0.0], texture_coordinates: [0.0, 0.0] }    // Right Down
+                    Vertex::build_default([0.0, 0.5, 0.0], [0.0, 0.0]),    // Top
+                    Vertex::build_default([-0.5, -0.5, 0.0], [0.0, 0.0]),  // Left Down
+                    Vertex::build_default([0.5, -0.5, 0.0], [0.0, 0.0])    // Right Down
                 ]
             },
             GeometryType::Square => {
                 vec![ 
-                    Vertex { position: [-1.0, -1.0, 0.0], texture_coordinates: [0.0, 1.0] }, // Bottom Left
-                    Vertex { position: [1.0, -1.0, 0.0], texture_coordinates: [1.0, 1.0] },  // Bottom Right
-                    Vertex { position: [1.0, 1.0, 0.0], texture_coordinates: [1.0, 0.0] },   // Top Right
-                    Vertex { position: [-1.0, 1.0, 0.0], texture_coordinates: [0.0, 0.0] }   // Top Left
+                    Vertex::build_default([-1.0, -1.0, 0.0], [0.0, 1.0]), // Bottom Left
+                    Vertex::build_default([1.0, -1.0, 0.0], [1.0, 1.0]),  // Bottom Right
+                    Vertex::build_default([1.0, 1.0, 0.0], [1.0, 0.0]),   // Top Right
+                    Vertex::build_default([-1.0, 1.0, 0.0], [0.0, 0.0])   // Top Left
                 ]
             },
             GeometryType::Rectangle => {
                 match orientation {
                     Orientation::Horizontal => {
                         vec![
-                            Vertex { position: [-0.75, -0.25, 0.0], texture_coordinates: [0.0, 1.0] }, // Left Down
-                            Vertex { position: [0.75, -0.25, 0.0], texture_coordinates: [1.0, 1.0] },  // Right Down
-                            Vertex { position: [0.75, 0.25, 0.0], texture_coordinates: [1.0, 0.0] },   // Right Up
-                            Vertex { position: [-0.75, 0.25, 0.0], texture_coordinates: [0.0, 0.0] }   // Left Up
+                            Vertex::build_default([-0.75, -0.25, 0.0], [0.0, 1.0]), // Left Down
+                            Vertex::build_default([0.75, -0.25, 0.0], [1.0, 1.0]),  // Right Down
+                            Vertex::build_default([0.75, 0.25, 0.0], [1.0, 0.0]),   // Right Up
+                            Vertex::build_default([-0.75, 0.25, 0.0], [0.0, 0.0])   // Left Up
                         ]
                     },
                     Orientation::Vertical => {
                         vec![
-                            Vertex { position: [-0.25, -0.75, 0.0], texture_coordinates: [0.0, 1.0] }, // Left Down
-                            Vertex { position: [0.25, -0.75, 0.0], texture_coordinates: [1.0, 1.0] },  // Right Down
-                            Vertex { position: [0.25, 0.75, 0.0], texture_coordinates: [1.0, 0.0] },   // Right Up
-                            Vertex { position: [-0.25, 0.75, 0.0], texture_coordinates: [0.0, 0.0] }   // Left Up
+                            Vertex::build_default([-0.25, -0.75, 0.0], [0.0, 1.0]), // Left Down
+                            Vertex::build_default([0.25, -0.75, 0.0], [1.0, 1.0]),  // Right Down
+                            Vertex::build_default([0.25, 0.75, 0.0], [1.0, 0.0]),   // Right Up
+                            Vertex::build_default([-0.25, 0.75, 0.0], [0.0, 0.0])   // Left Up
                         ]
                     }
                 }
             },
             GeometryType::Circle(circle) => {
                 let mut vertices: Vec<Vertex> = Vec::new();
-                vertices.push(Vertex { position: [0.0, 0.0, 0.0], texture_coordinates: [0.5, 0.5] }); // Central Point
+                vertices.push(Vertex::build_default([0.0, 0.0, 0.0], [0.5, 0.5])); // Central Point
 
                 for i in 0..circle.number_of_segments {
                     let theta: f32 = 2.0 * std::f32::consts::PI * (i as f32) / (circle.number_of_segments as f32);
                     let x: f32 = circle.radius * theta.cos();
                     let y: f32 = circle.radius * theta.sin();
-                    vertices.push(Vertex { position: [x, y, 0.0], texture_coordinates: [0.5 + x, 0.5 + y] });
+                    vertices.push(Vertex::build_default([x, y, 0.0], [0.5 + x, 0.5 + y]));
                 }
                 vertices
             }
