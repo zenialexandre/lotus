@@ -34,7 +34,7 @@ pub mod audio;
 /// Camera related features.
 pub mod camera;
 
-/// Text related features.
+/// Text processing and rendering related features.
 pub mod text;
 
 /// Asset loading related features.

@@ -5,4 +5,4 @@ pub mod manager;
 pub mod cache;
 
 /// Rendering type related features.
-pub(crate) mod rendering_type;
+pub mod rendering_type;

@@ -4,7 +4,9 @@
 
 ## Project To-do List
 
-- Create native text rendering flow (stop using external libs).
+- Understand Gravity as a Component and not as a global Resource.
+
+- Use the Event Dispatcher for specific operations.
 
 - Custom shaders support.
 

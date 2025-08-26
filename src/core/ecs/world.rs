@@ -20,9 +20,9 @@ use super::{
         input::Input,
         draw_order::DrawOrder,
         visibility::Visibility,
-        text::{Text, TextRenderer, Font, Fonts},
-        managers::rendering::manager::RenderState,
-        physics::{collision::Collision, velocity::Velocity, transform::{Transform, Position, Strategy}, gravity::Gravity, rigid_body::{RigidBody, BodyType}}
+        text::{text::{Text, TextRenderer}, font::{Font, Fonts}},
+        managers::rendering::{manager::RenderState, cache::outbound_functions},
+        physics::{collision::Collision, velocity::Velocity, transform::{Transform, Position, Strategy}, gravity::Gravity, rigid_body::{RigidBody, BodyType}},
     },
     query::Query,
     entity::Entity,
@@ -115,7 +115,7 @@ impl World {
 
         if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
             if let Some(text_renderer) = self.get_text_renderer_mut(&fps_entity) {
-                text_renderer.update_content(current_fps.to_string(), render_state.queue.clone(), render_state.physical_size);
+                //text_renderer.update_content(current_fps.to_string(), render_state.queue.clone(), render_state.physical_size);
             }
         } else {
             let fps_text: Text = Text::new(
@@ -236,8 +236,8 @@ impl World {
                 -position.y,
                 0.0
             ));
-            let _ = render_state.get_projection_or_view_buffer(true, Some(&entity), &camera2d);
-            let _ = render_state.get_projection_or_view_buffer(false, Some(&entity), &camera2d);
+            let _ = outbound_functions::get_projection_or_view_buffer(render_state, true, Some(&entity), &camera2d);
+            let _ = outbound_functions::get_projection_or_view_buffer(render_state, false, Some(&entity), &camera2d);
         }
     }
 
@@ -342,19 +342,21 @@ impl World {
     }
 
     /// Returns the text renderer based on its entity.
+    ///
     /// Use this function when you need to access data of a text that was rendered.
     pub fn get_text_renderer(&self, entity: &Entity) -> Option<&TextRenderer> {
         return self.text_renderers.get(&entity.0);
     }
 
     /// Returns the text renderer based on its entity.
+    ///
     /// Use this function when you need to mutate data of a text that was rendered.
     pub fn get_text_renderer_mut(&mut self, entity: &Entity) -> Option<&mut TextRenderer> {
         return self.text_renderers.get_mut(&entity.0);
     }
 
-    /// Return an immutable reference to the specified resource
-    pub fn get_resource<T: Resource + 'static>(&self) -> Option<ResourceRef<T>> {
+    /// Return an immutable reference to the specified resource.
+    pub fn get_resource<T: Resource + 'static>(&self) -> Option<ResourceRef<'_, T>> {
         let type_id: TypeId = TypeId::of::<T>();
         let mut resource_borrow_state: AtomicRefMut<'_, ResourceBorrowState> = self.resource_borrow_state.borrow_mut();
 
@@ -375,8 +377,8 @@ impl World {
         }
     }
 
-    /// Return a mutable reference to the specified resource
-    pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<ResourceRefMut<T>> {
+    /// Return a mutable reference to the specified resource.
+    pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<ResourceRefMut<'_, T>> {
         let type_id: TypeId = TypeId::of::<T>();
         let mut resource_borrow_state: AtomicRefMut<'_, ResourceBorrowState> = self.resource_borrow_state.borrow_mut();
 

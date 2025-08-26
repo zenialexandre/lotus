@@ -1,4 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use glyph_brush::Rectangle;
+use image::{GenericImageView, DynamicImage};
+use anyhow::*;
 use wgpu::{
     TextureView,
     TextureDescriptor,
@@ -18,12 +20,6 @@ use wgpu::{
     Queue,
     Extent3d
 };
-use image::{
-    GenericImageView,
-    DynamicImage
-};
-use anyhow::*;
-use super::super::asset_loader::AssetLoader;
 
 /// Struct to represent a texture to be used on the rendering process.
 pub struct Texture {
@@ -103,6 +99,69 @@ impl Texture {
         });
     }
 
+    /// Returns a texture struct from a text.
+    pub fn from_text(
+        device: &Device,
+        queue: &Queue,
+        label: Option<&str>,
+        text_size: Rectangle<u32>,
+        text_data: &[u8]
+    ) -> Result<Self> {
+        let extend_3d: Extent3d = Extent3d {
+            width: text_size.width(),
+            height: text_size.height(),
+            depth_or_array_layers: 1,
+        };
+
+        let texture: wgpu::Texture = device.create_texture(&TextureDescriptor {
+            label,
+            size: extend_3d,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::R8Unorm,
+            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+
+        queue.write_texture(
+            TexelCopyTextureInfo {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d {
+                    x: text_size.min[0],
+                    y: text_size.min[1],
+                    z: 0,
+                },
+                aspect: TextureAspect::All,
+            },
+            text_data,
+            TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(text_size.width()),
+                rows_per_image: Some(text_size.height()),
+            },
+            extend_3d
+        );
+
+        let texture_view: TextureView = texture.create_view(&TextureViewDescriptor::default());
+        let sampler: Sampler = device.create_sampler(&SamplerDescriptor {
+            label: Some("Text Texture Sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+
+        return Ok(Self {
+            wgpu_texture: texture,
+            texture_view,
+            sampler,
+        });
+    }
+
     pub(crate) fn dummy(
         device: &Device,
         queue: &Queue,
@@ -139,7 +198,7 @@ impl Texture {
                 bytes_per_row: Some(4),
                 rows_per_image: Some(1),
             },
-            size,
+            size
         );
 
         let texture_view: TextureView = texture.create_view(&TextureViewDescriptor::default());
@@ -158,44 +217,5 @@ impl Texture {
             texture_view,
             sampler,
         });
-    }
-}
-
-/// Struct to represent the textures current on the application cache.
-pub struct TextureCache {
-    textures: HashMap<String, Arc<Texture>>
-}
-
-impl TextureCache {
-    pub(crate) const DUMMY_TEXTURE: &str = "dummy_texture";
-
-    /// Create a new texture cache cleaned.
-    pub fn new() -> Self {
-        return Self {
-            textures: HashMap::new()
-        };
-    }
-
-    /// Returns a texture from the cache based on the file path.
-    pub fn get_texture(&self, key: String) -> Option<Arc<Texture>> {
-        return self.textures.get(&key).cloned();
-    }
-
-    /// Add a texture to the cache and returns it afterwards.
-    pub fn load_texture(&mut self, key: String, device: &Device, queue: &Queue) -> Option<Arc<Texture>> {
-        if !self.textures.contains_key(&key) {
-            let texture: Texture;
-
-            if key != TextureCache::DUMMY_TEXTURE.to_string() {
-                let image: DynamicImage = image::load_from_memory(&AssetLoader::load_bytes(&key).ok().unwrap()).unwrap();
-                texture = Texture::from_image(device, queue, &image, Some(&key)).unwrap();
-            } else {
-                texture = Texture::dummy(device, queue, Some(&key)).unwrap();
-            }
-            let texture_arc: Arc<Texture> = Arc::new(texture);
-            self.textures.insert(key.clone(), Arc::clone(&texture_arc));
-            return Some(texture_arc);
-        }
-        return Some(self.get_texture(key).expect("Texture should be on cache."));
     }
 }
