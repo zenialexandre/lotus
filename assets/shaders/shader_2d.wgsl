@@ -1,46 +1,53 @@
 // Shader responsible for rendering 2D entities (Sprites and Shapes).
 
+const SHAPE: u32 = 0u;
+const BACKGROUND: u32 = 1u;
+const TEXTURE: u32 = 2u;
+//const TEXT: u32 = 3u; -> Not used yet.
+
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) texture_coordinates: vec2<f32>,
+    @location(2) color: vec4<f32>
 };
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) texture_coordinates: vec2<f32>,
+    @location(1) color: vec4<f32>
 };
 
-@group(0) @binding(0) var texture: texture_2d<f32>;
-@group(0) @binding(1) var texture_sampler: sampler;
-@group(0) @binding(2) var<uniform> is_background: u32;
-@group(0) @binding(3) var<uniform> is_texture: u32;
+@group(0) @binding(0) var<uniform> rendering_type: u32;
 
-@group(1) @binding(0) var<uniform> color: vec4<f32>;
+@group(1) @binding(0) var texture: texture_2d<f32>;
+@group(1) @binding(1) var texture_sampler: sampler;
 
 @group(2) @binding(0) var<uniform> transform: mat4x4<f32>;
 @group(2) @binding(1) var<uniform> projection: mat4x4<f32>;
 @group(2) @binding(2) var<uniform> view: mat4x4<f32>;
 
 @vertex
-fn vs_main(model: VertexInput) -> VertexOutput {
+fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
 
-    if (is_background == 1u) {
-        out.clip_position = vec4<f32>(model.position, 1.0);
+    if (rendering_type == BACKGROUND) {
+        out.clip_position = vec4<f32>(in.position, 1.0);
     } else {
-        out.clip_position = projection * view * transform * vec4<f32>(model.position, 1.0);
+        out.clip_position = projection * view * transform * vec4<f32>(in.position, 1.0);
     }
 
-    if (is_texture == 1u) {
-        out.texture_coordinates = model.texture_coordinates;   
+    if (rendering_type == TEXTURE || rendering_type == BACKGROUND) {
+        out.texture_coordinates = in.texture_coordinates;   
+    } else {
+        out.color = in.color;
     }
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    if (is_texture == 1u) {
+    if (rendering_type == TEXTURE || rendering_type == BACKGROUND) {
         return textureSample(texture, texture_sampler, in.texture_coordinates);
     }
-    return vec4(color[0], color[1], color[2], 1.0); // Applying Blending::REPLACE.
+    return vec4(in.color.rgb, 1.0); // Applying Blending::REPLACE.
 }

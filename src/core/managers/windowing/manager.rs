@@ -10,6 +10,7 @@ use std::sync::Arc;
 use super::super::{
     rendering::manager::RenderState,
     super::{
+        text::text::TextHolder,
         asset_loader::AssetLoader,
         camera::camera2d::Camera2d,
         ecs::{world::World, resource::{ResourceRef, ResourceRefMut}},
@@ -278,7 +279,8 @@ impl ApplicationHandler for Application {
                 },
                 WindowEvent::Resized(new_size) => {
                     let camera2d: ResourceRef<'_, Camera2d> = context.world.get_resource::<Camera2d>().unwrap();
-                    render_state.resize(new_size, &camera2d, &context.world.text_renderers);
+                    let text_holder: ResourceRef<'_, TextHolder> = context.world.get_resource::<TextHolder>().unwrap();
+                    render_state.resize(new_size, &camera2d, &text_holder.text_renderers);
                 },
                 WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
                     let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();

@@ -1,5 +1,5 @@
 //! This example is a show off about applied gravity.
-//! The gravity resource will be applied to all entities with the Velocity and RigidBody components.
+//! The Gravity component will be affect all entities with the Velocity and RigidBody components.
 //! Making use of the velocity and collision components, one sprite is coliding with a shape.
 //! After the collision, the sprite bounce until its stops based on its restitution value.
 
@@ -33,6 +33,7 @@ fn setup(context: &mut Context) {
             Vector2::new(0.50, 0.50)
         )),
         Box::new(Collision::new(Collider::new_simple(GeometryType::Square))),
+        Box::new(Gravity::new(0.0)),
         Box::new(Velocity::new(Vector2::new(0.2, 0.2))),
         Box::new(RigidBody::new(BodyType::Dynamic, 1.0, 0.9, 1.0))
     ]);
@@ -44,14 +45,12 @@ fn update(context: &mut Context) {
         input_ref.clone()
     };
 
-    if input.is_key_released(KeyCode::Enter) {
-        let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
-        gravity.enable();
-    }
+    let mut query: Query = Query::new(&context.world).with::<Gravity>();
+    let entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
 
-    if input.is_key_released(KeyCode::Escape) {
-        let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
-        gravity.disable();
+    if input.is_key_released(KeyCode::Enter) {
+        let mut gravity: ComponentRefMut<'_, Gravity> = context.world.get_entity_component_mut::<Gravity>(&entity).unwrap();
+        gravity.value = 9.8;
     }
     check_table_object_collision(context);
 }
