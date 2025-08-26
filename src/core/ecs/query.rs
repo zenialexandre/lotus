@@ -1,11 +1,6 @@
 use std::any::TypeId;
 use atomic_refcell::AtomicRefMut;
-
-use super::{
-    world::{Archetype, World},
-    component::Component,
-    entity::Entity
-};
+use super::{world::{Archetype, World}, component::Component, entity::Entity};
 
 /// Struct to represent the querys made on the world.
 pub struct Query<'a> {
@@ -92,7 +87,7 @@ impl<'a> Query<'a> {
         let mut results: Vec<(Entity, Vec<AtomicRefMut<'_, Box<dyn Component>>>)> = Vec::new();
 
         for (_, archetype) in &self.world.archetypes {
-            if self.parameters.iter().all(|param| archetype.components.contains_key(param)) {    
+            if self.parameters.iter().all(|param| archetype.components.contains_key(param)) {
                 for entity in &archetype.entities {
                     if let Some(components) = self.world.get_entity_components_mut(entity) {
                         results.push((*entity, components));

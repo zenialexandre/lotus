@@ -56,11 +56,11 @@ impl ComponentBorrowState {
 
 /// Struct to represent the immutable reference of a component.
 pub struct ComponentRef<'a, T: Component + 'static> {
-   pub inner: AtomicRef<'a, Box<dyn Component>>,
-   pub type_id: TypeId,
+   pub(crate) inner: AtomicRef<'a, Box<dyn Component>>,
+   pub(crate) type_id: TypeId,
    pub entity_id: Uuid,
-   pub component_borrow_state: &'a AtomicRefCell<ComponentBorrowState>,
-   pub phantom_data: std::marker::PhantomData<T>
+   pub(crate) component_borrow_state: &'a AtomicRefCell<ComponentBorrowState>,
+   pub(crate) phantom_data: std::marker::PhantomData<T>
 }
 
 impl<'a, T: Component + 'static> Deref for ComponentRef<'a, T> {
@@ -79,11 +79,11 @@ impl<'a, T: Component + 'static> Drop for ComponentRef<'a, T> {
 
 /// Struct to represent a mutable reference of a component.
 pub struct ComponentRefMut<'a, T: Component + 'static> {
-   pub inner: AtomicRefMut<'a, Box<dyn Component>>,
-   pub type_id: TypeId,
+   pub(crate) inner: AtomicRefMut<'a, Box<dyn Component>>,
+   pub(crate) type_id: TypeId,
    pub entity_id: Uuid,
-   pub component_borrow_state: &'a AtomicRefCell<ComponentBorrowState>,
-   pub phantom_data: std::marker::PhantomData<T>
+   pub(crate) component_borrow_state: &'a AtomicRefCell<ComponentBorrowState>,
+   pub(crate) phantom_data: std::marker::PhantomData<T>
 }
 
 impl<'a, T: Component + 'static> Deref for ComponentRefMut<'a, T> {

@@ -3,6 +3,7 @@ use lotus_proc_macros::Resource;
 use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
 use super::{
+    text::text::TextHolder,
     context::Context,
     input::Input,
     camera::camera2d::Camera2d,
@@ -51,7 +52,7 @@ impl GameLoop {
 
         context.delta = self.get_delta_as_seconds();
         context.commands.flush_commands(&mut context.world, &mut context.render_state);
-        context.world.synchronize_events();
+        context.world.synchronize_events(&context.render_state);
         context.world.synchronize_animations_of_entities(context.delta);
         context.world.synchronize_gravity_with_dynamic_bodies(&mut context.render_state, context.delta);
         context.world.synchronize_transformations_with_collisions();
@@ -93,10 +94,12 @@ impl GameLoop {
                 SurfaceError::Lost | SurfaceError::Outdated
             ) => {
                 let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
+                let text_holder: ResourceRef<'_, TextHolder> = world.get_resource::<TextHolder>().unwrap();
+
                 render_state.resize(
                     render_state.physical_size.as_ref().unwrap().clone(),
                     &camera2d,
-                    &world.text_renderers
+                    &text_holder.text_renderers
                 );
             },
             Err(

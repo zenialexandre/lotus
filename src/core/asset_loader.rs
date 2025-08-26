@@ -13,6 +13,7 @@ pub(crate) static ASSETS_DIR: Lazy<PathBuf> = Lazy::new(|| {
 });
 
 /// Struct to represent our asset loader.
+///
 /// The main purpose of this object is to relate the relative paths to the CARGO_MANIFEST_DIR.
 #[derive(Clone)]
 pub struct AssetLoader;

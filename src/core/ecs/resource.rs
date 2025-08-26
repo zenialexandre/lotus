@@ -51,10 +51,10 @@ impl ResourceBorrowState {
 
 /// Struct to represent the immutable reference of a resource.
 pub struct ResourceRef<'a, T: Resource + 'static> {
-   pub inner: AtomicRef<'a, Box<dyn Resource>>,
-   pub type_id: TypeId,
-   pub resource_borrow_state: &'a AtomicRefCell<ResourceBorrowState>,
-   pub phantom_data: std::marker::PhantomData<T>
+   pub(crate) inner: AtomicRef<'a, Box<dyn Resource>>,
+   pub(crate) type_id: TypeId,
+   pub(crate) resource_borrow_state: &'a AtomicRefCell<ResourceBorrowState>,
+   pub(crate) phantom_data: std::marker::PhantomData<T>
 }
 
 impl<'a, T: Resource + 'static> Deref for ResourceRef<'a, T> {
@@ -73,10 +73,10 @@ impl<'a, T: Resource + 'static> Drop for ResourceRef<'a, T> {
 
 /// Struct to represent a mutable reference of a resource.
 pub struct ResourceRefMut<'a, T: Resource + 'static> {
-   pub inner: AtomicRefMut<'a, Box<dyn Resource>>,
-   pub type_id: TypeId,
-   pub resource_borrow_state: &'a AtomicRefCell<ResourceBorrowState>,
-   pub phantom_data: std::marker::PhantomData<T>
+   pub(crate) inner: AtomicRefMut<'a, Box<dyn Resource>>,
+   pub(crate) type_id: TypeId,
+   pub(crate) resource_borrow_state: &'a AtomicRefCell<ResourceBorrowState>,
+   pub(crate) phantom_data: std::marker::PhantomData<T>
 }
 
 impl<'a, T: Resource + 'static> Deref for ResourceRefMut<'a, T> {

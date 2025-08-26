@@ -12,7 +12,7 @@ use lotus_proc_macros::Component;
 use uuid::Uuid;
 use super::{
     super::{
-        event_dispatcher::{EventDispatcher, EventType},
+        event_dispatcher::{EventDispatcher, EventType, SubEventType},
         animation::Animation,
         texture::sprite_sheet::{AnimationState, LoopingState},
         color::Color,
@@ -20,8 +20,8 @@ use super::{
         input::Input,
         draw_order::DrawOrder,
         visibility::Visibility,
-        text::{Text, TextRenderer, Font, Fonts},
-        managers::rendering::manager::RenderState,
+        text::{text::{Text, TextHolder, TextRenderer}, font::{Font, Fonts}},
+        managers::rendering::{cache, manager::RenderState},
         physics::{collision::Collision, velocity::Velocity, transform::{Transform, Position, Strategy}, gravity::Gravity, rigid_body::{RigidBody, BodyType}}
     },
     query::Query,
@@ -69,8 +69,7 @@ pub struct World {
     pub archetypes: HashMap<u64, Archetype>,
     pub resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>>,
     pub resource_borrow_state: AtomicRefCell<ResourceBorrowState>,
-    pub component_borrow_state: AtomicRefCell<ComponentBorrowState>,
-    pub text_renderers: HashMap<Uuid, TextRenderer>
+    pub component_borrow_state: AtomicRefCell<ComponentBorrowState>
 }
 
 impl World {
@@ -80,14 +79,13 @@ impl World {
         resources.insert(TypeId::of::<EventDispatcher>(), Arc::new(AtomicRefCell::new(Box::new(EventDispatcher::new()))));
         resources.insert(TypeId::of::<Input>(), Arc::new(AtomicRefCell::new(Box::new(Input::default()))));
         resources.insert(TypeId::of::<Camera2d>(), Arc::new(AtomicRefCell::new(Box::new(Camera2d::default()))));
-        resources.insert(TypeId::of::<Gravity>(), Arc::new(AtomicRefCell::new(Box::new(Gravity::default()))));
+        resources.insert(TypeId::of::<TextHolder>(), Arc::new(AtomicRefCell::new(Box::new(TextHolder::default()))));
 
         return Self {
             archetypes: HashMap::new(),
             resources,
             resource_borrow_state: ResourceBorrowState::new().into(),
-            component_borrow_state: ComponentBorrowState::new().into(),
-            text_renderers: HashMap::new()
+            component_borrow_state: ComponentBorrowState::new().into()
         };
     }
 
@@ -114,8 +112,10 @@ impl World {
         let mut query: Query = Query::new(&self).with::<Fps>();
 
         if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
-            if let Some(text_renderer) = self.get_text_renderer_mut(&fps_entity) {
-                text_renderer.update_content(current_fps.to_string(), render_state.queue.clone(), render_state.physical_size);
+            if let Some(mut text_holder) = self.get_resource_mut::<TextHolder>() {
+                if let Some(text_renderer) = text_holder.text_renderers.get_mut(&fps_entity.0) {
+                    text_renderer.content(current_fps.to_string(), render_state.queue.clone(), render_state.physical_size);
+                }
             }
         } else {
             let fps_text: Text = Text::new(
@@ -139,9 +139,10 @@ impl World {
             let text: &Text = components.iter()
                 .find_map(|component| component.as_any().downcast_ref::<Text>()
             ).unwrap();
+            let mut text_holder: ResourceRefMut<'_, TextHolder> = self.get_resource_mut::<TextHolder>().unwrap();
 
             let text_renderer: TextRenderer = TextRenderer::new(render_state, &text);
-            self.text_renderers.insert(entity.0, text_renderer);
+            text_holder.text_renderers.insert(entity.0, text_renderer);
         }
 
         let mut components_refs: Vec<AtomicRefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
@@ -194,20 +195,71 @@ impl World {
     }
 
     /// Synchronizes events that were dispatched in another process.
-    pub(crate) fn synchronize_events(&mut self) {
+    pub(crate) fn synchronize_events(&mut self, render_state: &RenderState) {
         let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = self.get_resource_mut::<EventDispatcher>().unwrap();
+        let events: Vec<_> = event_dispatcher.drain().into();
 
-        for event in event_dispatcher.drain() {
-            let mut transform: ComponentRefMut<'_, Transform> = self.get_entity_component_mut::<Transform>(&event.entity).unwrap();
+        for event in events {
+            match &event.event_type {
+                EventType::Transform(sub_event_type) => {
+                    let mut transform: ComponentRefMut<'_, Transform> = self.get_entity_component_mut::<Transform>(&event.entity).unwrap();
 
-            if event.event_type == EventType::UpdatePixelatedPosition {
-                transform.position.x = event.value.x;
-                transform.position.y = event.value.y;
-                transform.dirty_position = false;
-            } else if event.event_type == EventType::UpdatePixelatedScale {
-                transform.scale.x = event.value.x;
-                transform.scale.y = event.value.y;
-                transform.dirty_scale = false;
+                    if let Some(value) = event.get::<Vector2<f32>>() {
+                        if sub_event_type == &SubEventType::UpdatePixelatedPosition {
+                            transform.position.x = value.x;
+                            transform.position.y = value.y;
+                        } else {
+                            transform.scale.x = value.x;
+                            transform.scale.y = value.y;
+                        }
+                        transform.dirty_position = false;
+                    }
+                },
+                EventType::Text(sub_event_type) => {
+                    let mut text_holder: ResourceRefMut<'_, TextHolder> = self.get_resource_mut::<TextHolder>().unwrap();
+
+                    if let Some(text_renderer) = text_holder.text_renderers.get_mut(&event.entity.0) {
+                        match sub_event_type {
+                            SubEventType::UpdateTextFont => {
+                                if let Some(font) = event.get::<Font>() {
+                                    text_renderer.font(
+                                        font.clone(),
+                                        render_state.queue.clone(),
+                                        render_state.physical_size.clone()
+                                    );
+                                }
+                            },
+                            SubEventType::UpdateTextPosition => {
+                                if let Some(position) = event.get::<Position>() {
+                                    text_renderer.position(
+                                        position.clone(),
+                                        render_state.queue.clone(),
+                                        render_state.physical_size.clone()
+                                    );
+                                }
+                            },
+                            SubEventType::UpdateTextContent => {
+                                if let Some(content) = event.get::<String>() {
+                                    text_renderer.content(
+                                        content.clone(),
+                                        render_state.queue.clone(),
+                                        render_state.physical_size.clone()
+                                    );
+                                }
+                            },
+                            SubEventType::UpdateTextColor => {
+                                if let Some(color) = event.get::<Color>() {
+                                    text_renderer.color(
+                                        color.clone(),
+                                        render_state.queue.clone(),
+                                        render_state.physical_size.clone()
+                                    );
+                                }
+                            },
+                            _ => {}
+                        }
+                    }                    
+                }
             }
         }
     }
@@ -236,8 +288,18 @@ impl World {
                 -position.y,
                 0.0
             ));
-            let _ = render_state.get_projection_or_view_buffer(true, Some(&entity), &camera2d);
-            let _ = render_state.get_projection_or_view_buffer(false, Some(&entity), &camera2d);
+            let _ = cache::buffer::get_projection_or_view_buffer(
+                render_state,
+                true,
+                Some(&entity),
+                &camera2d
+            );
+            let _ = cache::buffer::get_projection_or_view_buffer(
+                render_state,
+                false,
+                Some(&entity),
+                &camera2d
+            );
         }
     }
 
@@ -272,23 +334,16 @@ impl World {
         }
     }
 
-    /// Synchronizes the gravity with dynamic bodies.
+    /// Synchronizes the gravity with entities that are considered dynamic bodies.
     pub fn synchronize_gravity_with_dynamic_bodies(&mut self, render_state: &mut RenderState, delta: f32) {
-        let gravity: Gravity = match self.get_resource::<Gravity>() {
-            Some(g) => g.clone(),
-            None => return
-        };
-
-        if !gravity.enabled || gravity.value == 0.0 {
-            return;
-        }
-
-        let mut query: Query<'_> = Query::new(self).with::<Transform>()
+        let mut query: Query<'_> = Query::new(self).with::<Gravity>()
+            .with::<Transform>()
             .with::<Velocity>()
             .with::<RigidBody>();
 
         for entity in query.entities_with_components().unwrap() {
-            if let (Some(mut transform), Some(mut velocity), Some(rigid_body)) = (
+            if let (Some(gravity), Some(mut transform), Some(mut velocity), Some(rigid_body)) = (
+                self.get_entity_component::<Gravity>(&entity),
                 self.get_entity_component_mut::<Transform>(&entity),
                 self.get_entity_component_mut::<Velocity>(&entity),
                 self.get_entity_component::<RigidBody>(&entity)
@@ -341,20 +396,8 @@ impl World {
         return default_hasher.finish();
     }
 
-    /// Returns the text renderer based on its entity.
-    /// Use this function when you need to access data of a text that was rendered.
-    pub fn get_text_renderer(&self, entity: &Entity) -> Option<&TextRenderer> {
-        return self.text_renderers.get(&entity.0);
-    }
-
-    /// Returns the text renderer based on its entity.
-    /// Use this function when you need to mutate data of a text that was rendered.
-    pub fn get_text_renderer_mut(&mut self, entity: &Entity) -> Option<&mut TextRenderer> {
-        return self.text_renderers.get_mut(&entity.0);
-    }
-
-    /// Return an immutable reference to the specified resource
-    pub fn get_resource<T: Resource + 'static>(&self) -> Option<ResourceRef<T>> {
+    /// Return an immutable reference to the specified resource.
+    pub fn get_resource<T: Resource + 'static>(&self) -> Option<ResourceRef<'_, T>> {
         let type_id: TypeId = TypeId::of::<T>();
         let mut resource_borrow_state: AtomicRefMut<'_, ResourceBorrowState> = self.resource_borrow_state.borrow_mut();
 
@@ -375,8 +418,8 @@ impl World {
         }
     }
 
-    /// Return a mutable reference to the specified resource
-    pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<ResourceRefMut<T>> {
+    /// Return a mutable reference to the specified resource.
+    pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<ResourceRefMut<'_, T>> {
         let type_id: TypeId = TypeId::of::<T>();
         let mut resource_borrow_state: AtomicRefMut<'_, ResourceBorrowState> = self.resource_borrow_state.borrow_mut();
 

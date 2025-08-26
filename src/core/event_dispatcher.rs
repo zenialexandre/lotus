@@ -1,36 +1,49 @@
-use std::{collections::VecDeque, mem::take};
-use cgmath::Vector2;
+use std::{any::Any, collections::VecDeque, mem::take};
 use lotus_proc_macros::Resource;
 use super::ecs::entity::Entity;
 
-/// Enumerator to represent the different types of events.
+/// Enumerator to represent the different types of MACRO events.
 #[derive(Clone, PartialEq)]
 pub(crate) enum EventType {
+    Transform(SubEventType),
+    Text(SubEventType)
+}
+
+/// Enumerator to represent the different types of MICRO events.
+#[derive(Clone, PartialEq)]
+pub(crate) enum SubEventType {
     UpdatePixelatedPosition,
-    UpdatePixelatedScale
+    UpdatePixelatedScale,
+    UpdateTextFont,
+    UpdateTextPosition,
+    UpdateTextContent,
+    UpdateTextColor
 }
 
 /// Struct to represent an event to be dispatched.
-#[derive(Clone, PartialEq)]
 pub(crate) struct Event {
     pub(crate) entity: Entity,
     pub(crate) event_type: EventType,
-    pub(crate) value: Vector2<f32>
+    pub(crate) value: Box<dyn Any + Send + Sync>
 }
 
 impl Event {
     /// Create a new event struct.
-    pub(crate) fn new(entity: Entity, event_type: EventType, value: Vector2<f32>) -> Self {
+    pub(crate) fn new<T: Any + Send + Sync>(entity: Entity, event_type: EventType, value: T) -> Self {
         return Self {
             entity,
             event_type,
-            value
+            value: Box::new(value)
         };
+    }
+
+    pub(crate) fn get<T: Any>(&self) -> Option<&T> {
+        self.value.downcast_ref::<T>()
     }
 }
 
 /// Struct to represent the event dispatcher.
-#[derive(Clone, Resource)]
+#[derive(Resource)]
 pub(crate) struct EventDispatcher {
     pub(crate) events: VecDeque<Event>
 }

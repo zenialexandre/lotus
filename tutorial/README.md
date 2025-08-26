@@ -267,8 +267,8 @@ fn update(context: &mut Context) {
 ### How About Some Physics?
 
 Lotus supports collision detection using the AABB algorithm. <br>
-And the concept of gravity can be enabled using our Gravity global resource! <br>
-Let's create an small example of collision detection between two entities and enable the force of gravity.
+And the concept of gravity can be enabled using our Gravity component! <br>
+Let's create an small example of collision detection between two entities and use the force of gravity.
 
 ```rust
 use lotus_engine::*;
@@ -311,6 +311,8 @@ fn setup(context: &mut Context) {
             Vector2::new(0.50, 0.50)
         )),
         Box::new(Collision::new(Collider::new_simple(GeometryType::Square))),
+        // Gravity created with a specific value.
+        Box::new(Gravity::new(0.0)),
         Box::new(Velocity::new(Vector2::new(0.2, 0.2))),
         // The first parameter is the type of the body, in this case: Dynamic.
         // The next parameter is the mass of the body (it will affect movement after collisions with other objects with mass).
@@ -326,18 +328,15 @@ fn update(context: &mut Context) {
         input_ref.clone()
     };
 
-    // Gravity is a global resource in our world.
-    // It starts disabled and with 9.8 as its value of force (default value of Earth).
-    // So if you want it to act, enable it!
-    if input.is_key_released(KeyCode::Enter) {
-        let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
-        gravity.enable();
-    }
+    let mut query: Query = Query::new(&context.world).with::<Gravity>();
+    let entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
 
-    // As you can see, you can control the gravity acting state freely.
-    if input.is_key_released(KeyCode::Escape) {
-        let mut gravity: ResourceRefMut<'_, Gravity> = context.world.get_resource_mut::<Gravity>().unwrap();
-        gravity.disable();
+    // Using the query above, we can search for the entities that have the Gravity component.
+    // After releasing the specified key, our component of a entity is set to the default value of Earth.
+    if input.is_key_released(KeyCode::Enter) {
+        let mut gravity: ComponentRefMut<'_, Gravity> = context.world.get_entity_component_mut::<Gravity>(&entity).unwrap();
+        // Now you can see that the ball starts falling!
+        gravity.value = 9.8;
     }
 
     // This is our helper function to check collisions!
