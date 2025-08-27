@@ -186,7 +186,7 @@ impl RenderState {
             entries: &[
                 BindGroupLayoutEntry{
                     binding: 0,
-                    visibility: ShaderStages::VERTEX_FRAGMENT,
+                    visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -362,9 +362,9 @@ impl RenderState {
                 0.0,
                 1.0
             );
-            render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
 
             if let Some(background_image_path) = &self.background_image_path {
+                render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                 let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
                 self.setup_rendering_2d(
                     &mut event_dispatcher,
@@ -399,6 +399,7 @@ impl RenderState {
 
                     if let Some(animation) = animation {
                         if !animation.playing_stack.is_empty() {
+                            render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                             self.setup_rendering_2d(
                                 &mut event_dispatcher,
                                 Some(&entity),
@@ -418,6 +419,7 @@ impl RenderState {
                     }
 
                     if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
+                        render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                         self.setup_rendering_2d(
                             &mut event_dispatcher,
                             Some(&entity),
@@ -433,6 +435,7 @@ impl RenderState {
                             self.apply_render_pass_with_values(&mut render_pass);
                         }
                     } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
+                        render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
                         self.setup_rendering_2d(
                             &mut event_dispatcher,
                             Some(&entity),

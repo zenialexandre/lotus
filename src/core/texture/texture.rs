@@ -121,7 +121,7 @@ impl Texture {
             dimension: TextureDimension::D2,
             format: TextureFormat::Rgba8UnormSrgb,
             usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
-            view_formats: &[],
+            view_formats: &[]
         });
 
         queue.write_texture(
@@ -135,9 +135,9 @@ impl Texture {
             TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: Some(4),
-                rows_per_image: Some(1),
+                rows_per_image: Some(1)
             },
-            size,
+            size
         );
 
         let texture_view: TextureView = texture.create_view(&TextureViewDescriptor::default());
@@ -154,7 +154,7 @@ impl Texture {
         return Ok(Self {
             wgpu_texture: texture,
             texture_view,
-            sampler,
+            sampler
         });
     }
 }
