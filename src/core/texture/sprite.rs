@@ -8,7 +8,8 @@ use super::super::{
     }
 };
 
-/// # Struct to represent a sprite with its data.
+/// Struct to represent a sprite with its data.
+///
 /// A sprite is represented as two triangles, or a square.
 #[derive(Clone, Debug, Component)]
 pub struct Sprite {

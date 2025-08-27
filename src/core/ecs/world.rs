@@ -208,11 +208,12 @@ impl World {
                         if sub_event_type == &SubEventType::UpdatePixelatedPosition {
                             transform.position.x = value.x;
                             transform.position.y = value.y;
+                            transform.dirty_position = false;
                         } else {
                             transform.scale.x = value.x;
                             transform.scale.y = value.y;
+                            transform.dirty_scale = false;
                         }
-                        transform.dirty_position = false;
                     }
                 },
                 EventType::Text(sub_event_type) => {

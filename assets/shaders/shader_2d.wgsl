@@ -35,19 +35,15 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     } else {
         out.clip_position = projection * view * transform * vec4<f32>(in.position, 1.0);
     }
-
-    if (rendering_type == TEXTURE || rendering_type == BACKGROUND) {
-        out.texture_coordinates = in.texture_coordinates;   
-    } else {
-        out.color = in.color;
-    }
+    out.texture_coordinates = in.texture_coordinates;
+    out.color = in.color;
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     if (rendering_type == TEXTURE || rendering_type == BACKGROUND) {
-        return textureSample(texture, texture_sampler, in.texture_coordinates);
+        return textureSample(texture, texture_sampler, in.texture_coordinates) * in.color;
     }
     return vec4(in.color.rgb, 1.0); // Applying Blending::REPLACE.
 }
