@@ -4,6 +4,8 @@
 
 ## Project To-do List
 
+0 - Refactor ECS code structure for better reading.
+
 1 - Implement Batch Rendering.
 
 2 - Custom shaders support.
