@@ -4,12 +4,14 @@
 
 ## Project To-do List
 
-- Create native text rendering flow (stop using external libs).
+1 - Implement Batch Rendering.
 
-- Custom shaders support.
+2 - Custom shaders support.
 
-- UI creations related system.
+3 - Tilesets/Tilemaps handling and rendering.
 
-- Tilesets/Tilemaps handling and rendering.
+4 - Create native text rendering flow (stop using external libs).
 
-- Create own GUI Editor.
+5 - UI creations related system.
+
+6 - Create own GUI Editor.
