@@ -158,6 +158,8 @@ pub use core::draw_order::*;
 pub use core::audio::audio_source::*;
 pub use core::audio::audio_error::*;
 pub use core::ecs::world::*;
+pub use core::ecs::archetype::*;
+pub use core::ecs::command::*;
 pub use core::ecs::entity::*;
 pub use core::ecs::component::*;
 pub use core::ecs::resource::*;
