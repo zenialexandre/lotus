@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use atomic_refcell::AtomicRefMut;
-use super::{world::{Archetype, World}, component::Component, entity::Entity};
+use super::{world::World, archetype::Archetype, component::Component, entity::Entity};
 
 /// Struct to represent the querys made on the world.
 pub struct Query<'a> {

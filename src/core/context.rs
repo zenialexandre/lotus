@@ -1,6 +1,6 @@
 use super::{
     managers::windowing::manager::WindowConfiguration,
-    ecs::world::{World, Commands},
+    ecs::{world::World, command::Commands},
     managers::rendering::manager::RenderState,
     game_loop::GameLoopListener
 };
