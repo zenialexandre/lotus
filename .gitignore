@@ -1,3 +1,16 @@
-/target
-
+# Lotus related
 lotus_proc_macros/target
+
+# Rust build artifacts
+/target
+target
+crates/**/target
+benches/**/target
+tools/**/target
+**/*.rs.bk
+rustc-ice-*.txt
+
+# Cargo
+Cargo.lock
+.cargo/config
+.cargo/config.toml
