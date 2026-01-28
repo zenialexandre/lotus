@@ -13,6 +13,7 @@ use wgpu::{
     TextureViewDescriptor,
     AddressMode,
     FilterMode,
+    MipmapFilterMode,
     Device,
     Queue,
     Extent3d
@@ -90,7 +91,7 @@ impl Texture {
             address_mode_w: AddressMode::ClampToEdge,
             mag_filter: FilterMode::Nearest,
             min_filter: FilterMode::Nearest,
-            mipmap_filter: FilterMode::Nearest,
+            mipmap_filter: MipmapFilterMode::Nearest,
             ..Default::default()
         });
 
@@ -147,7 +148,7 @@ impl Texture {
             address_mode_w: AddressMode::ClampToEdge,
             mag_filter: FilterMode::Linear,
             min_filter: FilterMode::Linear,
-            mipmap_filter: FilterMode::Nearest,
+            mipmap_filter: MipmapFilterMode::Nearest,
             ..Default::default()
         });
 
