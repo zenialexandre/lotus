@@ -132,7 +132,8 @@ impl RenderState {
                 required_limits: Limits::default(),
                 label: None,
                 memory_hints: Default::default(),
-                trace: Trace::Off
+                trace: Trace::Off,
+                experimental_features: ExperimentalFeatures::disabled()
             }
         ).await.unwrap();
 
@@ -352,7 +353,8 @@ impl RenderState {
                 })],
                 depth_stencil_attachment: None,
                 occlusion_query_set: None,
-                timestamp_writes: None
+                timestamp_writes: None,
+                multiview_mask: None
             });
             render_pass.set_viewport(
                 0.0,
@@ -848,7 +850,7 @@ impl RenderState {
         let render_pipeline_layout: PipelineLayout = self.device.as_ref().unwrap().create_pipeline_layout(&PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &bind_group_layouts[..],
-            push_constant_ranges: &[]
+            immediate_size: 0
         });
         let render_pipeline: RenderPipeline = self.device.as_ref().unwrap().create_render_pipeline(&RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
@@ -895,7 +897,7 @@ impl RenderState {
                 mask: !0,
                 alpha_to_coverage_enabled: false
             },
-            multiview: None,
+            multiview_mask: None,
             cache: None
         });
         return render_pipeline;
