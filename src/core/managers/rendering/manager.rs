@@ -3,6 +3,7 @@ use uuid::Uuid;
 use atomic_refcell::AtomicRefMut;
 use cgmath::{ortho, Matrix4, SquareMatrix};
 use wgpu_text::glyph_brush::Section;
+use winit::event_loop::ActiveEventLoop;
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 use std::{collections::HashMap, sync::Arc};
 use super::cache::{self, buffer::BufferCache, bind_group::BindGroupCache};
@@ -112,9 +113,12 @@ impl RenderState {
     /// Create a new asynchronous rendering state for the window.
     pub async fn new(window: Arc<Window>, present_mode: PresentMode) -> Self {
         let physical_size: PhysicalSize<u32> = window.inner_size();
-        let instance: Instance = Instance::new(&InstanceDescriptor{
+        let instance: Instance = Instance::new(InstanceDescriptor{
             backends: Backends::PRIMARY,
-            ..Default::default()
+            backend_options: BackendOptions::from_env_or_default(),
+            flags: InstanceFlags::default(),
+            memory_budget_thresholds: MemoryBudgetThresholds::default(),
+            display: None
         });
 
         let surface: Surface = instance.create_surface(window.clone()).expect("Failed to create WGPU Surface.");
@@ -257,7 +261,7 @@ impl RenderState {
         });
 
         let render_pipeline_2d: RenderPipeline = render_state.get_render_pipeline(
-            vec![&rendering_type_bind_group_layout, &texture_bind_group_layout, &transform_bind_group_layout],
+            vec![Some(&rendering_type_bind_group_layout), Some(&texture_bind_group_layout), Some(&transform_bind_group_layout)],
             SHADER_2D
         );
 
@@ -328,141 +332,165 @@ impl RenderState {
     }
 
     /// Execute the rendering process.
-    pub fn render(&mut self, world: &mut World) -> Result<(), SurfaceError> {
-        let surface_texture: SurfaceTexture = self.surface.as_ref().unwrap().get_current_texture()?;
-        let texture_view: TextureView = surface_texture.texture.create_view(&TextureViewDescriptor::default());
-        let mut command_encoder: CommandEncoder = self.device.as_ref().unwrap().create_command_encoder(&CommandEncoderDescriptor {
-            label: Some("Render Encoder")
-        });
-        self.prepare_text_rendering(world);
-
-        {
-            let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
-            let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = world.get_resource_mut::<EventDispatcher>().unwrap();
-            let text_holder: ResourceRef<'_, TextHolder> = world.get_resource::<TextHolder>().unwrap();
-            let mut render_pass: RenderPass<'_> = command_encoder.begin_render_pass(&RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(RenderPassColorAttachment {
-                    depth_slice: None,
-                    view: &texture_view,
-                    resolve_target: None,
-                    ops: Operations {
-                        load: LoadOp::Clear(color::Color::to_wgpu(self.color.unwrap_or_else(|| color::Color::WHITE))),
-                        store: StoreOp::Store
-                    },
-                })],
-                depth_stencil_attachment: None,
-                occlusion_query_set: None,
-                timestamp_writes: None,
-                multiview_mask: None
-            });
-            render_pass.set_viewport(
-                0.0,
-                0.0,
-                self.physical_size.as_ref().unwrap().width as f32,
-                self.physical_size.as_ref().unwrap().height as f32,
-                0.0,
-                1.0
-            );
-
-            if let Some(background_image_path) = &self.background_image_path {
-                render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
-                self.setup_rendering_2d(
-                    &mut event_dispatcher,
-                    None,
-                    Some(&background_sprite),
-                    None,
-                    None,
-                    None,
-                    &camera2d,
-                    true
-                );
-                self.apply_render_pass_with_values(&mut render_pass);
-            }
-
-            let mut entities_to_render_sorted: Vec<Entity> = self.entities_to_render.clone();
-            if entities_to_render_sorted.len() > 1 {
-                entities_to_render_sorted.sort_by(|a, b| {
-                    DrawOrder::compare(world, a, b)
+    pub fn render(&mut self, world: &mut World, event_loop: &ActiveEventLoop) {
+        match self.surface.as_ref().unwrap().get_current_texture() {
+            CurrentSurfaceTexture::Success(surface_texture) => {
+                let texture_view: TextureView = surface_texture.texture.create_view(&TextureViewDescriptor::default());
+                let mut command_encoder: CommandEncoder = self.device.as_ref().unwrap().create_command_encoder(&CommandEncoderDescriptor {
+                    label: Some("Render Encoder")
                 });
-            }
+                self.prepare_text_rendering(world);
 
-            for entity in entities_to_render_sorted.clone() {
-                if world.is_entity_alive(entity) {
-                    let is_entity_visible: bool = world.is_entity_visible(entity);
-                    let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
-                    let transform: Option<&Transform> = components.iter().find_map(
-                        |component| component.as_any().downcast_ref::<Transform>()
+                {
+                    let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
+                    let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = world.get_resource_mut::<EventDispatcher>().unwrap();
+                    let text_holder: ResourceRef<'_, TextHolder> = world.get_resource::<TextHolder>().unwrap();
+                    let mut render_pass: RenderPass<'_> = command_encoder.begin_render_pass(&RenderPassDescriptor {
+                        label: Some("Render Pass"),
+                        color_attachments: &[Some(RenderPassColorAttachment {
+                            depth_slice: None,
+                            view: &texture_view,
+                            resolve_target: None,
+                            ops: Operations {
+                                load: LoadOp::Clear(color::Color::to_wgpu(self.color.unwrap_or_else(|| color::Color::WHITE))),
+                                store: StoreOp::Store
+                            },
+                        })],
+                        depth_stencil_attachment: None,
+                        occlusion_query_set: None,
+                        timestamp_writes: None,
+                        multiview_mask: None
+                    });
+                    render_pass.set_viewport(
+                        0.0,
+                        0.0,
+                        self.physical_size.as_ref().unwrap().width as f32,
+                        self.physical_size.as_ref().unwrap().height as f32,
+                        0.0,
+                        1.0
                     );
-                    let animation: Option<&Animation> = components.iter().find_map(
-                        |component| component.as_any().downcast_ref::<Animation>()
-                    );
 
-                    if let Some(animation) = animation {
-                        if !animation.playing_stack.is_empty() {
-                            render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                            self.setup_rendering_2d(
-                                &mut event_dispatcher,
-                                Some(&entity),
-                                None,
-                                None,
-                                transform,
-                                Some(animation),
-                                &camera2d,
-                                false
-                            );
-
-                            if is_entity_visible {
-                                self.apply_render_pass_with_values(&mut render_pass);
-                            }
-                            continue;
-                        }
+                    if let Some(background_image_path) = &self.background_image_path {
+                        render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
+                        let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
+                        self.setup_rendering_2d(
+                            &mut event_dispatcher,
+                            None,
+                            Some(&background_sprite),
+                            None,
+                            None,
+                            None,
+                            &camera2d,
+                            true
+                        );
+                        self.apply_render_pass_with_values(&mut render_pass);
                     }
 
-                    if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
-                        render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                        self.setup_rendering_2d(
-                            &mut event_dispatcher,
-                            Some(&entity),
-                            Some(sprite),
-                            None,
-                            transform,
-                            animation,
-                            &camera2d,
-                            false
-                        );
+                    let mut entities_to_render_sorted: Vec<Entity> = self.entities_to_render.clone();
+                    if entities_to_render_sorted.len() > 1 {
+                        entities_to_render_sorted.sort_by(|a, b| {
+                            DrawOrder::compare(world, a, b)
+                        });
+                    }
 
-                        if is_entity_visible {
-                            self.apply_render_pass_with_values(&mut render_pass);
-                        }
-                    } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
-                        render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                        self.setup_rendering_2d(
-                            &mut event_dispatcher,
-                            Some(&entity),
-                            None,
-                            Some(shape),
-                            transform,
-                            None,
-                            &camera2d,
-                            false
-                        );
+                    for entity in entities_to_render_sorted.clone() {
+                        if world.is_entity_alive(entity) {
+                            let is_entity_visible: bool = world.is_entity_visible(entity);
+                            let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
+                            let transform: Option<&Transform> = components.iter().find_map(
+                                |component| component.as_any().downcast_ref::<Transform>()
+                            );
+                            let animation: Option<&Animation> = components.iter().find_map(
+                                |component| component.as_any().downcast_ref::<Animation>()
+                            );
 
-                        if is_entity_visible {
-                            self.apply_render_pass_with_values(&mut render_pass);
-                        }
-                    } else if let Some(text_renderer) = text_holder.text_renderers.get(&entity.0) {
-                        if is_entity_visible {
-                            text_renderer.text_brush.draw(&mut render_pass);
+                            if let Some(animation) = animation {
+                                if !animation.playing_stack.is_empty() {
+                                    render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
+                                    self.setup_rendering_2d(
+                                        &mut event_dispatcher,
+                                        Some(&entity),
+                                        None,
+                                        None,
+                                        transform,
+                                        Some(animation),
+                                        &camera2d,
+                                        false
+                                    );
+
+                                    if is_entity_visible {
+                                        self.apply_render_pass_with_values(&mut render_pass);
+                                    }
+                                    continue;
+                                }
+                            }
+
+                            if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
+                                render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
+                                self.setup_rendering_2d(
+                                    &mut event_dispatcher,
+                                    Some(&entity),
+                                    Some(sprite),
+                                    None,
+                                    transform,
+                                    animation,
+                                    &camera2d,
+                                    false
+                                );
+
+                                if is_entity_visible {
+                                    self.apply_render_pass_with_values(&mut render_pass);
+                                }
+                            } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
+                                render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
+                                self.setup_rendering_2d(
+                                    &mut event_dispatcher,
+                                    Some(&entity),
+                                    None,
+                                    Some(shape),
+                                    transform,
+                                    None,
+                                    &camera2d,
+                                    false
+                                );
+
+                                if is_entity_visible {
+                                    self.apply_render_pass_with_values(&mut render_pass);
+                                }
+                            } else if let Some(text_renderer) = text_holder.text_renderers.get(&entity.0) {
+                                if is_entity_visible {
+                                    text_renderer.text_brush.draw(&mut render_pass);
+                                }
+                            }
                         }
                     }
                 }
+                self.queue.as_ref().unwrap().submit(std::iter::once(command_encoder.finish()));
+                surface_texture.present();
+            },
+            CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded | CurrentSurfaceTexture::Outdated => {
+                log::warn!("Surface timeout, occluded or outdated");
+            },
+            CurrentSurfaceTexture::Suboptimal(_) => {
+                log::warn!("Surface suboptimal -> Resizing the frame");
+                let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
+                let text_holder: ResourceRef<'_, TextHolder> = world.get_resource::<TextHolder>().unwrap();
+
+                self.resize(
+                    self.physical_size.as_ref().unwrap().clone(),
+                    &camera2d,
+                    &text_holder.text_renderers
+                );
+            },
+            CurrentSurfaceTexture::Lost => {
+                log::error!("Surface lost error!");
+                event_loop.exit();
+            },
+            CurrentSurfaceTexture::Validation => {
+                log::error!("Surface validation error!");
+                event_loop.exit();
             }
         }
-        self.queue.as_ref().unwrap().submit(std::iter::once(command_encoder.finish()));
-        surface_texture.present();
-        return Ok(());
     }
 
     pub(crate) fn prepare_text_rendering(&mut self, world: &mut World) {
@@ -842,7 +870,7 @@ impl RenderState {
         return (transform_bind_group, projection_buffer, view_buffer);
     }
 
-    pub(crate) fn get_render_pipeline(&self, bind_group_layouts: Vec<&BindGroupLayout>, shader_source: &str) -> RenderPipeline {
+    pub(crate) fn get_render_pipeline(&self, bind_group_layouts: Vec<Option<&BindGroupLayout>>, shader_source: &str) -> RenderPipeline {
         let shader_module: ShaderModule = self.device.as_ref().unwrap().create_shader_module(ShaderModuleDescriptor {
             label: Some("Shader Module"),
             source: ShaderSource::Wgsl(shader_source.into())

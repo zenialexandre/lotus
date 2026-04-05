@@ -1,5 +1,5 @@
 use lotus_engine::*;
-use rand::{rng, rngs::ThreadRng, Rng};
+use rand::{RngExt, rng, rngs::ThreadRng};
 
 #[derive(Clone, Component)]
 struct Object();

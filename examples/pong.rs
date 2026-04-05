@@ -6,7 +6,7 @@
 //! The input is used for mapping the users keyboard actions.
 
 use lotus_engine::*;
-use rand::{rngs::ThreadRng, Rng};
+use rand::{RngExt, rngs::ThreadRng};
 use std::time::Duration;
 
 #[derive(Component)]

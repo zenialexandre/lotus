@@ -1,14 +1,11 @@
 use std::time::{Duration, Instant};
 use lotus_proc_macros::Resource;
-use wgpu::SurfaceError;
 use winit::event_loop::ActiveEventLoop;
 use super::{
-    text::text::TextHolder,
     context::Context,
     input::Input,
-    camera::camera2d::Camera2d,
     managers::rendering::manager::RenderState,
-    ecs::{world::World, resource::{ResourceRef, ResourceRefMut}}
+    ecs::{world::World, resource::ResourceRefMut}
 };
 
 /// Enumerator to store the engine current state.
@@ -87,32 +84,7 @@ impl GameLoop {
 
     /// Call the rendering process.
     pub fn render(&self, render_state: &mut RenderState, world: &mut World, event_loop: &ActiveEventLoop) {
-        match render_state.render(world) {
-            Ok(_) => {}
-
-            Err(
-                SurfaceError::Lost | SurfaceError::Outdated
-            ) => {
-                let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
-                let text_holder: ResourceRef<'_, TextHolder> = world.get_resource::<TextHolder>().unwrap();
-
-                render_state.resize(
-                    render_state.physical_size.as_ref().unwrap().clone(),
-                    &camera2d,
-                    &text_holder.text_renderers
-                );
-            },
-            Err(
-                SurfaceError::OutOfMemory | SurfaceError::Other
-            ) => {
-                log::error!("Application OOMKilled.");
-                event_loop.exit();
-            }
-
-            Err(SurfaceError::Timeout) => {
-                log::warn!("Surface Timeout.")
-            }
-        }
+        render_state.render(world, event_loop);
     }
 
     /// Returns delta as a Duration struct.
