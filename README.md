@@ -1,9 +1,10 @@
+![lotus_pink_256x256_aligned](https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f)
+--------------
+
 [![Licence](https://img.shields.io/github/license/zenialexandre/lotus?color=%23537aed)](https://github.com/zenialexandre/lotus/blob/master/LICENSE)
 [![crates.io](https://img.shields.io/crates/v/lotus_engine?logo=rust&logoColor=%23bf7d36)](https://crates.io/crates/lotus_engine)
 [![Documentation](https://img.shields.io/docsrs/lotus_engine)](https://docs.rs/lotus_engine)
-
-![lotus_pink_256x256_aligned](https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f)
---------------
+[![Downloads](https://img.shields.io/crates/d/lotus_engine.svg)](https://crates.io/crates/lotus_engine)
 
 Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.  
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
