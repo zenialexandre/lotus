@@ -3,7 +3,7 @@
 //! Inside the 'update' function, each text component is mutated in a certain way.
 
 use lotus_engine::*;
-use rand::{rngs::ThreadRng, Rng};
+use rand::{RngExt, rngs::ThreadRng};
 use uuid::Uuid;
 
 const TEXT_SIZE: f32 = 65.0;

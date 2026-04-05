@@ -5,7 +5,7 @@
 
 use lotus_engine::*;
 use std::time::Duration;
-use rand::{rngs::ThreadRng, Rng};
+use rand::{RngExt, rngs::ThreadRng};
 
 #[derive(Clone, Component)]
 pub struct Player();
