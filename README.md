@@ -3,7 +3,6 @@
     <img src="https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f" alt="Lotus logo" width="256">
   </p>
 </h1>
---------------
 
 [![Licence](https://img.shields.io/github/license/zenialexandre/lotus?color=%23537aed)](https://github.com/zenialexandre/lotus/blob/master/LICENSE)
 [![crates.io](https://img.shields.io/crates/v/lotus_engine?logo=rust&logoColor=%23bf7d36)](https://crates.io/crates/lotus_engine)
