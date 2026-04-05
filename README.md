@@ -1,6 +1,6 @@
 <h1>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f" alt="Lotus logo" width="128">
+  <img src="https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f" alt="Lotus logo" width="512">
   <br>Lotus
 </h1>
 --------------
