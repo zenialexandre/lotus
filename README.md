@@ -1,7 +1,8 @@
 <h1>
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f" alt="Lotus logo" width="256">
-  <br>Lotus
+  <p align="center">
+    <img src="https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f" alt="Lotus logo" width="256">
+    <br>Lotus
+  </p>
 </h1>
 --------------
 [![Licence](https://img.shields.io/github/license/zenialexandre/lotus?color=%23537aed)](https://github.com/zenialexandre/lotus/blob/master/LICENSE)
