@@ -1,6 +1,5 @@
 use wgpu::*;
 use uuid::Uuid;
-use atomic_refcell::AtomicRefMut;
 use cgmath::{ortho, Matrix4, SquareMatrix};
 use wgpu_text::glyph_brush::Section;
 use winit::event_loop::ActiveEventLoop;
@@ -9,17 +8,16 @@ use std::{collections::HashMap, sync::Arc};
 use super::cache::{self, buffer::BufferCache, bind_group::BindGroupCache};
 use super::rendering_type::RenderingType;
 use super::super::super::{
-    color,
-    event_dispatcher::{EventDispatcher, Event, EventType, SubEventType},
+    super::{ColorOption},
+    event::dispatcher::{EventDispatcher, Event, EventType, SubEventType},
     shape::{Orientation, Shape, GeometryType},
     physics::transform::{Transform, Strategy},
-    draw_order::DrawOrder,
     texture,
     texture::{cache::TextureCache, sprite::Sprite, sprite_sheet::SpriteSheet},
     animation::Animation,
     text::text::{TextHolder, TextRenderer},
     camera::camera2d::Camera2d,
-    ecs::{entity::Entity, world::World, component::Component, resource::{ResourceRef, ResourceRefMut}}
+    ecs::{entity::Entity, world::World}
 };
 use crate::utils::constants::{shader::SHADER_2D, cache::{RENDERING_TYPE_BUFFER, DUMMY_TEXTURE}};
 
@@ -28,7 +26,7 @@ use crate::utils::constants::{shader::SHADER_2D, cache::{RENDERING_TYPE_BUFFER, 
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     pub position: [f32; 3],
-    pub texture_coordinates: [f32; 2],
+    pub uv_coordinates: [f32; 2],
     pub color: [f32; 4]
 }
 
@@ -55,7 +53,7 @@ pub struct RenderState {
     pub queue: Option<Queue>,
     pub surface_configuration: Option<SurfaceConfiguration>,
     pub physical_size: Option<PhysicalSize<u32>>,
-    pub color: Option<color::Color>,
+    pub color: Option<crate::core::color::color::Color>,
     pub background_image_path: Option<String>,
     pub window: Option<Arc<Window>>,
     pub render_pipeline_2d: Option<RenderPipeline>,
@@ -79,6 +77,7 @@ pub struct RenderState {
 
 impl RenderState {
     /// Create a dummy rendering state.
+    ///
     /// Mainly for testing purposes.
     pub fn dummy() -> Self {
         return Self {
@@ -111,14 +110,14 @@ impl RenderState {
     }
 
     /// Create a new asynchronous rendering state for the window.
-    pub async fn new(window: Arc<Window>, present_mode: PresentMode) -> Self {
+    pub async fn new(window: Arc<Window>, present_mode: PresentMode, event_loop: &ActiveEventLoop) -> Self {
         let physical_size: PhysicalSize<u32> = window.inner_size();
         let instance: Instance = Instance::new(InstanceDescriptor{
             backends: Backends::PRIMARY,
             backend_options: BackendOptions::from_env_or_default(),
             flags: InstanceFlags::default(),
             memory_budget_thresholds: MemoryBudgetThresholds::default(),
-            display: None
+            display: Some(Box::new(event_loop.owned_display_handle()))
         });
 
         let surface: Surface = instance.create_surface(window.clone()).expect("Failed to create WGPU Surface.");
@@ -130,7 +129,7 @@ impl RenderState {
             },
         ).await.unwrap();
 
-        let (device, queue) = adapter.request_device(
+        let (device, queue): (Device, Queue) = adapter.request_device(
             &DeviceDescriptor {
                 required_features: Features::default(),
                 required_limits: Limits::default(),
@@ -272,6 +271,39 @@ impl RenderState {
         return render_state;
     }
 
+    /// Execute the rendering process.
+    pub(crate) fn prepare(&mut self, world: &mut World, event_loop: &ActiveEventLoop) {
+        match self.surface.as_ref().unwrap().get_current_texture() {
+            CurrentSurfaceTexture::Success(surface_texture) => {
+                super::executor::on_success(self, world, surface_texture);
+            },
+            CurrentSurfaceTexture::Suboptimal(_) => {
+                super::executor::on_suboptimal(self, world);
+            },
+            CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded | CurrentSurfaceTexture::Outdated => {
+                log::warn!("Surface timeout, occluded or outdated");
+            },
+            CurrentSurfaceTexture::Lost => {
+                log::error!("Surface lost error!");
+                event_loop.exit();
+            },
+            CurrentSurfaceTexture::Validation => {
+                log::error!("Surface validation error!");
+                event_loop.exit();
+            }
+        }
+    }
+
+    /// Apply render pass with values and render.
+    pub(crate) fn render(&mut self, render_pass: &mut RenderPass<'_>) {
+        render_pass.set_bind_group(0, &self.rendering_type_bind_group, &[]);
+        render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
+        render_pass.set_bind_group(2, &self.transform_bind_group, &[]);
+        render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
+        render_pass.set_index_buffer(self.index_buffer.as_mut().unwrap().slice(..), IndexFormat::Uint16);
+        render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
+    }
+
     /// Returns the window reference.
     pub fn window(&self) -> &Window {
         return &self.window.as_ref().unwrap();
@@ -303,9 +335,31 @@ impl RenderState {
         }
     }
 
-    pub(crate) fn input(&mut self, window_event: &WindowEvent) -> bool {
-        match window_event {
-            _ =>  { return false; }
+    /// Prepare for rendering text by applying necessary values.
+    pub(crate) fn text(&mut self, world: &mut World) {
+        for entity in self.entities_to_render.clone() {
+            if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
+                if let Some(text_renderer) = world.get_resource_mut::<TextHolder>().unwrap().text_renderers.get_mut(&entity.0) {
+                    let (x, y): (f32, f32) = text_renderer.text.get_position_by_strategy(&self.physical_size.as_ref().unwrap());
+                    let width: f32 = self.physical_size.as_ref().unwrap().width as f32;
+                    let height: f32 = self.physical_size.as_ref().unwrap().height as f32;
+
+                    text_renderer.text_brush.queue(
+                        self.device.as_ref().unwrap(),
+                        self.queue.as_ref().unwrap(),
+                        vec![Section {
+                            screen_position: (x, y),
+                            bounds: (width, height),
+                            text: vec![
+                                wgpu_text::glyph_brush::Text::new(&text_renderer.text.content)
+                                    .with_color(text_renderer.text.color.to_array())
+                                    .with_scale(text_renderer.text.font.size)
+                            ],
+                            ..Default::default()
+                        }]
+                    ).ok();
+                }
+            }
         }
     }
 
@@ -331,205 +385,15 @@ impl RenderState {
         self.bind_group_cache.clean(entity.0.to_string());
     }
 
-    /// Execute the rendering process.
-    pub fn render(&mut self, world: &mut World, event_loop: &ActiveEventLoop) {
-        match self.surface.as_ref().unwrap().get_current_texture() {
-            CurrentSurfaceTexture::Success(surface_texture) => {
-                let texture_view: TextureView = surface_texture.texture.create_view(&TextureViewDescriptor::default());
-                let mut command_encoder: CommandEncoder = self.device.as_ref().unwrap().create_command_encoder(&CommandEncoderDescriptor {
-                    label: Some("Render Encoder")
-                });
-                self.prepare_text_rendering(world);
-
-                {
-                    let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
-                    let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = world.get_resource_mut::<EventDispatcher>().unwrap();
-                    let text_holder: ResourceRef<'_, TextHolder> = world.get_resource::<TextHolder>().unwrap();
-                    let mut render_pass: RenderPass<'_> = command_encoder.begin_render_pass(&RenderPassDescriptor {
-                        label: Some("Render Pass"),
-                        color_attachments: &[Some(RenderPassColorAttachment {
-                            depth_slice: None,
-                            view: &texture_view,
-                            resolve_target: None,
-                            ops: Operations {
-                                load: LoadOp::Clear(color::Color::to_wgpu(self.color.unwrap_or_else(|| color::Color::WHITE))),
-                                store: StoreOp::Store
-                            },
-                        })],
-                        depth_stencil_attachment: None,
-                        occlusion_query_set: None,
-                        timestamp_writes: None,
-                        multiview_mask: None
-                    });
-                    render_pass.set_viewport(
-                        0.0,
-                        0.0,
-                        self.physical_size.as_ref().unwrap().width as f32,
-                        self.physical_size.as_ref().unwrap().height as f32,
-                        0.0,
-                        1.0
-                    );
-
-                    if let Some(background_image_path) = &self.background_image_path {
-                        render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                        let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
-                        self.setup_rendering_2d(
-                            &mut event_dispatcher,
-                            None,
-                            Some(&background_sprite),
-                            None,
-                            None,
-                            None,
-                            &camera2d,
-                            true
-                        );
-                        self.apply_render_pass_with_values(&mut render_pass);
-                    }
-
-                    let mut entities_to_render_sorted: Vec<Entity> = self.entities_to_render.clone();
-                    if entities_to_render_sorted.len() > 1 {
-                        entities_to_render_sorted.sort_by(|a, b| {
-                            DrawOrder::compare(world, a, b)
-                        });
-                    }
-
-                    for entity in entities_to_render_sorted.clone() {
-                        if world.is_entity_alive(entity) {
-                            let is_entity_visible: bool = world.is_entity_visible(entity);
-                            let components: Vec<AtomicRefMut<'_, Box<dyn Component>>> = world.get_entity_components_mut(&entity).unwrap();
-                            let transform: Option<&Transform> = components.iter().find_map(
-                                |component| component.as_any().downcast_ref::<Transform>()
-                            );
-                            let animation: Option<&Animation> = components.iter().find_map(
-                                |component| component.as_any().downcast_ref::<Animation>()
-                            );
-
-                            if let Some(animation) = animation {
-                                if !animation.playing_stack.is_empty() {
-                                    render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                                    self.setup_rendering_2d(
-                                        &mut event_dispatcher,
-                                        Some(&entity),
-                                        None,
-                                        None,
-                                        transform,
-                                        Some(animation),
-                                        &camera2d,
-                                        false
-                                    );
-
-                                    if is_entity_visible {
-                                        self.apply_render_pass_with_values(&mut render_pass);
-                                    }
-                                    continue;
-                                }
-                            }
-
-                            if let Some(sprite) = components.iter().find_map(|component| component.as_any().downcast_ref::<Sprite>()) {
-                                render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                                self.setup_rendering_2d(
-                                    &mut event_dispatcher,
-                                    Some(&entity),
-                                    Some(sprite),
-                                    None,
-                                    transform,
-                                    animation,
-                                    &camera2d,
-                                    false
-                                );
-
-                                if is_entity_visible {
-                                    self.apply_render_pass_with_values(&mut render_pass);
-                                }
-                            } else if let Some(shape) = components.iter().find_map(|component| component.as_any().downcast_ref::<Shape>()) {
-                                render_pass.set_pipeline(self.render_pipeline_2d.as_ref().unwrap());
-                                self.setup_rendering_2d(
-                                    &mut event_dispatcher,
-                                    Some(&entity),
-                                    None,
-                                    Some(shape),
-                                    transform,
-                                    None,
-                                    &camera2d,
-                                    false
-                                );
-
-                                if is_entity_visible {
-                                    self.apply_render_pass_with_values(&mut render_pass);
-                                }
-                            } else if let Some(text_renderer) = text_holder.text_renderers.get(&entity.0) {
-                                if is_entity_visible {
-                                    text_renderer.text_brush.draw(&mut render_pass);
-                                }
-                            }
-                        }
-                    }
-                }
-                self.queue.as_ref().unwrap().submit(std::iter::once(command_encoder.finish()));
-                surface_texture.present();
-            },
-            CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded | CurrentSurfaceTexture::Outdated => {
-                log::warn!("Surface timeout, occluded or outdated");
-            },
-            CurrentSurfaceTexture::Suboptimal(_) => {
-                log::warn!("Surface suboptimal -> Resizing the frame");
-                let camera2d: ResourceRef<'_, Camera2d> = world.get_resource::<Camera2d>().unwrap();
-                let text_holder: ResourceRef<'_, TextHolder> = world.get_resource::<TextHolder>().unwrap();
-
-                self.resize(
-                    self.physical_size.as_ref().unwrap().clone(),
-                    &camera2d,
-                    &text_holder.text_renderers
-                );
-            },
-            CurrentSurfaceTexture::Lost => {
-                log::error!("Surface lost error!");
-                event_loop.exit();
-            },
-            CurrentSurfaceTexture::Validation => {
-                log::error!("Surface validation error!");
-                event_loop.exit();
-            }
+    /// Placeholder function for the input functionality.
+    pub(crate) fn input(&mut self, window_event: &WindowEvent) -> bool {
+        match window_event {
+            _ =>  { return false; }
         }
     }
 
-    pub(crate) fn prepare_text_rendering(&mut self, world: &mut World) {
-        for entity in self.entities_to_render.clone() {
-            if world.is_entity_alive(entity) && world.is_entity_visible(entity) {
-                if let Some(text_renderer) = world.get_resource_mut::<TextHolder>().unwrap().text_renderers.get_mut(&entity.0) {
-                    let (x, y): (f32, f32) = text_renderer.text.get_position_by_strategy(&self.physical_size.as_ref().unwrap());
-                    let width: f32 = self.physical_size.as_ref().unwrap().width as f32;
-                    let height: f32 = self.physical_size.as_ref().unwrap().height as f32;
-
-                    text_renderer.text_brush.queue(
-                        self.device.as_ref().unwrap(),
-                        self.queue.as_ref().unwrap(),
-                        vec![Section {
-                            screen_position: (x, y),
-                            bounds: (width, height),
-                            text: vec![
-                                wgpu_text::glyph_brush::Text::new(&text_renderer.text.content)
-                                    .with_color(text_renderer.text.color.to_rgba())
-                                    .with_scale(text_renderer.text.font.size)
-                            ],
-                            ..Default::default()
-                        }]
-                    ).ok();
-                }
-            }
-        }
-    }
-
-    pub(crate) fn apply_render_pass_with_values(&mut self, render_pass: &mut RenderPass<'_>) {
-        render_pass.set_bind_group(0, &self.rendering_type_bind_group, &[]);
-        render_pass.set_bind_group(1, &self.texture_bind_group, &[]);
-        render_pass.set_bind_group(2, &self.transform_bind_group, &[]);
-        render_pass.set_vertex_buffer(0, self.vertex_buffer.as_mut().unwrap().slice(..));
-        render_pass.set_index_buffer(self.index_buffer.as_mut().unwrap().slice(..), IndexFormat::Uint16);
-        render_pass.draw_indexed(0..self.number_of_indices.unwrap(), 0, 0..1);
-    }
-
-    pub(crate) fn setup_rendering_2d(
+    /// Send the entity to its rendering process.
+    pub(crate) fn setup(
         &mut self,
         event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
@@ -541,7 +405,7 @@ impl RenderState {
         is_background: bool
     ) {
         if let Some(sprite) = sprite {
-            self.setup_sprite_rendering(
+            self.sprite(
                 event_dispatcher,
                 entity,
                 sprite,
@@ -550,7 +414,7 @@ impl RenderState {
                 is_background
             );
         } else if let Some(animation) = animation {
-            self.setup_animation_rendering(
+            self.animation(
                 event_dispatcher,
                 entity,
                 animation,
@@ -559,7 +423,7 @@ impl RenderState {
                 is_background
             );
         } else if let Some(shape) = shape {
-            self.setup_shape_rendering(
+            self.shape(
                 event_dispatcher,
                 entity,
                 shape,
@@ -569,7 +433,8 @@ impl RenderState {
         }
     }
 
-    pub(crate) fn setup_sprite_rendering(
+    /// Prepare for sprite rendering.
+    pub(crate) fn sprite(
         &mut self,
         event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
@@ -593,7 +458,7 @@ impl RenderState {
             self,
             RENDERING_TYPE_BUFFER,
             entity,
-            if is_background { RenderingType::BACKGROUND.to_shader_index() } else { RenderingType::TEXTURE.to_shader_index() }
+            if is_background { RenderingType::Background.to_shader_index() } else { RenderingType::Texture.to_shader_index() }
         );
         let rendering_type_bind_group: BindGroup = cache::bind_group::get_rendering_type_bind_group(
             self,
@@ -607,7 +472,7 @@ impl RenderState {
             None
         );
 
-        let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
+        let (transform_bind_group, projection_buffer, view_buffer): (BindGroup, Buffer, Buffer) = self.get_transform_bindings(
             event_dispatcher,
             entity,
             transform,
@@ -617,7 +482,7 @@ impl RenderState {
             camera2d
         );
 
-        let (vertex_buffer, index_buffer) = cache::buffer::get_vertex_and_index_buffers(
+        let (vertex_buffer, index_buffer): (Buffer, Buffer) = cache::buffer::get_vertex_and_index_buffers(
             self,
             entity,
             &sprite.vertices,
@@ -634,7 +499,8 @@ impl RenderState {
         self.number_of_indices = Some(sprite.indices.len() as u32);
     }
 
-    pub(crate) fn setup_animation_rendering(
+    /// Prepare for animation rendering.
+    pub(crate) fn animation(
         &mut self,
         event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
@@ -661,7 +527,7 @@ impl RenderState {
                 self,
                 RENDERING_TYPE_BUFFER,
                 entity,
-                if is_background { RenderingType::BACKGROUND.to_shader_index() } else { RenderingType::TEXTURE.to_shader_index() }
+                if is_background { RenderingType::Background.to_shader_index() } else { RenderingType::Texture.to_shader_index() }
             );
             let rendering_type_bind_group: BindGroup = cache::bind_group::get_rendering_type_bind_group(
                 self,
@@ -675,16 +541,16 @@ impl RenderState {
                 Some(sprite_sheet)
             );
 
-            let mut vertices: Vec<Vertex> = GeometryType::Square.to_vertex_array(Orientation::Horizontal, color::Color::WHITE.to_rgba());
+            let mut vertices: Vec<Vertex> = GeometryType::Square.to_vertex_array(Orientation::Horizontal, ColorOption::White.to_rgba());
             let indices: Vec<u16> = GeometryType::Square.to_index_array();
-            let texure_coordinates: [f32; 8] = sprite_sheet.current_tile_texture_coordinates();
+            let uv_coordinates : [f32; 8] = sprite_sheet.current_tile_uv_coordinates();
 
-            vertices[0].texture_coordinates = [texure_coordinates[0], texure_coordinates[1]];
-            vertices[1].texture_coordinates = [texure_coordinates[2], texure_coordinates[3]]; 
-            vertices[2].texture_coordinates = [texure_coordinates[4], texure_coordinates[5]];
-            vertices[3].texture_coordinates = [texure_coordinates[6], texure_coordinates[7]];
+            vertices[0].uv_coordinates  = [uv_coordinates [0], uv_coordinates [1]];
+            vertices[1].uv_coordinates  = [uv_coordinates [2], uv_coordinates [3]]; 
+            vertices[2].uv_coordinates  = [uv_coordinates [4], uv_coordinates [5]];
+            vertices[3].uv_coordinates  = [uv_coordinates [6], uv_coordinates [7]];
 
-            let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
+            let (transform_bind_group, projection_buffer, view_buffer): (BindGroup, Buffer, Buffer) = self.get_transform_bindings(
                 event_dispatcher,
                 entity,
                 transform,
@@ -694,7 +560,7 @@ impl RenderState {
                 camera2d
             );
 
-            let (vertex_buffer, index_buffer) = cache::buffer::get_vertex_and_index_buffers(
+            let (vertex_buffer, index_buffer): (Buffer, Buffer) = cache::buffer::get_vertex_and_index_buffers(
                 self,
                 entity,
                 &vertices,
@@ -712,7 +578,8 @@ impl RenderState {
         }
     }
 
-    pub(crate) fn setup_shape_rendering(
+    /// Prepare for shape rendering.
+    pub(crate) fn shape(
         &mut self,
         event_dispatcher: &mut EventDispatcher,
         entity: Option<&Entity>,
@@ -735,7 +602,7 @@ impl RenderState {
             self, 
             RENDERING_TYPE_BUFFER,
             entity,
-            RenderingType::TEXT.to_shader_index()
+            RenderingType::Text.to_shader_index()
         );
         let rendering_type_bind_group: BindGroup = cache::bind_group::get_rendering_type_bind_group(
             self,
@@ -749,7 +616,7 @@ impl RenderState {
             None
         );
 
-        let (transform_bind_group, projection_buffer, view_buffer) = self.get_transform_bindings(
+        let (transform_bind_group, projection_buffer, view_buffer): (BindGroup, Buffer, Buffer) = self.get_transform_bindings(
             event_dispatcher,
             entity,
             transform,
@@ -758,10 +625,10 @@ impl RenderState {
             None,
             camera2d
         );
-        let (vertex_buffer, index_buffer) = cache::buffer::get_vertex_and_index_buffers(
+        let (vertex_buffer, index_buffer): (Buffer, Buffer) = cache::buffer::get_vertex_and_index_buffers(
             self,
             entity,
-            &shape.geometry_type.to_vertex_array(Orientation::Horizontal, shape.color.to_rgba()),
+            &shape.geometry_type.to_vertex_array(Orientation::Horizontal, shape.color.to_array()),
             &shape.geometry_type.to_index_array()
         );
 

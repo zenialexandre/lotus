@@ -4,7 +4,7 @@ pub mod game_loop;
 /// Window and render managers.
 pub mod managers;
 
-/// Colors related features.
+/// Colors related module for organization.
 pub mod color;
 
 /// Shapes/Geometric forms related features.
@@ -19,7 +19,7 @@ pub mod ecs;
 /// Engine context related data stored for the end-user.
 pub mod context;
 
-/// Input related features.
+/// Input and binding related features.
 pub mod input;
 
 /// Physics related features.
@@ -52,5 +52,5 @@ pub mod draw_order;
 /// Animation related features.
 pub mod animation;
 
-/// Event dispatching related features;
-pub(crate) mod event_dispatcher;
+/// Event related features.
+pub(crate) mod event;

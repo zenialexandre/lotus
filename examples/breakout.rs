@@ -47,7 +47,7 @@ your_game!(
     WindowConfiguration {
         icon_path: "textures/lotus_pink_256x256.png".to_string(),
         title: "Breakout Game :)".to_string(),
-        background_color: Some(Color::LIGHTGRAY),
+        background_color: Some(Color::by_option(ColorOption::Lightgray)),
         background_image_path: None,
         width: 725.0,
         height: 695.0,
@@ -65,13 +65,17 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let player: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::PURPLE);
-    let little_ball: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.2)), Color::BLACK);
+    let player: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::by_option(ColorOption::Purple));
+    let little_ball: Shape = Shape::new(
+        Orientation::Horizontal,
+        GeometryType::Circle(Circle::new(64, 0.2)),
+        Color::by_option(ColorOption::Black)
+    );
     let start_text: Text = Text::new(
         &mut context.render_state,
         Font::new(Fonts::RobotoMonoItalic.get_path(), 40.0),
         Position::new(Vector2::new(298.0, 380.0), Strategy::Pixelated),
-        Color::BLACK,
+        Color::by_option(ColorOption::Black),
         "> enter <".to_string()
     );
 
@@ -124,15 +128,13 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let input: Input = {
-        let input_ref: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
-        input_ref.clone()
-    };
-    let is_hover: bool = input.mouse_position.x >= 298.0 && (input.mouse_position.y > 380.0 && input.mouse_position.y < 416.0);
+    let keyboard_input: KeyboardInput = context.world.get_resource_cloned::<KeyboardInput>().unwrap();
+    let mouse_input: MouseInput = context.world.get_resource_cloned::<MouseInput>().unwrap();
+    let is_hover: bool = mouse_input.mouse_position.x >= 298.0 && (mouse_input.mouse_position.y > 380.0 && mouse_input.mouse_position.y < 416.0);
 
     if
-        input.is_key_released(KeyCode::Enter) ||
-        (input.is_mouse_button_released(MouseButton::Left) && is_hover)
+        keyboard_input.is_key_released(KeyCode::Enter) ||
+        (mouse_input.is_mouse_button_released(MouseButton::Left) && is_hover)
     {
         let mut next_state: ResourceRefMut<'_, NextState> = context.world.get_resource_mut::<NextState>().unwrap();
         next_state.0 = GameState::Running;
@@ -153,7 +155,7 @@ fn update(context: &mut Context) {
         let mut thread_rng: ThreadRng = rand::rng();
         let random_factor: f32 = thread_rng.random_range(-0.5..0.5);
 
-        move_player(context, input, player_entity);
+        move_player(context, keyboard_input, player_entity);
         move_little_ball(context, little_ball_entity);
         check_player_little_ball_collision(context, player_entity, little_ball_entity, random_factor);
         check_little_ball_borders_collision(context, little_ball_entity, random_factor);
@@ -163,7 +165,7 @@ fn update(context: &mut Context) {
 }
 
 fn spawn_border(context: &mut Context, position: Vector2<f32>) {
-    let border: Shape = Shape::new(Orientation::Vertical, GeometryType::Rectangle, Color::CYAN);
+    let border: Shape = Shape::new(Orientation::Vertical, GeometryType::Rectangle, Color::by_option(ColorOption::Cyan));
 
     context.commands.spawn(
         vec![
@@ -196,14 +198,14 @@ fn spawn_targets(context: &mut Context) {
             let x: f32 = start_x + column as f32 * (width + spacing_x);
             let y: f32 = start_y - row as f32 * (height + spacing_y);
 
-            let mut color: Color = Color::RED;
+            let mut color: Color = Color::by_option(ColorOption::Red);
 
             if row == 2 || row == 3 {
-                color = Color::ORANGE;
+                color = Color::by_option(ColorOption::Orange);
             } else if row == 4 || row == 5 {
-                color = Color::GREEN;
+                color = Color::by_option(ColorOption::Green);
             } else if row == 6 || row == 7 {
-                color = Color::YELLOW;
+                color = Color::by_option(ColorOption::Yellow);
             }
 
             context.commands.spawn(
@@ -222,14 +224,14 @@ fn spawn_targets(context: &mut Context) {
     }
 }
 
-fn move_player(context: &mut Context, input: Input, player_entity: Entity) {
+fn move_player(context: &mut Context, keyboard_input: KeyboardInput, player_entity: Entity) {
     let mut player_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut(&player_entity).unwrap();
     let player_velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component(&player_entity).unwrap();
 
-    if input.is_key_pressed(KeyCode::ArrowRight) {
+    if keyboard_input.is_key_pressed(KeyCode::ArrowRight) {
         let x: f32 = player_transform.position.x + player_velocity.x * context.delta;
         player_transform.set_position_x(&context.render_state, x);
-    } else if input.is_key_pressed(KeyCode::ArrowLeft) {
+    } else if keyboard_input.is_key_pressed(KeyCode::ArrowLeft) {
         let x: f32 = player_transform.position.x - player_velocity.x * context.delta;
         player_transform.set_position_x(&context.render_state, x);
     }

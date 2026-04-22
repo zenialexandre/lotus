@@ -12,8 +12,8 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::BLACK);
-    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()), Color::BLUE);
+    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::by_option(ColorOption::Black));
+    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()), Color::by_option(ColorOption::Blue));
 
     context.commands.spawn(vec![
         Box::new(table),
@@ -40,15 +40,12 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let input: Input = {
-        let input_ref: ResourceRef<'_, Input> = context.world.get_resource::<Input>().unwrap();
-        input_ref.clone()
-    };
+    let keyboard_input: KeyboardInput = context.world.get_resource_cloned::<KeyboardInput>().unwrap();
 
     let mut query: Query = Query::new(&context.world).with::<Gravity>();
     let entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
 
-    if input.is_key_released(KeyCode::Enter) {
+    if keyboard_input.is_some_released() {
         let mut gravity: ComponentRefMut<'_, Gravity> = context.world.get_entity_component_mut::<Gravity>(&entity).unwrap();
         gravity.value = 9.8;
     }

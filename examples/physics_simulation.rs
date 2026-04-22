@@ -19,8 +19,8 @@ your_game!(
 
 fn setup(context: &mut Context) {
     let circle: Circle = Circle::new(64, 0.5);
-    let red_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::RED);
-    let blue_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::BLUE);
+    let red_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::by_option(ColorOption::Red));
+    let blue_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::by_option(ColorOption::Blue));
 
     context.commands.spawn(
         vec![
@@ -66,7 +66,7 @@ fn update(context: &mut Context) {
 }
 
 fn spawn_border(context: &mut Context, orientation: Orientation, position: Vector2<f32>, scale: Vector2<f32>) {
-    let border: Shape = Shape::new(orientation, GeometryType::Rectangle, Color::WHITE);
+    let border: Shape = Shape::new(orientation, GeometryType::Rectangle, Color::by_option(ColorOption::White));
 
     context.commands.spawn(
         vec![

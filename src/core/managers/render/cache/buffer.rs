@@ -1,11 +1,10 @@
 use std::collections::HashMap;
-
 use cgmath::Matrix4;
 use wgpu::{Buffer, BufferUsages, util::{BufferInitDescriptor, DeviceExt}};
 use super::{
     utils,
     super::super::{
-        rendering::manager::{RenderState, Vertex},
+        render::manager::{RenderState, Vertex},
         super::{camera::camera2d::Camera2d, ecs::entity::Entity}
     }
 };

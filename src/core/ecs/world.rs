@@ -7,22 +7,26 @@ use std::{
     sync::Arc
 };
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
-use cgmath::{Matrix4, Vector2, Vector3};
+use cgmath::Vector2;
 use lotus_proc_macros::Component;
 use uuid::Uuid;
+use crate::core::event::synchronizer;
+
 use super::{
     super::{
-        event_dispatcher::{EventDispatcher, EventType, SubEventType},
-        animation::Animation,
-        texture::sprite_sheet::{AnimationState, LoopingState},
-        color::Color,
+        event::{
+            dispatcher::EventDispatcher,
+        },
+        super::Color,
         camera::camera2d::Camera2d,
-        input::Input,
+        input::keyboard_input::KeyboardInput,
+        input::mouse_input::MouseInput,
+        input::gamepad_input::GamepadInput,
         draw_order::DrawOrder,
         visibility::Visibility,
         text::{text::{Text, TextHolder, TextRenderer}, font::{Font, Fonts}},
-        managers::rendering::{cache, manager::RenderState},
-        physics::{collision::Collision, velocity::Velocity, transform::{Transform, Position, Strategy}, gravity::Gravity, rigid_body::{RigidBody, BodyType}}
+        managers::render::manager::RenderState,
+        physics::transform::{Transform, Position, Strategy}
     },
     archetype::Archetype,
     query::Query,
@@ -50,7 +54,9 @@ impl World {
     pub fn new() -> Self {
         let mut resources: HashMap<TypeId, Arc<AtomicRefCell<Box<dyn Resource>>>> = HashMap::new();
         resources.insert(TypeId::of::<EventDispatcher>(), Arc::new(AtomicRefCell::new(Box::new(EventDispatcher::new()))));
-        resources.insert(TypeId::of::<Input>(), Arc::new(AtomicRefCell::new(Box::new(Input::default()))));
+        resources.insert(TypeId::of::<KeyboardInput>(), Arc::new(AtomicRefCell::new(Box::new(KeyboardInput::default()))));
+        resources.insert(TypeId::of::<MouseInput>(), Arc::new(AtomicRefCell::new(Box::new(MouseInput::default()))));
+        resources.insert(TypeId::of::<GamepadInput>(), Arc::new(AtomicRefCell::new(Box::new(GamepadInput::default()))));
         resources.insert(TypeId::of::<Camera2d>(), Arc::new(AtomicRefCell::new(Box::new(Camera2d::default()))));
         resources.insert(TypeId::of::<TextHolder>(), Arc::new(AtomicRefCell::new(Box::new(TextHolder::default()))));
 
@@ -167,191 +173,13 @@ impl World {
         }
     }
 
-    /// Synchronizes events that were dispatched in another process.
-    pub(crate) fn synchronize_events(&mut self, render_state: &RenderState) {
-        let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = self.get_resource_mut::<EventDispatcher>().unwrap();
-        let events: Vec<_> = event_dispatcher.drain().into();
-
-        for event in events {
-            match &event.event_type {
-                EventType::Transform(sub_event_type) => {
-                    let mut transform: ComponentRefMut<'_, Transform> = self.get_entity_component_mut::<Transform>(&event.entity).unwrap();
-
-                    if let Some(value) = event.get::<Vector2<f32>>() {
-                        if sub_event_type == &SubEventType::UpdatePixelatedPosition {
-                            transform.position.x = value.x;
-                            transform.position.y = value.y;
-                            transform.dirty_position = false;
-                        } else {
-                            transform.scale.x = value.x;
-                            transform.scale.y = value.y;
-                            transform.dirty_scale = false;
-                        }
-                    }
-                },
-                EventType::Text(sub_event_type) => {
-                    let mut text_holder: ResourceRefMut<'_, TextHolder> = self.get_resource_mut::<TextHolder>().unwrap();
-
-                    if let Some(text_renderer) = text_holder.text_renderers.get_mut(&event.entity.0) {
-                        match sub_event_type {
-                            SubEventType::UpdateTextFont => {
-                                if let Some(font) = event.get::<Font>() {
-                                    text_renderer.font(
-                                        font.clone(),
-                                        render_state.queue.clone(),
-                                        render_state.physical_size.clone()
-                                    );
-                                }
-                            },
-                            SubEventType::UpdateTextPosition => {
-                                if let Some(position) = event.get::<Position>() {
-                                    text_renderer.position(
-                                        position.clone(),
-                                        render_state.queue.clone(),
-                                        render_state.physical_size.clone()
-                                    );
-                                }
-                            },
-                            SubEventType::UpdateTextContent => {
-                                if let Some(content) = event.get::<String>() {
-                                    text_renderer.content(
-                                        content.clone(),
-                                        render_state.queue.clone(),
-                                        render_state.physical_size.clone()
-                                    );
-                                }
-                            },
-                            SubEventType::UpdateTextColor => {
-                                if let Some(color) = event.get::<Color>() {
-                                    text_renderer.color(
-                                        color.clone(),
-                                        render_state.queue.clone(),
-                                        render_state.physical_size.clone()
-                                    );
-                                }
-                            },
-                            _ => {}
-                        }
-                    }                    
-                }
-            }
-        }
-    }
-
-    /// Synchronizes the camera with its target.
-    pub fn synchronize_camera_with_target(&mut self, render_state: &mut RenderState) {
-        let (target_entity, target_position) = {
-            let camera2d: ResourceRefMut<'_, Camera2d> = self.get_resource_mut::<Camera2d>().unwrap();
-
-            if let Some(entity) = camera2d.target {
-                if let Some(transform) = self.get_entity_component::<Transform>(&entity) {
-                    (Some(entity), Some(transform.position.clone()))
-                } else {
-                    (None, None)
-                }
-            } else {
-                (None, None)
-            }
-        };
-
-        if let (Some(entity), Some(position)) = (target_entity, target_position) {
-            let mut camera2d: ResourceRefMut<'_, Camera2d> = self.get_resource_mut::<Camera2d>().unwrap();
-            camera2d.transform.position = position.clone();
-            camera2d.view_matrix = Matrix4::from_translation(Vector3::new(
-                -position.x.clone(),
-                -position.y,
-                0.0
-            ));
-            let _ = cache::buffer::get_projection_or_view_buffer(
-                render_state,
-                true,
-                Some(&entity),
-                &camera2d
-            );
-            let _ = cache::buffer::get_projection_or_view_buffer(
-                render_state,
-                false,
-                Some(&entity),
-                &camera2d
-            );
-        }
-    }
-
-    /// Synchronizes the animation of entities sprite sheets.
-    pub fn synchronize_animations_of_entities(&mut self, delta: f32) {
-        let mut query: Query<'_> = Query::new(&self).with::<Animation>();
-
-        for entity in query.entities_with_components().unwrap() {
-            if let Some(mut animation) = self.get_entity_component_mut::<Animation>(&entity) {
-                let mut to_remove_from_stack: Vec<String> = Vec::new();
-
-                for (title, sprite_sheet) in animation.sprite_sheets.iter_mut() {
-                    if sprite_sheet.animation_state != AnimationState::Playing {
-                        continue;
-                    }
-                    sprite_sheet.timer.tick(delta);
-
-                    if sprite_sheet.timer.is_finished() {
-                        sprite_sheet.current_index = (sprite_sheet.current_index + 1) % sprite_sheet.indices.len() as u32;
-
-                        if &sprite_sheet.current_index == sprite_sheet.indices.last().unwrap() && sprite_sheet.looping_state != LoopingState::Repeat {
-                            sprite_sheet.animation_state = AnimationState::Finished;
-                            to_remove_from_stack.push(title.clone());
-                        }
-                    }
-                }
-
-                for title in to_remove_from_stack {
-                    animation.playing_stack.retain(|t| *t != title);
-                }
-            }
-        }
-    }
-
-    /// Synchronizes the gravity with entities that are considered dynamic bodies.
-    pub fn synchronize_gravity_with_dynamic_bodies(&mut self, render_state: &mut RenderState, delta: f32) {
-        let mut query: Query<'_> = Query::new(self).with::<Gravity>()
-            .with::<Transform>()
-            .with::<Velocity>()
-            .with::<RigidBody>();
-
-        for entity in query.entities_with_components().unwrap() {
-            if let (Some(gravity), Some(mut transform), Some(mut velocity), Some(rigid_body)) = (
-                self.get_entity_component::<Gravity>(&entity),
-                self.get_entity_component_mut::<Transform>(&entity),
-                self.get_entity_component_mut::<Velocity>(&entity),
-                self.get_entity_component::<RigidBody>(&entity)
-            ) {
-                if rigid_body.body_type == BodyType::Dynamic && rigid_body.rest == false {
-                    velocity.y -= gravity.value * rigid_body.friction * delta;
-                    let new_y: f32 = transform.position.y + velocity.y * delta;
-                    transform.set_position_y(render_state, new_y);
-                }
-            }
-        }
-    }
-
-    /// Synchronizes the transformation matrices with the collision objects.
-    pub fn synchronize_transformations_with_collisions(&mut self) {
-        for archetype in self.archetypes.values_mut() {
-            if let (Some(transforms), Some(collisions)) = (
-                archetype.components.get(&TypeId::of::<Transform>()),
-                archetype.components.get(&TypeId::of::<Collision>())
-            ) {
-                for (transform, collision) in transforms.iter().zip(collisions) {
-                    let transform_ref: AtomicRef<'_, Box<dyn Component>> = transform.borrow();
-                    let mut collision_ref: AtomicRefMut<'_, Box<dyn Component>> = collision.borrow_mut();
-
-                    if let (Some(transform), Some(collision)) = (
-                        transform_ref.as_any().downcast_ref::<Transform>(),
-                        collision_ref.as_any_mut().downcast_mut::<Collision>()
-                    ) {
-                        collision.collider.position = transform.position.to_vec();
-                        collision.collider.scale = transform.scale;
-                    }
-                }
-            }
-        }
+    /// Synchronize all pending events.
+    pub(crate) fn synchronize(&mut self, render_state: &mut RenderState, delta: f32) {
+        synchronizer::events(self, render_state);
+        synchronizer::camera(self, render_state);
+        synchronizer::animations(self, delta);
+        synchronizer::collisions(self);
+        synchronizer::gravity(self, render_state, delta);
     }
 
     /// Returns the unique key of a archetype.
@@ -370,7 +198,7 @@ impl World {
         return default_hasher.finish();
     }
 
-    /// Return an immutable reference to the specified resource.
+    /// Returns an immutable reference to the specified resource.
     pub fn get_resource<T: Resource + 'static>(&self) -> Option<ResourceRef<'_, T>> {
         let type_id: TypeId = TypeId::of::<T>();
         let mut resource_borrow_state: AtomicRefMut<'_, ResourceBorrowState> = self.resource_borrow_state.borrow_mut();
@@ -392,7 +220,12 @@ impl World {
         }
     }
 
-    /// Return a mutable reference to the specified resource.
+    /// Returns an immutable cloned reference to the specified resource.
+    pub fn get_resource_cloned<T: Resource + Clone + 'static>(&self) -> Option<T> {
+        return self.get_resource::<T>().map(|resource| resource.clone());
+    }
+
+    /// Returns a mutable reference to the specified resource.
     pub fn get_resource_mut<T: Resource + 'static>(&self) -> Option<ResourceRefMut<'_, T>> {
         let type_id: TypeId = TypeId::of::<T>();
         let mut resource_borrow_state: AtomicRefMut<'_, ResourceBorrowState> = self.resource_borrow_state.borrow_mut();
@@ -416,7 +249,7 @@ impl World {
         }
     }
 
-    /// Return a specific component from an entity.
+    /// Returns a specific component from an entity.
     pub fn get_entity_component<T: Component + 'static>(&self, entity: &Entity) -> Option<ComponentRef<'_, T>> {
         for archetype in self.archetypes.values() {
             if archetype.entities.contains(entity) {

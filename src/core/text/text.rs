@@ -8,11 +8,11 @@ use winit::dpi::PhysicalSize;
 use super::{
     font::Font,
     super::{
-        event_dispatcher::{EventDispatcher, Event, EventType, SubEventType},
+        event::dispatcher::{EventDispatcher, Event, EventType, SubEventType},
         ecs::{entity::Entity, world::World, resource::ResourceRefMut},
         physics::transform::{Position, Strategy},
-        color::Color,
-        managers::rendering::manager::RenderState
+        super::Color,
+        managers::render::manager::RenderState
     }
 };
 

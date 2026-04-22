@@ -3,7 +3,7 @@ use super::{
     entity::Entity,
     component::Component,
     resource::Resource,
-    super::{color::Color, managers::rendering::manager::RenderState}
+    super::{super::Color, managers::render::manager::RenderState}
 };
 
 /// Enumerator that store the mutable commands allowed in the world.

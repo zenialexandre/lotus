@@ -1,5 +1,8 @@
 /// Windowing related features.
-pub mod windowing;
+pub mod window;
 
 /// Rendering related features.
-pub mod rendering;
+pub mod render;
+
+/// Gamepad related features;
+pub mod gamepad;

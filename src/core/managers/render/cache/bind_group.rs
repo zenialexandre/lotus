@@ -3,7 +3,7 @@ use wgpu::{Buffer, BindGroup, BindingResource, BindGroupDescriptor, BindGroupEnt
 use super::{
     utils,
     super::super::{
-        rendering::manager::RenderState,
+        render::manager::RenderState,
         super::{texture::{texture::Texture, sprite_sheet::SpriteSheet}, ecs::entity::Entity}
     }
 };

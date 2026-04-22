@@ -12,12 +12,12 @@ your_game!(
 fn setup(context: &mut Context) {
     let player: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
     let secondary_sprite: Sprite = Sprite::new("textures/lotus_pink_256x256.png".to_string());
-    let shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BURGUNDY);
+    let shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Burgundy));
     let text: Text = Text::new(
         &mut context.render_state,
         Font::new(Fonts::RobotoMono.get_path(), 30.0),
         Position::new(Vector2::new(0.0, 0.0), Strategy::Pixelated),
-        Color::BLACK,
+        Color::by_option(ColorOption::Black),
         "Boiler Plate".to_string()
     );
 
@@ -64,7 +64,7 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let input: ResourceRef<'_, Input> = context.world.get_resource::<Input>().unwrap();
+    let keyboard_input: ResourceRef<'_, KeyboardInput> = context.world.get_resource::<KeyboardInput>().unwrap();
 
     let mut query: Query = Query::new(&context.world).with::<Sprite>().with::<Velocity>();
     let player_entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
@@ -75,10 +75,10 @@ fn update(context: &mut Context) {
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(&player_entity).unwrap();
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&player_entity).unwrap();
 
-    if input.is_key_pressed(KeyCode::ArrowRight) {
+    if keyboard_input.is_key_pressed(KeyCode::ArrowRight) {
         let x: f32 = transform.position.x + velocity.x * context.delta;
         transform.set_position_x(&context.render_state, x);
-    } else if input.is_key_pressed(KeyCode::ArrowLeft) {
+    } else if keyboard_input.is_key_pressed(KeyCode::ArrowLeft) {
         let x: f32 = transform.position.x - velocity.x * context.delta;
         transform.set_position_x(&context.render_state, x);
     }

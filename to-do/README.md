@@ -4,13 +4,15 @@
 
 ## Project To-do List
 
-1 - Implement Batch Rendering.
+0 - Joystick inputs support.
 
-2 - Custom shaders support.
+1 - Custom shaders support.
 
-3 - Tilesets/Tilemaps handling and rendering.
+2 - Migrate from `wgpu_text` to `glyphon`.
 
-4 - Create native text rendering flow (stop using external libs).
+3 - Implement Batch Rendering.
+
+4 - Tilesets/Tilemaps handling and rendering.
 
 5 - UI creations related system.
 

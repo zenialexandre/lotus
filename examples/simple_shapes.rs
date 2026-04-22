@@ -26,10 +26,14 @@ your_game!(
 fn setup(context: &mut Context) {
     context.game_loop_listener.fps_cap(120);
 
-    let my_square: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
-    let my_rectangle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::GREEN);
-    let my_triangle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Triangle, Color::RED);
-    let my_circle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.5)), Color::BLACK);
+    let my_square: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Blue));
+    let my_rectangle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::by_option(ColorOption::Green));
+    let my_triangle: Shape = Shape::new(Orientation::Horizontal, GeometryType::Triangle, Color::by_option(ColorOption::Red));
+    let my_circle: Shape = Shape::new(
+        Orientation::Horizontal,
+        GeometryType::Circle(Circle::new(64, 0.5)),
+        Color::by_option(ColorOption::Black)
+    );
 
     context.commands.spawn(
         vec![
@@ -78,7 +82,7 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    context.commands.show_fps(context.game_loop_listener.current_fps, Color::BLACK);
+    context.commands.show_fps(context.game_loop_listener.current_fps, Color::by_option(ColorOption::Black));
 
     let mut query: Query = Query::new(&context.world).with::<Shape>();
     let entities: Vec<Entity> = query.entities_with_components().unwrap();

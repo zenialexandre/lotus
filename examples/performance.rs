@@ -32,7 +32,7 @@ fn setup(context: &mut Context) {
 
         context.commands.spawn(
             vec![
-                Box::new(Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::BLUE)),
+                Box::new(Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::by_option(ColorOption::Blue))),
                 Box::new(Object()),
                 Box::new(Transform::new(
                     Position::new(Vector2::new(randomic_position_x, randomic_position_y), Strategy::Normalized),
@@ -52,7 +52,7 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    context.commands.show_fps(context.game_loop_listener.current_fps, Color::BLACK);
+    context.commands.show_fps(context.game_loop_listener.current_fps, Color::by_option(ColorOption::Black));
 
     let mut query: Query = Query::new(&context.world).with::<Object>();
     let entities: Vec<Entity> = query.entities_with_components().unwrap();
@@ -62,7 +62,7 @@ fn update(context: &mut Context) {
 }
 
 fn spawn_border(context: &mut Context, orientation: Orientation, position: Vector2<f32>, scale: Vector2<f32>) {
-    let border: Shape = Shape::new(orientation, GeometryType::Rectangle, Color::WHITE);
+    let border: Shape = Shape::new(orientation, GeometryType::Rectangle, Color::by_option(ColorOption::White));
 
     context.commands.spawn(
         vec![

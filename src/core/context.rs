@@ -1,7 +1,7 @@
 use super::{
-    managers::windowing::manager::WindowConfiguration,
+    managers::window::manager::WindowConfiguration,
     ecs::{world::World, command::Commands},
-    managers::rendering::manager::RenderState,
+    managers::render::manager::RenderState,
     game_loop::GameLoopListener
 };
 

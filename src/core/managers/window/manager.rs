@@ -1,4 +1,3 @@
-use wgpu::PresentMode;
 use winit::{
     application::ApplicationHandler,
     event::{WindowEvent, ElementState},
@@ -7,17 +6,20 @@ use winit::{
     dpi::{Size, Position, LogicalSize, LogicalPosition}
 };
 use std::sync::Arc;
-use super::super::{
-    rendering::manager::RenderState,
+use super::{
+    present_mode,
     super::{
-        text::text::TextHolder,
-        asset_loader::AssetLoader,
-        camera::camera2d::Camera2d,
-        ecs::{world::World, resource::{ResourceRef, ResourceRefMut}},
-        color::Color,
-        game_loop::GameLoop,
-        context::Context,
-        input::Input
+        render::manager::RenderState,
+        super::{
+            text::text::TextHolder,
+            asset_loader::AssetLoader,
+            camera::camera2d::Camera2d,
+            ecs::{world::World, resource::{ResourceRef, ResourceRefMut}},
+            super::{Color, ColorOption},
+            game_loop::GameLoop,
+            context::Context,
+            input::{keyboard_input::KeyboardInput, mouse_input::MouseInput}
+        }
     }
 };
 
@@ -35,10 +37,9 @@ pub struct WindowConfiguration {
     pub resizable: bool,
     pub decorations: bool,
     pub transparent: bool,
-    //pub visible: bool,
     pub active: bool,
     pub enabled_buttons: WindowButtons,
-    pub present_mode: PresentMode
+    pub present_mode: present_mode::PresentMode
 }
 
 impl Default for WindowConfiguration {
@@ -47,7 +48,7 @@ impl Default for WindowConfiguration {
         return Self {
             icon_path: "".to_string(),
             title: "New Game!".to_string(),
-            background_color: Some(Color::WHITE),
+            background_color: Some(Color::by_option(ColorOption::White)),
             background_image_path: None,
             width: 800.0,
             height: 600.0,
@@ -56,10 +57,9 @@ impl Default for WindowConfiguration {
             resizable: true,
             decorations: true,
             transparent: true,
-            //visible: false,
             active: true,
             enabled_buttons: WindowButtons::all(),
-            present_mode: PresentMode::AutoNoVsync
+            present_mode: present_mode::PresentMode::AutoNoVsync
         };
     }
 }
@@ -154,6 +154,8 @@ impl WindowConfiguration {
     }
 
     /// Returns the window configuration with the visible.
+    /// 
+    /// Unused function, it doesn't work well with the taskbar icon.
     pub(crate) fn _visible(self, _visible: bool) -> Self {
         return Self {
             //visible,
@@ -178,7 +180,7 @@ impl WindowConfiguration {
     }
 
     /// Returns the window configuration with the present mode.
-    pub fn present_mode(self, present_mode: PresentMode) -> Self {
+    pub fn present_mode(self, present_mode: present_mode::PresentMode) -> Self {
         return Self {
             present_mode,
             ..self
@@ -198,7 +200,7 @@ impl WindowConfiguration {
     }
 }
 
-struct Application {
+pub struct Application {
     window: Option<Arc<Window>>,
     window_configuration: Option<WindowConfiguration>,
     context: Option<Context>,
@@ -209,7 +211,7 @@ impl ApplicationHandler for Application {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let mut color: Option<Color> = None;
         let mut background_image_path: Option<String> = None;
-        let mut present_mode: PresentMode = PresentMode::AutoNoVsync;
+        let mut present_mode: present_mode::PresentMode = present_mode::PresentMode::AutoNoVsync;
 
         let window: Arc<Window> = if let Some(window_configuration) = &self.window_configuration {
             let mut window_attributes: WindowAttributes = Window::default_attributes();
@@ -255,7 +257,7 @@ impl ApplicationHandler for Application {
         self.window.as_ref().unwrap().focus_window();
 
         let world: World = World::new();
-        let mut render_state: RenderState = pollster::block_on(RenderState::new(window, present_mode));
+        let mut render_state: RenderState = pollster::block_on(RenderState::new(window, present_mode.to_wgpu(), event_loop));
         render_state.color = color;
         render_state.background_image_path = background_image_path;
 
@@ -283,26 +285,26 @@ impl ApplicationHandler for Application {
                     render_state.resize(new_size, &camera2d, &text_holder.text_renderers);
                 },
                 WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
-                    let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+                    let mut keyboard_input: ResourceRefMut<'_, KeyboardInput> = context.world.get_resource_mut::<KeyboardInput>().unwrap();
 
                     if ElementState::Pressed == event.state {
-                        input.pressed_keys.insert(event.physical_key);
+                        keyboard_input.pressed.insert(event.physical_key);
                     } else if ElementState::Released == event.state {
-                        input.pressed_keys.remove(&event.physical_key);
+                        keyboard_input.pressed.remove(&event.physical_key);
                     }
                 },
                 WindowEvent::CursorMoved { device_id: _, position } => {
-                    let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
-                    input.mouse_position.x = position.x as f32;
-                    input.mouse_position.y = position.y as f32;
+                    let mut mouse_input: ResourceRefMut<'_, MouseInput> = context.world.get_resource_mut::<MouseInput>().unwrap();
+                    mouse_input.mouse_position.x = position.x as f32;
+                    mouse_input.mouse_position.y = position.y as f32;
                 },
                 WindowEvent::MouseInput { device_id: _, state, button } => {
-                    let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+                    let mut mouse_input: ResourceRefMut<'_, MouseInput> = context.world.get_resource_mut::<MouseInput>().unwrap();
 
                     if ElementState::Pressed == state {
-                        input.pressed_mouse_buttons.insert(button);
+                        mouse_input.pressed.insert(button);
                     } else if ElementState::Released == state {
-                        input.pressed_mouse_buttons.remove(&button);
+                        mouse_input.pressed.remove(&button);
                     }
                 },
                 WindowEvent::RedrawRequested => {

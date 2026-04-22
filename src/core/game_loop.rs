@@ -3,9 +3,9 @@ use lotus_proc_macros::Resource;
 use winit::event_loop::ActiveEventLoop;
 use super::{
     context::Context,
-    input::Input,
-    managers::rendering::manager::RenderState,
-    ecs::{world::World, resource::ResourceRefMut}
+    input::{input::Input, keyboard_input::KeyboardInput, mouse_input::MouseInput, gamepad_input::GamepadInput},
+    managers::render::manager::RenderState,
+    ecs::world::World
 };
 
 /// Enumerator to store the engine current state.
@@ -41,27 +41,8 @@ impl GameLoop {
         };
     }
 
-    /// Run the engine loop to start the logic and rendering processes.
-    pub fn run(&mut self, context: &mut Context, event_loop: &ActiveEventLoop) {
-        let now: Instant = Instant::now();
-        self.delta = now - self.previous_time_of_last_run;
-        self.previous_time_of_last_run = now;
-
-        context.delta = self.get_delta_as_seconds();
-        context.commands.flush_commands(&mut context.world, &mut context.render_state);
-        context.world.synchronize_events(&context.render_state);
-        context.world.synchronize_animations_of_entities(context.delta);
-        context.world.synchronize_gravity_with_dynamic_bodies(&mut context.render_state, context.delta);
-        context.world.synchronize_transformations_with_collisions();
-        context.world.synchronize_camera_with_target(&mut context.render_state);
-        (self.update)(context);
-
-        self.render(&mut context.render_state, &mut context.world, event_loop);
-
-        let mut input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
-        input.update_hashes();
-
-        // FPS calculus.
+    /// Calculates the current FPS and optionally apply capping.
+    pub(crate) fn fps_calculus(&mut self, context: &mut Context) {
         self.frame_count += 1;
         let elapsed: Duration = self.last_fps_update.elapsed();
         if elapsed >= Duration::from_secs(1) {
@@ -71,7 +52,6 @@ impl GameLoop {
             context.game_loop_listener.current_fps = self.current_fps;
         }
 
-        // Optional FPS capping.
         if let Some(fps_cap) = context.game_loop_listener.fps_cap {
             let target_delta: Duration = Duration::from_secs_f32(1.0 / fps_cap as f32);
             let frame_time: Duration = Instant::now() - now;
@@ -82,9 +62,28 @@ impl GameLoop {
         }
     }
 
+    /// Run the engine loop to start the logic and rendering processes.
+    pub fn run(&mut self, context: &mut Context, event_loop: &ActiveEventLoop) {
+        let now: Instant = Instant::now();
+        self.delta = now - self.previous_time_of_last_run;
+        self.previous_time_of_last_run = now;
+
+        context.delta = self.get_delta_as_seconds();
+        context.commands.flush_commands(&mut context.world, &mut context.render_state);
+        context.world.synchronize(&mut context.render_state, context.delta);
+        (self.update)(context);
+
+        self.render(&mut context.render_state, &mut context.world, event_loop);
+        self.fps_calculus(context);
+
+        context.world.get_resource_mut::<KeyboardInput>().unwrap().update_hashes();
+        context.world.get_resource_mut::<MouseInput>().unwrap().update_hashes();
+        context.world.get_resource_mut::<GamepadInput>().unwrap().update_hashes();
+    }
+
     /// Call the rendering process.
     pub fn render(&self, render_state: &mut RenderState, world: &mut World, event_loop: &ActiveEventLoop) {
-        render_state.render(world, event_loop);
+        render_state.prepare(world, event_loop);
     }
 
     /// Returns delta as a Duration struct.
@@ -103,7 +102,8 @@ impl GameLoop {
 pub struct GameLoopListener {
     pub state: GameLoopState,
     pub current_fps: u32,
-    pub fps_cap: Option<u32>
+    pub fps_cap: Option<u32>,
+    pub(crate) is_gamepad_enabled: bool
 }
 
 impl GameLoopListener {
@@ -112,7 +112,8 @@ impl GameLoopListener {
         return Self {
             state: GameLoopState::Running,
             current_fps: 60,
-            fps_cap: None
+            fps_cap: None,
+            is_gamepad_enabled: false
         };
     }
 
@@ -129,5 +130,15 @@ impl GameLoopListener {
     /// Enable FPS capping.
     pub fn fps_cap(&mut self, fps_cap: u32) {
         self.fps_cap = Some(fps_cap);
+    }
+
+    /// Enable Gamepad functionalities.
+    pub fn enable_gamepad_listener(&mut self) {
+        self.is_gamepad_enabled = true;
+    }
+
+    /// Disable Gamepad functionalities.
+    pub fn disable_gamepad_listener(&mut self) {
+        self.is_gamepad_enabled = false;
     }
 }

@@ -47,7 +47,7 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLACK);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
         commands.spawn(vec![Box::new(dummy_shape)]);
         commands.flush_commands(&mut world, &mut render_state);
 
@@ -64,7 +64,7 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLACK);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
         commands.spawn(vec![Box::new(dummy_shape)]);
         commands.flush_commands(&mut world, &mut render_state);
 
@@ -81,7 +81,7 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLACK);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
         commands.spawn(vec![Box::new(dummy_shape)]);
         commands.flush_commands(&mut world, &mut render_state);
 
@@ -99,7 +99,7 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLACK);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
         commands.spawn(vec![Box::new(dummy_shape)]);
         commands.flush_commands(&mut world, &mut render_state);
 
@@ -117,7 +117,7 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLACK);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
         commands.spawn(vec![Box::new(dummy_shape)]);
         commands.flush_commands(&mut world, &mut render_state);
 
@@ -133,7 +133,7 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLACK);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
         commands.spawn(vec![Box::new(dummy_shape)]);
         commands.flush_commands(&mut world, &mut render_state);
 
@@ -146,12 +146,12 @@ pub mod tests {
     #[test]
     fn get_resource_as_immutable_test() {
         let world: World = World::new();
-        assert!(!world.get_resource::<Input>().is_none());
+        assert!(!world.get_resource::<KeyboardInput>().is_none());
     }
 
     #[test]
     fn get_resource_as_mutable_test() {
         let world: World = World::new();
-        assert!(!world.get_resource_mut::<Input>().is_none());
+        assert!(!world.get_resource_mut::<KeyboardInput>().is_none());
     }
 }

@@ -1,7 +1,7 @@
 use lotus_proc_macros::Component;
 use super::super::{
-    managers::rendering::manager::Vertex,
-    color::Color,
+    managers::render::manager::Vertex,
+    super::ColorOption,
     shape::{
         GeometryType,
         Orientation
@@ -21,7 +21,7 @@ pub struct Sprite {
 impl Sprite {
     /// Create a new sprite with its file path as the parameter.
     pub fn new(path: String) -> Self {
-        let vertices: Vec<Vertex> = GeometryType::Square.to_vertex_array(Orientation::Horizontal, Color::WHITE.to_rgba());
+        let vertices: Vec<Vertex> = GeometryType::Square.to_vertex_array(Orientation::Horizontal, ColorOption::White.to_rgba());
         let indices: Vec<u16> = GeometryType::Square.to_index_array();
         let sprite: Sprite = Self {
             path,

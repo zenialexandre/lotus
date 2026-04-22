@@ -30,18 +30,18 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let input: ResourceRefMut<'_, Input> = context.world.get_resource_mut::<Input>().unwrap();
+    let keyboard_input: ResourceRefMut<'_, KeyboardInput> = context.world.get_resource_mut::<KeyboardInput>().unwrap();
     let mut query: Query = Query::new(&context.world).with::<Animation>();
     let result: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
     let mut animation: ComponentRefMut<'_, Animation> = context.world.get_entity_component_mut::<Animation>(&result).unwrap();
 
-    if input.is_key_pressed(KeyCode::KeyW) {
+    if keyboard_input.is_key_pressed(KeyCode::KeyW) {
         animation.play("run".to_string());
-    } else if input.is_key_pressed(KeyCode::KeyA) {
+    } else if keyboard_input.is_key_pressed(KeyCode::KeyA) {
         animation.pause("run".to_string());
-    } else if input.is_key_pressed(KeyCode::KeyS) {
+    } else if keyboard_input.is_key_pressed(KeyCode::KeyS) {
         animation.resume("run".to_string());
-    } else if input.is_key_pressed(KeyCode::KeyD) {
+    } else if keyboard_input.is_key_pressed(KeyCode::KeyD) {
         animation.stop("run".to_string());
     }
 }

@@ -1,12 +1,13 @@
 use std::{any::Any, collections::VecDeque, mem::take};
 use lotus_proc_macros::Resource;
-use super::ecs::entity::Entity;
+use super::super::ecs::entity::Entity;
 
 /// Enumerator to represent the different types of MACRO events.
 #[derive(Clone, PartialEq)]
 pub(crate) enum EventType {
     Transform(SubEventType),
-    Text(SubEventType)
+    Text(SubEventType),
+    Gamepad(SubEventType)
 }
 
 /// Enumerator to represent the different types of MICRO events.
@@ -17,7 +18,11 @@ pub(crate) enum SubEventType {
     UpdateTextFont,
     UpdateTextPosition,
     UpdateTextContent,
-    UpdateTextColor
+    UpdateTextColor,
+    GamepadConnected,
+    GamepadDisconnected,
+    GamepadButtonPressed,
+    GamepadButtonRelease
 }
 
 /// Struct to represent an event to be dispatched.
