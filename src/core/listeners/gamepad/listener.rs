@@ -34,7 +34,7 @@ impl GamepadListener {
     pub(crate) fn manage(&mut self, world: &mut World) {
         let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = world.get_resource_mut::<EventDispatcher>().unwrap();
 
-        if let Some(gilrs::Event {id, event, ..}) = self.gilrs.next_event() {
+        while let Some(gilrs::Event {id, event, ..}) = self.gilrs.next_event() {
             match event {
                 gilrs::EventType::Connected => {
                     event_dispatcher.send(Event::new_with_dummy(EventType::Gamepad(SubEventType::GamepadConnected), id));

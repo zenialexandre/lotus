@@ -13,19 +13,19 @@ fn setup(context: &mut Context) {
 fn update(context: &mut Context) {
     let gamepad_input: GamepadInput = context.world.get_resource_cloned::<GamepadInput>().unwrap();
 
-    if let Some((key, value)) = gamepad_input.instances.iter().next() {
-        //println!("id = {}", key);
-
-        if value.is_some_pressed() {
-            println!("Some button has been pressed");
+    for (id, gamepad) in gamepad_input.get_all_connected() {
+        if gamepad.is_some_pressed() {
+            println!("Gamepad {} - Some button has been pressed", id);
         }
 
-        if value.is_button_pressed(Start) {
-            println!("Start is pressed");
+        if gamepad.is_button_pressed(Start) {
+            println!("Gamepad {} - Start is pressed", id);
         }
 
-        if value.is_buttons_pressed(vec![North, East]) {
-            println!("Buttons pressed at the same time");
+        if gamepad.is_buttons_pressed(vec![North, East]) {
+            println!("Gamepad {} - Buttons pressed at the same time", id);
         }
+
+        println!("Axis {}, Direction {}", gamepad.gamepad_axis.axis.is_stick(), gamepad.gamepad_axis.direction);
     }
 }

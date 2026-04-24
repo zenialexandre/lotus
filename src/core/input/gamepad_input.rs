@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use gilrs::{Button, GamepadId};
+use gilrs::{Axis, Button, GamepadId};
 use lotus_proc_macros::Resource;
 use super::input::Input;
 
@@ -16,6 +16,31 @@ impl GamepadInput {
             instances: HashMap::new()
         };
     }
+
+    /// Returns the first gamepad instance that is connected.
+    /// 
+    /// For reading purposes only.
+    pub fn get_first_connected(&self) -> Option<(&GamepadId, &GamepadInstance)> {
+        return self.instances.iter()
+            .filter(|(_, instance)| instance.is_connected)
+            .next();
+    }
+
+    /// Returns a gamepad instance that are connected by its index/id.
+    /// 
+    /// For reading purposes only.
+    pub fn get_by_index(&self, index: usize) -> Option<(&GamepadId, &GamepadInstance)> {
+        return self.instances.iter().nth(index);
+    }
+
+    /// Returns all gamepad instances that are connected.
+    /// 
+    /// For reading purposes only.
+    pub fn get_all_connected(&self) -> Vec<(&GamepadId, &GamepadInstance)> {
+        return self.instances.iter()
+            .filter(|(_, instance)| instance.is_connected)
+            .collect();
+    }
 }
 
 /// Struct to hold a gamepad instance.
@@ -23,6 +48,7 @@ impl GamepadInput {
 pub struct GamepadInstance {
     pub pressed: HashSet<Button>,
     pub previously_pressed: HashSet<Button>,
+    pub gamepad_axis: GamepadAxis,
     pub is_connected: bool
 }
 
@@ -49,8 +75,19 @@ impl GamepadInstance {
         return Self {
             pressed: HashSet::new(),
             previously_pressed: HashSet::new(),
+            gamepad_axis: GamepadAxis::default(),
             is_connected: true
         };
+    }
+
+    /// Sets the current state of connection to `true`.
+    pub(crate) fn connect(&mut self) {
+        self.is_connected = true;
+    }
+
+    /// Sets the current state of connection to `false`.
+    pub(crate) fn disconnect(&mut self) {
+        self.is_connected = false;
     }
 
     /// Returns if one of the buttons inside a list is pressed.
@@ -81,5 +118,29 @@ impl GamepadInstance {
     /// Returns if a specific button is released.
     pub fn is_button_released(&self, button: Button) -> bool {
         return self.previously_pressed.contains(&button) && !self.pressed.contains(&button);
+    }
+}
+
+#[derive(Clone)]
+pub struct GamepadAxis {
+    pub axis: Axis,
+    pub direction: f32
+}
+
+impl GamepadAxis {
+    /// Returns a new GamepadAxis with default values.
+    pub fn default() -> Self {
+        return Self {
+            axis: gilrs::Axis::Unknown,
+            direction: 0.0
+        };
+    }
+
+    /// Returns a new GamepadAxis based on arguments.
+    pub fn new(axis: Axis, direction: f32) -> Self {
+        return Self {
+            axis: axis,
+            direction: direction
+        };
     }
 }

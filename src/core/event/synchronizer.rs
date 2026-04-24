@@ -13,7 +13,7 @@ use super::{
         camera::camera2d::Camera2d,
         animation::Animation,
         texture::sprite_sheet::{AnimationState, LoopingState},
-        input::gamepad_input::{GamepadInput, GamepadInstance}
+        input::gamepad_input::{GamepadInput, GamepadInstance, GamepadAxis}
     }
 };
 
@@ -89,22 +89,28 @@ pub(crate) fn events(world: &mut World, render_state: &RenderState) {
 
                 match sub_event_type {
                     SubEventType::GamepadConnected => {
-                        gamepad_input.instances.insert(event.get::<GamepadId>().unwrap().clone(), GamepadInstance::new());
+                        let id: &GamepadId = event.get::<GamepadId>().unwrap();
+
+                        if gamepad_input.instances.get_mut(id).is_some() {
+                            gamepad_input.instances.get_mut(id).unwrap().connect();
+                        } else {
+                            gamepad_input.instances.insert(id.clone(), GamepadInstance::new());
+                        }
                     },
                     SubEventType::GamepadDisconnected => {
-                        gamepad_input.instances.remove(&event.get::<GamepadId>().unwrap());
+                        gamepad_input.instances.get_mut(event.get::<GamepadId>().unwrap()).map(|instance| instance.disconnect());
                     },
                     SubEventType::GamepadButtonPressed => {
                         let (id, button): &(GamepadId, Button) = event.get::<(GamepadId, Button)>().unwrap();
-                        gamepad_input.instances.get_mut(id).map(|element| element.pressed.insert(button.clone()));
+                        gamepad_input.instances.get_mut(id).map(|instance| instance.pressed.insert(button.clone()));
                     },
                     SubEventType::GamepadButtonReleased => {
                         let (id, button): &(GamepadId, Button) = event.get::<(GamepadId, Button)>().unwrap();
-                        gamepad_input.instances.get_mut(id).map(|element| element.pressed.remove(button));
+                        gamepad_input.instances.get_mut(id).map(|instance| instance.pressed.remove(button));
                     },
                     SubEventType::GamepadAxisChanged => {
-                        let (id, axis, directon): (GamepadId, Axis, f32) = event.get::<(GamepadId, Axis, f32)>().unwrap().clone();
-                        todo!();
+                        let (id, axis, direction): (&GamepadId, &Axis, &f32) = event.get::<(&GamepadId, &Axis, &f32)>().unwrap().clone();
+                        gamepad_input.instances.get_mut(id).map(|instance| instance.gamepad_axis = GamepadAxis::new(axis.clone(), direction.clone()));
                     }
                     _ => {}
                 }
