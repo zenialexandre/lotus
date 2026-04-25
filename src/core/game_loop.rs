@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 use winit::event_loop::ActiveEventLoop;
 use super::{
     context::Context,
-    input::{input::Input, keyboard_input::KeyboardInput, mouse_input::MouseInput, gamepad_input::GamepadInput},
+    bindings::{input::Input, keyboard_input::KeyboardInput, mouse_input::MouseInput, gamepad_input::GamepadInput},
     managers::render::manager::RenderState,
     ecs::world::World
 };

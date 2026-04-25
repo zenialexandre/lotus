@@ -20,7 +20,7 @@ pub mod ecs;
 pub mod context;
 
 /// Input and binding related features.
-pub mod input;
+pub mod bindings;
 
 /// Physics related features.
 pub mod physics;

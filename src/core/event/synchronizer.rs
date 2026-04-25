@@ -13,7 +13,7 @@ use super::{
         camera::camera2d::Camera2d,
         animation::Animation,
         texture::sprite_sheet::{AnimationState, LoopingState},
-        input::gamepad_input::{GamepadInput, GamepadInstance}
+        bindings::gamepad_input::{GamepadInput, GamepadInstance}
     }
 };
 

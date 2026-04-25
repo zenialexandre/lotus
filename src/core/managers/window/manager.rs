@@ -18,7 +18,7 @@ use super::{
             super::{Color, ColorOption},
             game_loop::GameLoop,
             context::Context,
-            input::{keyboard_input::KeyboardInput, mouse_input::MouseInput}
+            bindings::{keyboard_input::KeyboardInput, mouse_input::MouseInput}
         }
     }
 };
