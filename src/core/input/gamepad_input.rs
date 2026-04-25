@@ -9,14 +9,16 @@ pub struct GamepadInput {
     pub instances: HashMap<GamepadId, GamepadInstance>
 }
 
-impl GamepadInput {
+impl Default for GamepadInput {
     /// Returns a default GamepadInput struct.
-    pub fn default() -> Self {
+    fn default() -> Self {
         return Self {
             instances: HashMap::new()
         };
     }
+}
 
+impl GamepadInput {
     /// Returns the first gamepad instance that is connected.
     /// 
     /// For reading purposes only.
@@ -48,7 +50,7 @@ impl GamepadInput {
 pub struct GamepadInstance {
     pub pressed: HashSet<Button>,
     pub previously_pressed: HashSet<Button>,
-    pub gamepad_axis: GamepadAxis,
+    pub joystick_actions: HashMap<Axis, f32>,
     pub is_connected: bool
 }
 
@@ -69,17 +71,19 @@ impl Input for GamepadInstance {
     }
 }
 
-impl GamepadInstance {
-    /// Create a new gamepad struct instance.
-    pub fn new() -> Self {
+impl Default for GamepadInstance {
+    /// Create a default GamepadInstance struct.
+    fn default() -> Self {
         return Self {
             pressed: HashSet::new(),
             previously_pressed: HashSet::new(),
-            gamepad_axis: GamepadAxis::default(),
+            joystick_actions: HashMap::new(),
             is_connected: true
         };
     }
+}
 
+impl GamepadInstance {
     /// Sets the current state of connection to `true`.
     pub(crate) fn connect(&mut self) {
         self.is_connected = true;
@@ -92,7 +96,16 @@ impl GamepadInstance {
 
     /// Returns if one of the buttons inside a list is pressed.
     pub fn is_some_of_buttons_pressed(&self, buttons: Vec<Button>) -> bool {
-        return false;
+        let mut is_some_of_buttons_pressed: bool = false;
+
+        for button in buttons {
+            is_some_of_buttons_pressed = self.pressed.contains(&button);
+
+            if is_some_of_buttons_pressed {
+                return is_some_of_buttons_pressed;
+            }
+        }
+        return is_some_of_buttons_pressed;
     }
 
     /// Returns if a specific list of buttons are all pressed.
@@ -107,7 +120,16 @@ impl GamepadInstance {
 
     /// Returns if one of the buttons inside a list is released.
     pub fn is_some_of_buttons_released(&self, buttons: Vec<Button>) -> bool {
-        return false;
+        let mut is_some_of_buttons_released: bool = false;
+
+        for button in buttons {
+            is_some_of_buttons_released = self.previously_pressed.contains(&button) && !self.pressed.contains(&button);
+
+            if is_some_of_buttons_released {
+                return is_some_of_buttons_released;
+            }
+        }
+        return is_some_of_buttons_released;
     }
 
     /// Returns if a specific list of buttons are all released.
@@ -118,29 +140,5 @@ impl GamepadInstance {
     /// Returns if a specific button is released.
     pub fn is_button_released(&self, button: Button) -> bool {
         return self.previously_pressed.contains(&button) && !self.pressed.contains(&button);
-    }
-}
-
-#[derive(Clone)]
-pub struct GamepadAxis {
-    pub axis: Axis,
-    pub direction: f32
-}
-
-impl GamepadAxis {
-    /// Returns a new GamepadAxis with default values.
-    pub fn default() -> Self {
-        return Self {
-            axis: gilrs::Axis::Unknown,
-            direction: 0.0
-        };
-    }
-
-    /// Returns a new GamepadAxis based on arguments.
-    pub fn new(axis: Axis, direction: f32) -> Self {
-        return Self {
-            axis: axis,
-            direction: direction
-        };
     }
 }

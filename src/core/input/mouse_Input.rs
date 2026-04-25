@@ -28,16 +28,18 @@ impl Input for MouseInput {
     }
 }
 
-impl MouseInput {
+impl Default for MouseInput {
     /// Returns a default MouseInput struct.
-    pub fn default() -> Self {
+    fn default() -> Self {
         return Self {
             pressed: HashSet::new(),
             previously_pressed: HashSet::new(),
             mouse_position: MousePosition::default()
         };
     }
+}
 
+impl MouseInput {
     /// Returns if a specific mouse button is pressed at the moment.
     pub fn is_mouse_button_pressed(&self, mouse_button: MouseButton) -> bool {
         return self.pressed.contains(&mouse_button);

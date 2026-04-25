@@ -18,14 +18,14 @@ fn update(context: &mut Context) {
             println!("Gamepad {} - Some button has been pressed", id);
         }
 
-        if gamepad.is_button_pressed(Start) {
+        if gamepad.is_button_pressed(Button::Start) {
             println!("Gamepad {} - Start is pressed", id);
         }
 
-        if gamepad.is_buttons_pressed(vec![North, East]) {
+        if gamepad.is_buttons_pressed(vec![Button::North, Button::East]) {
             println!("Gamepad {} - Buttons pressed at the same time", id);
         }
 
-        println!("Axis {}, Direction {}", gamepad.gamepad_axis.axis.is_stick(), gamepad.gamepad_axis.direction);
+        println!("Gamepad Instance Joystick Mapping. Len: {}", gamepad.joystick_actions.len());
     }
 }

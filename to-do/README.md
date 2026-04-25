@@ -4,7 +4,7 @@
 
 ## Project To-do List
 
-0 - Joystick inputs support.
+0 - Create aliases for Winit and Gilrs enums.
 
 1 - Custom shaders support.
 
