@@ -12,7 +12,8 @@ pub enum Command {
     Despawn(Entity),
     AddResource(Box<dyn Resource>),
     AddResources(Vec<Box<dyn Resource>>),
-    ShowFps(u32, Color)
+    ShowFps(u32, Color),
+    HideFps
 }
 
 /// Struct to represent the mutable commands to be made on the world.
@@ -57,6 +58,11 @@ impl Commands {
         self.commands.push(Command::ShowFps(current_fps, color));
     }
 
+    /// Hide the current FPS value.
+    pub fn hide_fps(&mut self) {
+        self.commands.push(Command::HideFps);
+    }
+
     /// Take the commands memory reference.
     pub(crate) fn _take_commands(&mut self) -> Vec<Command> {
         return std::mem::take(&mut self.commands);
@@ -75,13 +81,16 @@ impl Commands {
                     }
                 },
                 Command::AddResource(resource) => {
-                    world.add_resource(resource);   
+                    world.add_resource(resource);
                 },
                 Command::AddResources(resources) => {
                     world.add_resources(resources);
                 },
                 Command::ShowFps(current_fps, color) => {
                     world.show_fps(render_state, current_fps, color);
+                },
+                Command::HideFps => {
+                    world.hide_fps(render_state);
                 }
             }
         }
