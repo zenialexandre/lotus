@@ -1,56 +1,14 @@
-use std::collections::{HashMap, HashSet};
-use gilrs::{Axis, Button, GamepadId};
-use lotus_proc_macros::Resource;
-use super::input::Input;
-
-/// Global resource to store all the gamepad inputs done on runtime.
-#[derive(Clone, Resource)]
-pub struct GamepadInput {
-    pub instances: HashMap<GamepadId, GamepadInstance>
-}
-
-impl Default for GamepadInput {
-    /// Returns a default GamepadInput struct.
-    fn default() -> Self {
-        return Self {
-            instances: HashMap::new()
-        };
-    }
-}
-
-impl GamepadInput {
-    /// Returns the first gamepad instance that is connected.
-    /// 
-    /// For reading purposes only.
-    pub fn get_first_connected(&self) -> Option<(&GamepadId, &GamepadInstance)> {
-        return self.instances.iter()
-            .filter(|(_, instance)| instance.is_connected)
-            .next();
-    }
-
-    /// Returns a gamepad instance that are connected by its index/id.
-    /// 
-    /// For reading purposes only.
-    pub fn get_by_index(&self, index: usize) -> Option<(&GamepadId, &GamepadInstance)> {
-        return self.instances.iter().nth(index);
-    }
-
-    /// Returns all gamepad instances that are connected.
-    /// 
-    /// For reading purposes only.
-    pub fn get_all_connected(&self) -> Vec<(&GamepadId, &GamepadInstance)> {
-        return self.instances.iter()
-            .filter(|(_, instance)| instance.is_connected)
-            .collect();
-    }
-}
+use std::collections::HashSet;
+use gilrs::{Button, Axis};
+use super::{super::input::Input, joystick::Joystick};
 
 /// Struct to hold a gamepad instance.
 #[derive(Clone)]
 pub struct GamepadInstance {
     pub pressed: HashSet<Button>,
     pub previously_pressed: HashSet<Button>,
-    pub joystick_actions: HashMap<Axis, f32>,
+    pub left_joystick: Joystick,
+    pub right_joystick: Joystick,
     pub is_connected: bool
 }
 
@@ -77,7 +35,8 @@ impl Default for GamepadInstance {
         return Self {
             pressed: HashSet::new(),
             previously_pressed: HashSet::new(),
-            joystick_actions: HashMap::new(),
+            left_joystick: Joystick::default(),
+            right_joystick: Joystick::default(),
             is_connected: true
         };
     }
@@ -92,6 +51,61 @@ impl GamepadInstance {
     /// Sets the current state of connection to `false`.
     pub(crate) fn disconnect(&mut self) {
         self.is_connected = false;
+    }
+
+    /// Manages joystick persistence after events.
+    pub(crate) fn joystick(&mut self, axis: &Axis, direction: &f32) {
+        match axis {
+            Axis::LeftStickX => {
+                self.left_joystick.x.previous_direction = self.left_joystick.x.current_direction;
+                self.left_joystick.x.current_direction = *direction;
+            },
+            Axis::LeftStickY => {
+                self.left_joystick.y.previous_direction = self.left_joystick.y.current_direction;
+                self.left_joystick.y.current_direction = *direction;
+            },
+            Axis::RightStickX => {
+                self.right_joystick.x.previous_direction = self.right_joystick.x.current_direction;
+                self.right_joystick.x.current_direction = *direction;
+            },
+            Axis::RightStickY => {
+                self.right_joystick.y.previous_direction = self.right_joystick.y.current_direction;
+                self.right_joystick.y.current_direction = *direction;
+            },
+            _ => {}
+        }
+    }
+
+    /// Returns if the right joystick is moving.
+    pub fn is_right_joystick_moving(&self, deadzone: f32) -> bool {
+        return (self.right_joystick.x.current_direction != 0.0 && self.right_joystick.x.current_direction.abs() > deadzone) ||
+            (self.right_joystick.y.current_direction != 0.0 && self.right_joystick.y.current_direction.abs() > deadzone);
+    }
+
+    /// Returns if the right joystick is stopping.
+    pub fn has_right_joystick_stopped(&self) -> bool {
+        return self.right_joystick.x.current_direction == 0.0 && self.right_joystick.y.current_direction == 0.0;
+    }
+
+    /// Returns if the left joystick is moving.
+    pub fn is_left_joystick_moving(&self, deadzone: f32) -> bool {
+        return (self.left_joystick.x.current_direction != 0.0 && self.left_joystick.x.current_direction.abs() > deadzone) ||
+            (self.left_joystick.y.current_direction != 0.0 && self.left_joystick.y.current_direction.abs() > deadzone);
+    }
+
+    /// Returns if the left joystick is stopping.
+    pub fn has_left_joystick_stopped(&self) -> bool {
+        return self.left_joystick.x.current_direction == 0.0 && self.left_joystick.y.current_direction == 0.0;
+    }
+
+    /// Returns if any joystick is moving.
+    pub fn is_any_joystick_moving(&self, deadzone: f32) -> bool {
+        return self.is_left_joystick_moving(deadzone) || self.is_right_joystick_moving(deadzone);
+    }
+
+    /// Returns if any joystick is stopping.
+    pub fn is_any_joystick_stopped(&self) -> bool {
+        return self.has_left_joystick_stopped() || self.has_right_joystick_stopped();
     }
 
     /// Returns if one of the buttons inside a list is pressed.

@@ -10,11 +10,11 @@ use super::rendering_type::RenderingType;
 use super::super::super::{
     super::{ColorOption},
     event::dispatcher::{EventDispatcher, Event, EventType, SubEventType},
-    shape::{Orientation, Shape, GeometryType},
+    shape::{shape::Shape, geometry_type::GeometryType, orientation::Orientation},
     physics::transform::{Transform, Strategy},
     texture,
     texture::{cache::TextureCache, sprite::Sprite, sprite_sheet::SpriteSheet},
-    animation::Animation,
+    animation::animation::Animation,
     text::text::{TextHolder, TextRenderer},
     camera::camera2d::Camera2d,
     ecs::{entity::Entity, world::World}
@@ -546,7 +546,7 @@ impl RenderState {
             let uv_coordinates : [f32; 8] = sprite_sheet.current_tile_uv_coordinates();
 
             vertices[0].uv_coordinates  = [uv_coordinates [0], uv_coordinates [1]];
-            vertices[1].uv_coordinates  = [uv_coordinates [2], uv_coordinates [3]]; 
+            vertices[1].uv_coordinates  = [uv_coordinates [2], uv_coordinates [3]];
             vertices[2].uv_coordinates  = [uv_coordinates [4], uv_coordinates [5]];
             vertices[3].uv_coordinates  = [uv_coordinates [6], uv_coordinates [7]];
 
@@ -599,7 +599,7 @@ impl RenderState {
             }
         };
         let rendering_type_buffer: Buffer = cache::buffer::get_conditional_buffer(
-            self, 
+            self,
             RENDERING_TYPE_BUFFER,
             entity,
             RenderingType::Text.to_shader_index()

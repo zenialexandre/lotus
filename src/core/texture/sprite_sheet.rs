@@ -1,21 +1,8 @@
+use super::super::{
+    animation::{animation_state::AnimationState, looping_state::LoopingState},
+    time::timer::{Timer, TimerType}
+};
 use std::time::Duration;
-use super::super::{time::timer::{Timer, TimerType}};
-
-/// Enumerator for animation state mapping.
-#[derive(Clone, PartialEq)]
-pub enum AnimationState {
-    Stopped,
-    Paused,
-    Playing,
-    Finished
-}
-
-/// Enumerator for animation loop mapping.
-#[derive(Clone, PartialEq)]
-pub enum LoopingState {
-    Repeat,
-    Once
-}
 
 /// Struct to represent a sprite sheet.
 #[derive(Clone)]
@@ -29,7 +16,7 @@ pub struct SpriteSheet {
     pub indices: Vec<u32>,
     pub current_index: u32,
     pub animation_state: AnimationState,
-    pub looping_state: LoopingState
+    pub looping_state: LoopingState,
 }
 
 impl SpriteSheet {
@@ -41,11 +28,14 @@ impl SpriteSheet {
         time_between_tiles: f32,
         rows: u32,
         columns: u32,
-        indices: Vec<u32>
+        indices: Vec<u32>,
     ) -> Self {
         return Self {
             path,
-            timer: Timer::new(TimerType::Repeat, Duration::from_secs_f32(time_between_tiles)),
+            timer: Timer::new(
+                TimerType::Repeat,
+                Duration::from_secs_f32(time_between_tiles),
+            ),
             tile_width: tile_size.0,
             tile_height: tile_size.1,
             rows,
@@ -53,7 +43,7 @@ impl SpriteSheet {
             indices,
             current_index: 0,
             animation_state: AnimationState::Finished,
-            looping_state
+            looping_state,
         };
     }
 
@@ -74,12 +64,7 @@ impl SpriteSheet {
         let top: f32 = row * tile_height;
         let bottom: f32 = top + tile_height;
 
-        return [
-            left, bottom,
-            right, bottom,
-            right, top,
-            left, top
-        ];
+        return [left, bottom, right, bottom, right, top, left, top];
     }
 
     /// Play the current animation while reseting the timer.

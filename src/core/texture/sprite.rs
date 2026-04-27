@@ -2,10 +2,7 @@ use lotus_proc_macros::Component;
 use super::super::{
     managers::render::manager::Vertex,
     super::ColorOption,
-    shape::{
-        GeometryType,
-        Orientation
-    }
+    shape::{geometry_type::GeometryType, orientation::Orientation}
 };
 
 /// Struct to represent a sprite with its data.

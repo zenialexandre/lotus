@@ -11,9 +11,8 @@ use super::{
         text::{text::TextHolder, font::Font},
         color::color::Color,
         camera::camera2d::Camera2d,
-        animation::Animation,
-        texture::sprite_sheet::{AnimationState, LoopingState},
-        bindings::gamepad_input::{GamepadInput, GamepadInstance}
+        animation::{animation::Animation, looping_state::LoopingState, animation_state::AnimationState},
+        bindings::gamepad::{gamepad_input::GamepadInput, gamepad_instance::GamepadInstance}
     }
 };
 
@@ -82,7 +81,7 @@ pub(crate) fn events(world: &mut World, render_state: &RenderState) {
                         },
                         _ => {}
                     }
-                }                    
+                }
             },
             EventType::Gamepad(sub_event_type) => {
                 let mut gamepad_input: ResourceRefMut<'_, GamepadInput> = world.get_resource_mut::<GamepadInput>().unwrap();
@@ -110,7 +109,7 @@ pub(crate) fn events(world: &mut World, render_state: &RenderState) {
                     },
                     SubEventType::GamepadAxisChanged => {
                         let (id, axis, direction): &(GamepadId, Axis, f32) = event.get::<(GamepadId, Axis, f32)>().unwrap();
-                        gamepad_input.instances.get_mut(id).map(|instance| instance.joystick_actions.entry(*axis).or_insert(*direction));
+                        gamepad_input.instances.get_mut(id).map(|instance| instance.joystick(axis, direction));
                     }
                     _ => {}
                 }

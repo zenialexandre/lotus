@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 use winit::event_loop::ActiveEventLoop;
 use super::{
     context::Context,
-    bindings::{input::Input, keyboard_input::KeyboardInput, mouse_input::MouseInput, gamepad_input::GamepadInput},
+    bindings::{input::Input, keyboard_input::KeyboardInput, mouse_input::MouseInput, gamepad::gamepad_input::GamepadInput},
     managers::render::manager::RenderState,
     ecs::world::World
 };
@@ -92,7 +92,7 @@ impl GameLoop {
         return self.delta;
     }
 
-    /// Returns delta as seconds on the f32 format. 
+    /// Returns delta as seconds on the f32 format.
     pub fn get_delta_as_seconds(&self) -> f32 {
         return self.delta.as_secs_f32();
     }
