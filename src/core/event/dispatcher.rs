@@ -22,7 +22,8 @@ pub(crate) enum SubEventType {
     GamepadConnected,
     GamepadDisconnected,
     GamepadButtonPressed,
-    GamepadButtonRelease
+    GamepadButtonReleased,
+    GamepadAxisChanged
 }
 
 /// Struct to represent an event to be dispatched.
@@ -38,6 +39,15 @@ impl Event {
         return Self {
             entity,
             event_type,
+            value: Box::new(value)
+        };
+    }
+
+    /// Create a new event struct with a dummy entity.
+    pub(crate) fn new_with_dummy<T: Any + Send + Sync>(event_type: EventType, value: T) -> Self {
+        return Self {
+            entity: Entity::dummy(),
+            event_type: event_type,
             value: Box::new(value)
         };
     }

@@ -20,7 +20,7 @@ pub mod ecs;
 pub mod context;
 
 /// Input and binding related features.
-pub mod input;
+pub mod bindings;
 
 /// Physics related features.
 pub mod physics;
@@ -54,3 +54,6 @@ pub mod animation;
 
 /// Event related features.
 pub(crate) mod event;
+
+/// Listeners of all sorts.
+pub(crate) mod listeners;

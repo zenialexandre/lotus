@@ -1,6 +1,9 @@
 use std::collections::{HashMap, VecDeque};
 use lotus_proc_macros::Component;
-use super::texture::sprite_sheet::{SpriteSheet, AnimationState};
+use super::super::{
+    texture::sprite_sheet::SpriteSheet,
+    animation::animation_state::AnimationState
+};
 
 /// Struct that represents the animations for a certain entity.
 #[derive(Clone, Component)]
@@ -52,7 +55,7 @@ impl Animation {
 
     /// Plays the animation of a certain sprite sheet.
     pub fn play(&mut self, title: String) {
-        if  
+        if
             self.get_playing_animation_now().is_some() &&
             self.playing_stack.front().map(|t| t == &title).unwrap_or(false)
         {

@@ -19,9 +19,9 @@ use super::{
         },
         super::Color,
         camera::camera2d::Camera2d,
-        input::keyboard_input::KeyboardInput,
-        input::mouse_input::MouseInput,
-        input::gamepad_input::GamepadInput,
+        bindings::keyboard_input::KeyboardInput,
+        bindings::mouse_input::MouseInput,
+        bindings::gamepad::gamepad_input::GamepadInput,
         draw_order::DrawOrder,
         visibility::Visibility,
         text::{text::{Text, TextHolder, TextRenderer}, font::{Font, Fonts}},
@@ -238,7 +238,7 @@ impl World {
                         type_id,
                         resource_borrow_state: &self.resource_borrow_state,
                         phantom_data: PhantomData
-                    }  
+                    }
                 );
             } else {
                 resource_borrow_state.release_mutable(type_id);
@@ -314,7 +314,7 @@ impl World {
         if let Some((_, archetype)) = self.archetypes.iter().find(|(_, arch)| arch.entities.contains(entity)) {
             if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
                 let mut entity_components: Vec<AtomicRef<'a, Box<dyn Component>>> = Vec::new();
-    
+
                 for component_vec in archetype.components.values() {
                     if let Some(component) = component_vec.get(index) {
                         let borrowed: AtomicRef<'_, Box<dyn Component>> = component.borrow();
@@ -332,7 +332,7 @@ impl World {
         if let Some((_, archetype)) = self.archetypes.iter().find(|(_, arch)| arch.entities.contains(entity)) {
             if let Some(index) = archetype.entities.iter().position(|e| e == entity) {
                 let mut entity_components: Vec<AtomicRefMut<'a, Box<dyn Component>>> = Vec::new();
-    
+
                 for component_vec in archetype.components.values() {
                     if let Some(component) = component_vec.get(index) {
                         let borrowed: AtomicRefMut<'_, Box<dyn Component>> = component.borrow_mut();
@@ -347,7 +347,7 @@ impl World {
 
     /// Returns if an entity still is in the world.
     pub fn is_entity_alive(&self, entity: Entity) -> bool {
-        return self.archetypes.values().any(|archetype| archetype.entities.iter().any(|e| e.0 == entity.0));    
+        return self.archetypes.values().any(|archetype| archetype.entities.iter().any(|e| e.0 == entity.0));
     }
 
     /// Returns if an entity is visible.

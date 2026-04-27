@@ -1,6 +1,6 @@
 use cgmath::Vector2;
 use lotus_proc_macros::Component;
-use super::super::shape::GeometryType;
+use super::super::shape::geometry_type::GeometryType;
 
 /// Struct to represent the real collider of the object.
 #[derive(Clone, Debug)]
@@ -30,7 +30,7 @@ impl Collider {
     }
 }
 
-/// Enumerator to store the possible collision algorithms to be used. 
+/// Enumerator to store the possible collision algorithms to be used.
 #[derive(Default, Clone, Debug)]
 pub enum CollisionAlgorithm {
     #[default]

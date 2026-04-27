@@ -27,19 +27,21 @@ impl Input for KeyboardInput {
     }
 }
 
-impl KeyboardInput {
+impl Default for KeyboardInput {
     /// Returns a default KeyboardInput struct.
-    pub fn default() -> Self {
+    fn default() -> Self {
         return Self {
             pressed: HashSet::new(),
             previously_pressed: HashSet::new(),
         };
     }
+}
 
+impl KeyboardInput {
     /// Returns if some of the following keyboard keys is pressed.
     pub fn is_some_of_keys_pressed(&self, keys: Vec<KeyCode>) -> bool {
         let mut is_some_of_keys_pressed: bool = false;
-        
+
         for key in keys {
             is_some_of_keys_pressed = self.pressed.contains(&PhysicalKey::Code(key));
 
@@ -58,7 +60,7 @@ impl KeyboardInput {
     /// Returns if some of the following keyboard keys is released.
     pub fn is_some_of_keys_released(&self, keys: Vec<KeyCode>) -> bool {
         let mut is_some_of_keys_released: bool = false;
-        
+
         for key in keys {
             is_some_of_keys_released = self.previously_pressed.contains(&PhysicalKey::Code(key)) && !self.pressed.contains(&PhysicalKey::Code(key));
 

@@ -4,7 +4,7 @@
 #![doc = r#"
 ![Lotus Logo](https://raw.githubusercontent.com/zenialexandre/lotus/main/assets/textures/lotus_pink_256x256_aligned.png)
 
-Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.  
+Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
 Heavily inspired by awesome open-source projects like [`Bevy`](https://github.com/bevyengine/bevy), [`Comfy`](https://github.com/darthdeus/comfy) and [`LÖVE`](https://github.com/love2d/love).
 
@@ -139,16 +139,25 @@ pub use core::context::*;
 pub use core::color::color::*;
 pub use core::color::option::*;
 pub use core::visibility::*;
-pub use core::shape::*;
+pub use core::shape::shape::*;
+pub use core::shape::orientation::*;
+pub use core::shape::geometry_type::*;
 pub use core::texture::sprite::*;
 pub use core::texture::sprite_sheet::*;
-pub use core::input::keyboard_input::*;
-pub use core::input::mouse_input::*;
-pub use core::input::gamepad_input::*;
+pub use core::bindings::input::*;
+pub use core::bindings::keyboard_input::*;
+pub use core::bindings::mouse_input::*;
+pub use core::bindings::gamepad::gamepad_input::*;
+pub use core::bindings::gamepad::gamepad_instance::*;
+pub use core::bindings::gamepad::axis_state::*;
+pub use core::bindings::gamepad::joystick::*;
 pub use core::text::*;
 pub use core::text::text::*;
+
 pub use core::text::font::*;
-pub use core::animation::*;
+pub use core::animation::animation::*;
+pub use core::animation::animation_state::*;
+pub use core::animation::looping_state::*;
 pub use core::camera::camera2d::*;
 pub use core::physics::transform::Transform;
 pub use core::physics::transform::*;
@@ -171,10 +180,9 @@ pub use core::ecs::query::*;
 pub use lotus_proc_macros::Component;
 pub use lotus_proc_macros::Resource;
 pub use cgmath::*;
-pub use kira::*;
+pub use kira::{*, Mapping};
 pub use pollster::block_on;
 pub use winit::keyboard::{KeyCode, PhysicalKey};
 pub use winit::event::MouseButton;
 pub use winit::window::WindowButtons;
-pub use gilrs::Button::*;
-pub use gilrs::Axis::*;
+pub use gilrs::*;

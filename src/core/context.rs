@@ -2,7 +2,7 @@ use super::{
     managers::window::manager::WindowConfiguration,
     ecs::{world::World, command::Commands},
     managers::render::manager::RenderState,
-    game_loop::GameLoopListener
+    listeners::{game_loop::listener::GameLoopListener, gamepad::listener::GamepadListener}
 };
 
 /// Struct created to provide the main features of the engine for the end-user.
@@ -30,6 +30,9 @@ pub struct Context {
     /// Use for mutating some useful data.
     pub game_loop_listener: GameLoopListener,
 
+    /// The listener of gamepad events.
+    pub gamepad_listener: GamepadListener,
+
     /// The delta time for reading purposes.
     pub delta: f32
 }
@@ -43,6 +46,7 @@ impl Context {
             commands: Commands::new(),
             window_configuration,
             game_loop_listener: GameLoopListener::new(),
+            gamepad_listener: GamepadListener::new(),
             delta
         };
     }

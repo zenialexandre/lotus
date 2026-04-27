@@ -1,14 +1,14 @@
-use std::collections::HashSet;
-use lotus_proc_macros::Resource;
-use winit::event::MouseButton;
 use super::input::Input;
+use lotus_proc_macros::Resource;
+use std::collections::HashSet;
+use winit::event::MouseButton;
 
 /// Global resource to store all the mouse inputs done on runtime.
 #[derive(Clone, Debug, Resource)]
 pub struct MouseInput {
     pub pressed: HashSet<MouseButton>,
     pub previously_pressed: HashSet<MouseButton>,
-    pub mouse_position: MousePosition
+    pub mouse_position: MousePosition,
 }
 
 impl Input for MouseInput {
@@ -28,16 +28,18 @@ impl Input for MouseInput {
     }
 }
 
-impl MouseInput {
+impl Default for MouseInput {
     /// Returns a default MouseInput struct.
-    pub fn default() -> Self {
+    fn default() -> Self {
         return Self {
             pressed: HashSet::new(),
             previously_pressed: HashSet::new(),
-            mouse_position: MousePosition::default()
+            mouse_position: MousePosition::default(),
         };
     }
+}
 
+impl MouseInput {
     /// Returns if a specific mouse button is pressed at the moment.
     pub fn is_mouse_button_pressed(&self, mouse_button: MouseButton) -> bool {
         return self.pressed.contains(&mouse_button);
@@ -45,7 +47,8 @@ impl MouseInput {
 
     /// Returns if a specific mouse button is released.
     pub fn is_mouse_button_released(&self, mouse_button: MouseButton) -> bool {
-        return self.previously_pressed.contains(&mouse_button) && !self.pressed.contains(&mouse_button);
+        return self.previously_pressed.contains(&mouse_button)
+            && !self.pressed.contains(&mouse_button);
     }
 }
 
@@ -53,14 +56,11 @@ impl MouseInput {
 #[derive(Clone, Debug)]
 pub struct MousePosition {
     pub x: f32,
-    pub y: f32
+    pub y: f32,
 }
 
 impl Default for MousePosition {
     fn default() -> Self {
-        return Self {
-            x: 0.0,
-            y: 0.0
-        };
+        return Self { x: 0.0, y: 0.0 };
     }
 }

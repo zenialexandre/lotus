@@ -5,11 +5,11 @@ use super::super::super::{
     super::ColorOption,
     color::color,
     event::dispatcher::EventDispatcher,
-    shape::Shape,
+    shape::shape::Shape,
     physics::transform::Transform,
     draw_order::DrawOrder,
     texture::sprite::Sprite,
-    animation::Animation,
+    animation::animation::Animation,
     text::text::TextHolder,
     camera::camera2d::Camera2d,
     ecs::{entity::Entity, world::World, component::Component, resource::{ResourceRef, ResourceRefMut}}
@@ -158,7 +158,7 @@ pub(crate) fn on_suboptimal(render_state: &mut RenderState, world: &mut World) {
 }
 
 fn get_entities_to_render_sorted(render_state: &mut RenderState, world: &World) -> Vec<Entity> {
-    let mut entities_to_render_sorted: Vec<Entity> = render_state.entities_to_render.clone(); 
+    let mut entities_to_render_sorted: Vec<Entity> = render_state.entities_to_render.clone();
 
     if entities_to_render_sorted.len() > 1 {
         entities_to_render_sorted.sort_by(|a, b| {

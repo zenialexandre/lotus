@@ -18,7 +18,7 @@ use super::{
             super::{Color, ColorOption},
             game_loop::GameLoop,
             context::Context,
-            input::{keyboard_input::KeyboardInput, mouse_input::MouseInput}
+            bindings::{keyboard_input::KeyboardInput, mouse_input::MouseInput}
         }
     }
 };
@@ -265,7 +265,7 @@ impl ApplicationHandler for Application {
             render_state,
             world,
             self.window_configuration.as_ref().unwrap().clone(),
-            0.
+            0.0
         ));
         (self.game_loop.setup)(self.context.as_mut().unwrap());
     }

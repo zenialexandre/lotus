@@ -8,4 +8,4 @@ pub mod keyboard_input;
 pub mod mouse_input;
 
 /// Gamepad input recognition and treatments.
-pub mod gamepad_input;
+pub mod gamepad;
