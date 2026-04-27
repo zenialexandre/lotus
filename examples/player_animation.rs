@@ -61,9 +61,17 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    context.commands.show_fps(context.game_loop_listener.current_fps, Color::by_option(ColorOption::Black));
-
     let keyboard_input: KeyboardInput = context.world.get_resource_cloned::<KeyboardInput>().unwrap();
+
+    if keyboard_input.is_key_pressed(KeyCode::Semicolon) {
+        let mut query: Query = Query::new(&context.world).with::<Fps>();
+
+        if let Some(_) = query.entities_with_components().unwrap().first() {
+            context.commands.hide_fps();
+        } else {
+            context.commands.show_fps(context.game_loop_listener.current_fps, Color::by_option(ColorOption::Black));
+        }
+    }
     move_player(context, keyboard_input.clone());
     attack(context, keyboard_input);
 }

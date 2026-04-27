@@ -37,7 +37,7 @@ use super::{
 
 /// Struct to represent the FPS entity on the world.
 #[derive(Clone, Component)]
-struct Fps();
+pub struct Fps();
 
 /// Struct to represent the World of the Entity-Component-System architecture.
 ///
@@ -105,6 +105,17 @@ impl World {
                 current_fps.to_string()
             );
             self.spawn(render_state, vec![Box::new(fps_text), Box::new(DrawOrder(99999)), Box::new(Fps())]);
+        }
+    }
+
+    /// Deletes the text showing the current application FPS.
+    ///
+    /// Causes the despawn of the entity containing the FPS text.
+    pub fn hide_fps(&mut self, render_state: &mut RenderState) {
+        let mut query: Query = Query::new(&self).with::<Fps>();
+
+        if let Some(fps_entity) = query.entities_with_components().unwrap().first() {
+            self.despawn(render_state, fps_entity);
         }
     }
 
