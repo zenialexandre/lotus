@@ -153,7 +153,6 @@ pub use core::bindings::gamepad::axis_state::*;
 pub use core::bindings::gamepad::joystick::*;
 pub use core::text::*;
 pub use core::text::text::*;
-
 pub use core::text::font::*;
 pub use core::animation::animation::*;
 pub use core::animation::animation_state::*;
