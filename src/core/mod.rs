@@ -53,7 +53,7 @@ pub mod draw_order;
 pub mod animation;
 
 /// Event related features.
-pub(crate) mod event;
+pub mod event;
 
 /// Listeners of all sorts.
-pub(crate) mod listeners;
+pub mod listeners;

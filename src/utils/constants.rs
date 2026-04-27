@@ -20,9 +20,9 @@ pub mod cache {
 
 /// Constants related to native engine fonts.
 pub mod font {
-    pub const UNDERDOG_REGULAR_PATH: &str = "../assets/fonts/Underdog-Regular.ttf";
-    pub const CODYSTAR_LIGHT_PATH: &str = "../assets/fonts/Codystar-Light.ttf";
-    pub const CODYSTAR_REGULAR_PATH: &str = "../assets/fonts/Codystar-Regular.ttf";
-    pub const ROBOTO_MONO_PATH: &str = "../assets/fonts/RobotoMono-VariableFont_wght.ttf";
-    pub const ROBOTO_MONO_ITALIC_PATH: &str = "../assets/fonts/RobotoMono-Italic-VariableFont_wght.ttf";
+    pub const UNDERDOG_REGULAR_PATH: &str = "../../assets/fonts/Underdog-Regular.ttf";
+    pub const CODYSTAR_LIGHT_PATH: &str = "../../assets/fonts/Codystar-Light.ttf";
+    pub const CODYSTAR_REGULAR_PATH: &str = "../../assets/fonts/Codystar-Regular.ttf";
+    pub const ROBOTO_MONO_PATH: &str = "../../assets/fonts/RobotoMono-VariableFont_wght.ttf";
+    pub const ROBOTO_MONO_ITALIC_PATH: &str = "../../assets/fonts/RobotoMono-Italic-VariableFont_wght.ttf";
 }
