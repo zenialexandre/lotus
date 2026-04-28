@@ -1,8 +1,7 @@
 use std::collections::HashSet;
 use lotus_proc_macros::Resource;
 use winit::keyboard::PhysicalKey;
-use crate::KeyboardKey;
-use super::super::input::Input;
+use super::{super::input::Input, keyboard_key::KeyboardKey};
 
 /// Global resource to store all the keyboard inputs done on runtime.
 #[derive(Clone, Debug, Resource)]

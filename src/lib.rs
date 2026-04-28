@@ -146,7 +146,7 @@ pub use core::texture::sprite::*;
 pub use core::texture::sprite_sheet::*;
 pub use core::bindings::input::*;
 pub use core::bindings::keyboard::keyboard_input::*;
-pub use core::bindings::keyboard::keyboard_code::*;
+pub use core::bindings::keyboard::keyboard_key::*;
 pub use core::bindings::mouse::mouse_input::*;
 pub use core::bindings::mouse::mouse_position::*;
 pub use core::bindings::gamepad::gamepad_input::*;

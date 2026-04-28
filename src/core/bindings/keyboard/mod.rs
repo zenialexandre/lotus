@@ -2,4 +2,4 @@
 pub mod keyboard_input;
 
 /// Keyboard code enumerator.
-pub mod keyboard_code;
+pub mod keyboard_key;
