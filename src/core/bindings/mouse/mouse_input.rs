@@ -1,4 +1,4 @@
-use super::input::Input;
+use super::{super::input::Input, mouse_position::MousePosition};
 use lotus_proc_macros::Resource;
 use std::collections::HashSet;
 use winit::event::MouseButton;
@@ -49,18 +49,5 @@ impl MouseInput {
     pub fn is_mouse_button_released(&self, mouse_button: MouseButton) -> bool {
         return self.previously_pressed.contains(&mouse_button)
             && !self.pressed.contains(&mouse_button);
-    }
-}
-
-/// Struct that represents the current mouse position.
-#[derive(Clone, Debug)]
-pub struct MousePosition {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Default for MousePosition {
-    fn default() -> Self {
-        return Self { x: 0.0, y: 0.0 };
     }
 }

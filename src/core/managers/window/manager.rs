@@ -18,7 +18,7 @@ use super::{
             super::{Color, ColorOption},
             game_loop::GameLoop,
             context::Context,
-            bindings::{keyboard_input::KeyboardInput, mouse_input::MouseInput}
+            bindings::{keyboard::keyboard_input::KeyboardInput, mouse::mouse_input::MouseInput}
         }
     }
 };
@@ -154,7 +154,7 @@ impl WindowConfiguration {
     }
 
     /// Returns the window configuration with the visible.
-    /// 
+    ///
     /// Unused function, it doesn't work well with the taskbar icon.
     pub(crate) fn _visible(self, _visible: bool) -> Self {
         return Self {

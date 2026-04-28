@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use lotus_proc_macros::Resource;
-use winit::keyboard::{KeyCode, PhysicalKey};
-use super::input::Input;
+use winit::keyboard::PhysicalKey;
+use crate::KeyboardKey;
+use super::super::input::Input;
 
 /// Global resource to store all the keyboard inputs done on runtime.
 #[derive(Clone, Debug, Resource)]
@@ -39,11 +40,11 @@ impl Default for KeyboardInput {
 
 impl KeyboardInput {
     /// Returns if some of the following keyboard keys is pressed.
-    pub fn is_some_of_keys_pressed(&self, keys: Vec<KeyCode>) -> bool {
+    pub fn is_some_of_keys_pressed(&self, keys: Vec<KeyboardKey>) -> bool {
         let mut is_some_of_keys_pressed: bool = false;
 
         for key in keys {
-            is_some_of_keys_pressed = self.pressed.contains(&PhysicalKey::Code(key));
+            is_some_of_keys_pressed = self.pressed.contains(&PhysicalKey::Code(KeyboardKey::to_winit(&key)));
 
             if is_some_of_keys_pressed {
                 return is_some_of_keys_pressed;
@@ -53,16 +54,17 @@ impl KeyboardInput {
     }
 
     /// Returns if a specific keyboard key is pressed at the moment.
-    pub fn is_key_pressed(&self, key: KeyCode) -> bool {
-        return self.pressed.contains(&PhysicalKey::Code(key));
+    pub fn is_key_pressed(&self, key: KeyboardKey) -> bool {
+        return self.pressed.contains(&PhysicalKey::Code(KeyboardKey::to_winit(&key)));
     }
 
     /// Returns if some of the following keyboard keys is released.
-    pub fn is_some_of_keys_released(&self, keys: Vec<KeyCode>) -> bool {
+    pub fn is_some_of_keys_released(&self, keys: Vec<KeyboardKey>) -> bool {
         let mut is_some_of_keys_released: bool = false;
 
         for key in keys {
-            is_some_of_keys_released = self.previously_pressed.contains(&PhysicalKey::Code(key)) && !self.pressed.contains(&PhysicalKey::Code(key));
+            is_some_of_keys_released = self.previously_pressed.contains(&PhysicalKey::Code(KeyboardKey::to_winit(&key))) &&
+                !self.pressed.contains(&PhysicalKey::Code(KeyboardKey::to_winit(&key)));
 
             if is_some_of_keys_released {
                 return is_some_of_keys_released;
@@ -72,7 +74,8 @@ impl KeyboardInput {
     }
 
     /// Returns if a specific keyboard key is released.
-    pub fn is_key_released(&self, key: KeyCode) -> bool {
-        return self.previously_pressed.contains(&PhysicalKey::Code(key)) && !self.pressed.contains(&PhysicalKey::Code(key));
+    pub fn is_key_released(&self, key: KeyboardKey) -> bool {
+        return self.previously_pressed.contains(&PhysicalKey::Code(KeyboardKey::to_winit(&key))) &&
+            !self.pressed.contains(&PhysicalKey::Code(KeyboardKey::to_winit(&key)));
     }
 }

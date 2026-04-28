@@ -59,7 +59,7 @@ fn update(context: &mut Context) {
     let mut query: Query = Query::new(&context.world).with::<Text>();
     let entities: Vec<Entity> = query.entities_with_components().unwrap();
 
-    if keyboard_input.is_key_pressed(KeyCode::Space) {
+    if keyboard_input.is_key_pressed(KeyboardKey::Space) {
         for entity in entities {
             let text: ComponentRef<'_, Text> = context.world.get_entity_component::<Text>(&entity).unwrap();
 

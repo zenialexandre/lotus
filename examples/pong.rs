@@ -177,11 +177,11 @@ fn move_gray_racket(context: &mut Context, keyboard_input: KeyboardInput) {
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(gray_racket_entity).unwrap();
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(gray_racket_entity).unwrap();
 
-    if keyboard_input.is_key_pressed(KeyCode::KeyW) {
+    if keyboard_input.is_key_pressed(KeyboardKey::KeyW) {
         transform.position.y += velocity.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
-    } else if keyboard_input.is_key_pressed(KeyCode::KeyS) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::KeyS) {
         transform.position.y -= velocity.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
@@ -195,12 +195,12 @@ fn move_pink_racket(context: &mut Context, keyboard_input: KeyboardInput) {
 
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pink_racket_entity).unwrap();
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(pink_racket_entity).unwrap();
-    
-    if keyboard_input.is_key_pressed(KeyCode::ArrowUp) {
+
+    if keyboard_input.is_key_pressed(KeyboardKey::ArrowUp) {
         transform.position.y += velocity.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
-    } else if keyboard_input.is_key_pressed(KeyCode::ArrowDown) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::ArrowDown) {
         transform.position.y -= velocity.y * context.delta;
         let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);

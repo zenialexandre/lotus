@@ -16,7 +16,3 @@ impl Default for Joystick {
         }
     }
 }
-
-impl Joystick {
-
-}
