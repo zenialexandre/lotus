@@ -1,5 +1,5 @@
 /// Keyboard input recognition and treatments.
 pub mod keyboard_input;
 
-/// Keyboard code enumerator.
+/// Keyboard key enumerator.
 pub mod keyboard_key;
