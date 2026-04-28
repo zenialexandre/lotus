@@ -28,11 +28,11 @@ fn update(context: &mut Context) {
             println!("Gamepad {} - Some button has been pressed", id);
         }
 
-        if gamepad.is_button_pressed(Button::Start) {
+        if gamepad.is_button_pressed(GamepadButton::Start) {
             println!("Gamepad {} - Start is pressed", id);
         }
 
-        if gamepad.is_buttons_pressed(vec![Button::North, Button::East]) {
+        if gamepad.is_buttons_pressed(vec![GamepadButton::North, GamepadButton::East]) {
             println!("Gamepad {} - Buttons pressed at the same time", id);
         }
 

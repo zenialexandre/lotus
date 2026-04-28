@@ -1,12 +1,12 @@
 use std::collections::HashSet;
-use gilrs::{Button, Axis};
-use super::{super::input::Input, joystick::Joystick};
+use gilrs::Axis;
+use super::{super::input::Input, joystick::Joystick, gamepad_button::GamepadButton};
 
 /// Struct to hold a gamepad instance.
 #[derive(Clone)]
 pub struct GamepadInstance {
-    pub pressed: HashSet<Button>,
-    pub previously_pressed: HashSet<Button>,
+    pub pressed: HashSet<GamepadButton>,
+    pub previously_pressed: HashSet<GamepadButton>,
     pub left_joystick: Joystick,
     pub right_joystick: Joystick,
     pub is_connected: bool
@@ -109,7 +109,7 @@ impl GamepadInstance {
     }
 
     /// Returns if one of the buttons inside a list is pressed.
-    pub fn is_some_of_buttons_pressed(&self, buttons: Vec<Button>) -> bool {
+    pub fn is_some_of_buttons_pressed(&self, buttons: Vec<GamepadButton>) -> bool {
         let mut is_some_of_buttons_pressed: bool = false;
 
         for button in buttons {
@@ -123,17 +123,17 @@ impl GamepadInstance {
     }
 
     /// Returns if a specific list of buttons are all pressed.
-    pub fn is_buttons_pressed(&self, buttons: Vec<Button>) -> bool {
+    pub fn is_buttons_pressed(&self, buttons: Vec<GamepadButton>) -> bool {
         return buttons.iter().all(|element| self.pressed.contains(element));
     }
 
     /// Returns if a specific button is pressed.
-    pub fn is_button_pressed(&self, button: Button) -> bool {
+    pub fn is_button_pressed(&self, button: GamepadButton) -> bool {
         return self.pressed.contains(&button);
     }
 
     /// Returns if one of the buttons inside a list is released.
-    pub fn is_some_of_buttons_released(&self, buttons: Vec<Button>) -> bool {
+    pub fn is_some_of_buttons_released(&self, buttons: Vec<GamepadButton>) -> bool {
         let mut is_some_of_buttons_released: bool = false;
 
         for button in buttons {
@@ -147,12 +147,12 @@ impl GamepadInstance {
     }
 
     /// Returns if a specific list of buttons are all released.
-    pub fn is_buttons_released(&self, buttons: Vec<Button>) -> bool {
+    pub fn is_buttons_released(&self, buttons: Vec<GamepadButton>) -> bool {
         return buttons.iter().all(|element| self.previously_pressed.contains(element) && !self.pressed.contains(element));
     }
 
     /// Returns if a specific button is released.
-    pub fn is_button_released(&self, button: Button) -> bool {
+    pub fn is_button_released(&self, button: GamepadButton) -> bool {
         return self.previously_pressed.contains(&button) && !self.pressed.contains(&button);
     }
 }

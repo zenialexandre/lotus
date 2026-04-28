@@ -63,7 +63,7 @@ fn setup(context: &mut Context) {
 fn update(context: &mut Context) {
     let keyboard_input: KeyboardInput = context.world.get_resource_cloned::<KeyboardInput>().unwrap();
 
-    if keyboard_input.is_key_pressed(KeyCode::Semicolon) {
+    if keyboard_input.is_key_pressed(KeyboardKey::Semicolon) {
         let mut query: Query = Query::new(&context.world).with::<Fps>();
 
         if let Some(_) = query.entities_with_components().unwrap().first() {
@@ -83,25 +83,25 @@ fn move_player(context: &mut Context, keyboard_input: KeyboardInput) {
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&result).unwrap();
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(&result).unwrap();
 
-    if keyboard_input.is_key_pressed(KeyCode::KeyW) {
+    if keyboard_input.is_key_pressed(KeyboardKey::KeyW) {
         let y: f32 = transform.position.y + velocity.y * context.delta;
         transform.set_position_y(&context.render_state, y);
-    } else if keyboard_input.is_key_pressed(KeyCode::KeyS) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::KeyS) {
         let y: f32 = transform.position.y - velocity.y * context.delta;
         transform.set_position_y(&context.render_state, y);
-    } else if keyboard_input.is_key_pressed(KeyCode::KeyD) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::KeyD) {
         let x: f32 = transform.position.x + velocity.x * context.delta;
         transform.set_position_x(&context.render_state, x);
-    } else if keyboard_input.is_key_pressed(KeyCode::KeyA) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::KeyA) {
         let x: f32 = transform.position.x - velocity.x * context.delta;
         transform.set_position_x(&context.render_state, x);
     }
 
-    if keyboard_input.is_some_of_keys_pressed(vec![KeyCode::KeyW, KeyCode::KeyS, KeyCode::KeyA, KeyCode::KeyD]) {
+    if keyboard_input.is_some_of_keys_pressed(vec![KeyboardKey::KeyW, KeyboardKey::KeyS, KeyboardKey::KeyA, KeyboardKey::KeyD]) {
         animation.play("walk".to_string());
     }
 
-    if keyboard_input.is_some_of_keys_released(vec![KeyCode::KeyW, KeyCode::KeyS, KeyCode::KeyA, KeyCode::KeyD]) {
+    if keyboard_input.is_some_of_keys_released(vec![KeyboardKey::KeyW, KeyboardKey::KeyS, KeyboardKey::KeyA, KeyboardKey::KeyD]) {
         animation.stop("walk".to_string());
     }
 }
@@ -111,11 +111,11 @@ fn attack(context: &mut Context, keyboard_input: KeyboardInput) {
     let result: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
     let mut animation: ComponentRefMut<'_, Animation> = context.world.get_entity_component_mut::<Animation>(&result).unwrap();
 
-    if keyboard_input.is_key_pressed(KeyCode::Space) {
+    if keyboard_input.is_key_pressed(KeyboardKey::Space) {
         animation.play("attack".to_string());
     }
 
-    if keyboard_input.is_key_released(KeyCode::Space) {
+    if keyboard_input.is_key_released(KeyboardKey::Space) {
         animation.stop("attack".to_string());
     }
 }

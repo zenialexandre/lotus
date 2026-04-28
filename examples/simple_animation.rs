@@ -35,13 +35,13 @@ fn update(context: &mut Context) {
     let result: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
     let mut animation: ComponentRefMut<'_, Animation> = context.world.get_entity_component_mut::<Animation>(&result).unwrap();
 
-    if keyboard_input.is_key_pressed(KeyCode::KeyW) {
+    if keyboard_input.is_key_pressed(KeyboardKey::KeyW) {
         animation.play("run".to_string());
-    } else if keyboard_input.is_key_pressed(KeyCode::KeyA) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::KeyA) {
         animation.pause("run".to_string());
-    } else if keyboard_input.is_key_pressed(KeyCode::KeyS) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::KeyS) {
         animation.resume("run".to_string());
-    } else if keyboard_input.is_key_pressed(KeyCode::KeyD) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::KeyD) {
         animation.stop("run".to_string());
     }
 }

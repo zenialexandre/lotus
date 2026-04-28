@@ -81,7 +81,7 @@ fn setup(context: &mut Context) {
 
     let mut thread_rng: ThreadRng = rand::rng();
     let random_direction: bool = thread_rng.random_bool(1.0 / 3.0);
- 
+
     let velocity_x: f32 = if random_direction {
         1.2
     } else {
@@ -133,7 +133,7 @@ fn update(context: &mut Context) {
     let is_hover: bool = mouse_input.mouse_position.x >= 298.0 && (mouse_input.mouse_position.y > 380.0 && mouse_input.mouse_position.y < 416.0);
 
     if
-        keyboard_input.is_key_released(KeyCode::Enter) ||
+        keyboard_input.is_key_released(KeyboardKey::Enter) ||
         (mouse_input.is_mouse_button_released(MouseButton::Left) && is_hover)
     {
         let mut next_state: ResourceRefMut<'_, NextState> = context.world.get_resource_mut::<NextState>().unwrap();
@@ -210,7 +210,7 @@ fn spawn_targets(context: &mut Context) {
 
             context.commands.spawn(
                 vec![
-                    Box::new(Shape::new(Orientation::Horizontal, GeometryType::Rectangle, color)), 
+                    Box::new(Shape::new(Orientation::Horizontal, GeometryType::Rectangle, color)),
                     Box::new(Target()),
                     Box::new(Transform::new(
                         Position::new(Vector2::new(x, y), Strategy::Normalized),
@@ -228,10 +228,10 @@ fn move_player(context: &mut Context, keyboard_input: KeyboardInput, player_enti
     let mut player_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut(&player_entity).unwrap();
     let player_velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component(&player_entity).unwrap();
 
-    if keyboard_input.is_key_pressed(KeyCode::ArrowRight) {
+    if keyboard_input.is_key_pressed(KeyboardKey::ArrowRight) {
         let x: f32 = player_transform.position.x + player_velocity.x * context.delta;
         player_transform.set_position_x(&context.render_state, x);
-    } else if keyboard_input.is_key_pressed(KeyCode::ArrowLeft) {
+    } else if keyboard_input.is_key_pressed(KeyboardKey::ArrowLeft) {
         let x: f32 = player_transform.position.x - player_velocity.x * context.delta;
         player_transform.set_position_x(&context.render_state, x);
     }
@@ -255,10 +255,10 @@ fn check_player_little_ball_collision(context: &mut Context, player_entity: Enti
     if Collision::check(CollisionAlgorithm::Aabb, &player_collision, &little_ball_collision) {
         let velocity_magnitude: f32 = little_ball_velocity.to_vec().magnitude();
         let collision_point: f32 = (
-            (little_ball_collision.collider.position.x - player_collision.collider.position.x) / 
+            (little_ball_collision.collider.position.x - player_collision.collider.position.x) /
             (player_collision.collider.scale.x * 0.5)
         ).clamp(-1.0, 1.0);
-        
+
         let mut new_direction: Vector2<f32> = Vector2::new(
             collision_point * 1.5,
             1.0 - collision_point.abs() * 0.3
@@ -296,7 +296,7 @@ fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity
                 little_ball_velocity.to_vec().normalize() - 2.0 *
                 little_ball_velocity.to_vec().normalize().dot(collision_normal) * collision_normal
             ).normalize();
-            
+
             let randomized_direction: Vector2<f32> = Vector2::new(
                 new_direction.x + random_factor * 0.3,
                 new_direction.y

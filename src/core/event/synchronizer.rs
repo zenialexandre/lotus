@@ -12,7 +12,7 @@ use super::{
         color::color::Color,
         camera::camera2d::Camera2d,
         animation::{animation::Animation, looping_state::LoopingState, animation_state::AnimationState},
-        bindings::gamepad::{gamepad_input::GamepadInput, gamepad_instance::GamepadInstance}
+        bindings::gamepad::{gamepad_input::GamepadInput, gamepad_instance::GamepadInstance, gamepad_button::GamepadButton}
     }
 };
 
@@ -101,11 +101,11 @@ pub(crate) fn events(world: &mut World, render_state: &RenderState) {
                     },
                     SubEventType::GamepadButtonPressed => {
                         let (id, button): &(GamepadId, Button) = event.get::<(GamepadId, Button)>().unwrap();
-                        gamepad_input.instances.get_mut(id).map(|instance| instance.pressed.insert(button.clone()));
+                        gamepad_input.instances.get_mut(id).map(|instance| instance.pressed.insert(GamepadButton::from_gilrs(&button)));
                     },
                     SubEventType::GamepadButtonReleased => {
                         let (id, button): &(GamepadId, Button) = event.get::<(GamepadId, Button)>().unwrap();
-                        gamepad_input.instances.get_mut(id).map(|instance| instance.pressed.remove(button));
+                        gamepad_input.instances.get_mut(id).map(|instance| instance.pressed.remove(&GamepadButton::from_gilrs(&button)));
                     },
                     SubEventType::GamepadAxisChanged => {
                         let (id, axis, direction): &(GamepadId, Axis, f32) = event.get::<(GamepadId, Axis, f32)>().unwrap();
