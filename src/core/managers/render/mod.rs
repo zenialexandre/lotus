@@ -8,4 +8,4 @@ pub mod executor;
 pub mod cache;
 
 /// Rendering type related features.
-pub mod rendering_type;
+pub mod render_type;

@@ -1,3 +1,8 @@
+#![doc =
+    r"This example is a performance benchmark.
+    Making usage of multiple rendering to reach the engine's limits"
+]
+
 use lotus_engine::*;
 use rand::{RngExt, rng, rngs::ThreadRng};
 
@@ -88,10 +93,10 @@ fn check_border_collision(context: &mut Context, entities: &Vec<Entity>) {
 
         for border in &borders {
             let border_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&border).unwrap();
-    
+
             if Collision::check(CollisionAlgorithm::Aabb, &collision, &border_collision) {
                 let border_transform: ComponentRef<'_, Transform> = context.world.get_entity_component::<Transform>(&border).unwrap();
-    
+
                 if border_transform.position.x.abs() < border_transform.position.y.abs() {
                     velocity.y *= -1.0;
                 } else {

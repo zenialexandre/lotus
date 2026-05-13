@@ -1,6 +1,8 @@
-//! This example is a show off for the text management.
-//! Inside the 'setup' function, each text component is spawned as an entity.
-//! Inside the 'update' function, each text component is mutated in a certain way.
+#![doc =
+    r"This example is a show off for the text management.
+    Inside the 'setup' function, each text component is spawned as an entity.
+    Inside the 'update' function, each text component is mutated in a certain way."
+]
 
 use lotus_engine::*;
 use rand::{RngExt, rngs::ThreadRng};
