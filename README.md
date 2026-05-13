@@ -8,6 +8,7 @@
 [![crates.io](https://img.shields.io/crates/v/lotus_engine?logo=rust&logoColor=%23bf7d36)](https://crates.io/crates/lotus_engine)
 [![Documentation](https://img.shields.io/docsrs/lotus_engine)](https://docs.rs/lotus_engine)
 [![Downloads](https://img.shields.io/crates/d/lotus_engine.svg)](https://crates.io/crates/lotus_engine)
+[![Ask DeepWiki - Documentation](https://deepwiki.com/badge.svg)](https://deepwiki.com/zenialexandre/lotus)
 
 Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.  
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
