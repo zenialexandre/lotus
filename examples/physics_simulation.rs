@@ -1,6 +1,8 @@
-//! This example is a show off about physics.
-//! Making use of the velocity and collision components, two shapes (circles) are moving and colliding around the window.
-//! The collision happens between the two shapes and with the borders of the window.
+#![doc =
+    r"This example is a show off about physics.
+    Making use of the velocity and collision components, two shapes (circles) are moving and colliding around the window.
+    The collision happens between the two shapes and with the borders of the window."
+]
 
 use lotus_engine::*;
 use rand::{RngExt, rng, rngs::ThreadRng};
@@ -92,10 +94,10 @@ fn check_border_collision(context: &mut Context, entities: &Vec<Entity>) {
 
         for border in &borders {
             let border_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&border).unwrap();
-    
+
             if Collision::check(CollisionAlgorithm::Aabb, &collision, &border_collision) {
                 let border_transform: ComponentRef<'_, Transform> = context.world.get_entity_component::<Transform>(&border).unwrap();
-    
+
                 if border_transform.position.x.abs() < border_transform.position.y.abs() {
                     velocity.y *= -1.0;
                 } else {

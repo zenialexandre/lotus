@@ -48,7 +48,6 @@ your_game!(
         icon_path: "textures/lotus_pink_256x256.png".to_string(),
         title: "Breakout Game :)".to_string(),
         background_color: Some(Color::by_option(ColorOption::Lightgray)),
-        background_image_path: None,
         width: 725.0,
         height: 695.0,
         position_x: 200.0,

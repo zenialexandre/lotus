@@ -29,7 +29,6 @@ pub struct WindowConfiguration {
     pub icon_path: String,
     pub title: String,
     pub background_color: Option<Color>,
-    pub background_image_path: Option<String>,
     pub width: f64,
     pub height: f64,
     pub position_x: f64,
@@ -49,7 +48,6 @@ impl Default for WindowConfiguration {
             icon_path: "".to_string(),
             title: "New Game!".to_string(),
             background_color: Some(Color::by_option(ColorOption::White)),
-            background_image_path: None,
             width: 800.0,
             height: 600.0,
             position_x: 100.0,
@@ -85,14 +83,6 @@ impl WindowConfiguration {
     pub fn background_color(self, background_color: Option<Color>) -> Self {
         return Self {
             background_color,
-            ..self
-        };
-    }
-
-    /// Returns the window configuration with the background image.
-    pub fn background_image_path(self, background_image_path: Option<String>) -> Self {
-        return Self {
-            background_image_path,
             ..self
         };
     }
@@ -210,7 +200,6 @@ pub struct Application {
 impl ApplicationHandler for Application {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let mut color: Option<Color> = None;
-        let mut background_image_path: Option<String> = None;
         let mut present_mode: present_mode::PresentMode = present_mode::PresentMode::AutoNoVsync;
 
         let window: Arc<Window> = if let Some(window_configuration) = &self.window_configuration {
@@ -245,10 +234,6 @@ impl ApplicationHandler for Application {
             if let Some(background_color) = window_configuration.background_color {
                 color = Some(background_color);
             }
-
-            if let Some(background_image_path_unwrapped) = &window_configuration.background_image_path {
-                background_image_path = Some(background_image_path_unwrapped.to_string());
-            }
             Arc::new(event_loop.create_window(window_attributes).unwrap())
         } else {
             Arc::new(event_loop.create_window(Window::default_attributes()).unwrap())
@@ -259,7 +244,6 @@ impl ApplicationHandler for Application {
         let world: World = World::new();
         let mut render_state: RenderState = pollster::block_on(RenderState::new(window, present_mode.to_wgpu(), event_loop));
         render_state.color = color;
-        render_state.background_image_path = background_image_path;
 
         self.context = Some(Context::new(
             render_state,

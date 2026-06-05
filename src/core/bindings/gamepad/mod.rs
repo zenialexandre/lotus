@@ -8,7 +8,7 @@ pub mod gamepad_instance;
 pub mod gamepad_button;
 
 /// Axis state management.
-pub mod axis_state;
+pub mod gamepad_axis_state;
 
 /// Joystick input recognition and treatments.
-pub mod joystick;
+pub mod gamepad_joystick;

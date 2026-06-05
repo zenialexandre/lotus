@@ -1,21 +1,19 @@
 /// Enumerator used to separate different rendering processes by type.
 #[derive(Clone, Default, Debug, PartialEq)]
-pub enum RenderingType {
+pub enum RenderType {
     #[default]
     Shape,
-    Background,
     Texture,
     Text
 }
 
-impl RenderingType {
+impl RenderType {
     /// Returns the specific rendering type index by its enumerator.
     pub fn to_shader_index(&self) -> u32 {
         return match self {
-            RenderingType::Shape => 0,
-            RenderingType::Background => 1,
-            RenderingType::Texture => 2,
-            RenderingType::Text => 3
+            RenderType::Shape => 0,
+            RenderType::Texture => 1,
+            RenderType::Text => 2
         };
     }
 }

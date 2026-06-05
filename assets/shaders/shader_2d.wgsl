@@ -1,9 +1,8 @@
 // Shader responsible for rendering 2D entities (Sprites and Shapes).
 
 const SHAPE: u32 = 0u;
-const BACKGROUND: u32 = 1u;
-const TEXTURE: u32 = 2u;
-//const TEXT: u32 = 3u; -> Not used yet.
+const TEXTURE: u32 = 1u;
+//const TEXT: u32 = 2u; -> Not used yet.
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -29,12 +28,7 @@ struct VertexOutput {
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
-
-    if (rendering_type == BACKGROUND) {
-        out.clip_position = vec4<f32>(in.position, 1.0);
-    } else {
-        out.clip_position = projection * view * transform * vec4<f32>(in.position, 1.0);
-    }
+    out.clip_position = projection * view * transform * vec4<f32>(in.position, 1.0);
     out.texture_coordinates = in.texture_coordinates;
     out.color = in.color;
     return out;
@@ -42,7 +36,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    if (rendering_type == TEXTURE || rendering_type == BACKGROUND) {
+    if (rendering_type == TEXTURE) {
         return textureSample(texture, texture_sampler, in.texture_coordinates) * in.color;
     }
     return vec4(in.color.rgb, 1.0); // Applying Blending::REPLACE.

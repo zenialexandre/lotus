@@ -1,8 +1,10 @@
-//! This example aims to show off the usage of Gamepads.
-//! First the listener needs to know if the user wants to hear Gamepad related events.
-//! Then the user should set the deadzones of movement for the joysticks.
-//! Inside of the GamepadInput struct, there are N GamepadInstances that are identified by a unique identifier.
-//! Each GamepadInstance has its own events and can be queried individually.
+#![doc =
+    r"This example aims to show off the usage of Gamepads.
+    First the listener needs to know if the user wants to hear Gamepad related events.
+    Then the user should set the deadzones of movement for the joysticks.
+    Inside of the GamepadInput struct, there are N GamepadInstances that are identified by a unique identifier.
+    Each GamepadInstance has its own events and can be queried individually."
+]
 
 use lotus_engine::*;
 

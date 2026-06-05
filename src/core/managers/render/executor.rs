@@ -52,22 +52,6 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
             1.0
         );
 
-        if let Some(background_image_path) = &render_state.background_image_path {
-            render_pass.set_pipeline(render_state.render_pipeline_2d.as_ref().unwrap());
-            let background_sprite: Sprite = Sprite::new(background_image_path.to_string());
-            render_state.setup(
-                &mut event_dispatcher,
-                None,
-                Some(&background_sprite),
-                None,
-                None,
-                None,
-                &camera2d,
-                true
-            );
-            render_state.render(&mut render_pass);
-        }
-
         for entity in get_entities_to_render_sorted(render_state, world).clone() {
             if world.is_entity_alive(entity) {
                 let is_entity_visible: bool = world.is_entity_visible(entity);
@@ -89,8 +73,7 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
                             None,
                             transform,
                             Some(animation),
-                            &camera2d,
-                            false
+                            &camera2d
                         );
 
                         if is_entity_visible {
@@ -109,8 +92,7 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
                         None,
                         transform,
                         animation,
-                        &camera2d,
-                        false
+                        &camera2d
                     );
 
                     if is_entity_visible {
@@ -125,8 +107,7 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
                         Some(shape),
                         transform,
                         None,
-                        &camera2d,
-                        false
+                        &camera2d
                     );
 
                     if is_entity_visible {

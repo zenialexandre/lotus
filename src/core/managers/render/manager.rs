@@ -5,19 +5,21 @@ use wgpu_text::glyph_brush::Section;
 use winit::event_loop::ActiveEventLoop;
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 use std::{collections::HashMap, sync::Arc};
-use super::cache::{self, buffer::BufferCache, bind_group::BindGroupCache};
-use super::rendering_type::RenderingType;
-use super::super::super::{
-    super::{ColorOption},
-    event::dispatcher::{EventDispatcher, Event, EventType, SubEventType},
-    shape::{shape::Shape, geometry_type::GeometryType, orientation::Orientation},
-    physics::transform::{Transform, Strategy},
-    texture,
-    texture::{cache::TextureCache, sprite::Sprite, sprite_sheet::SpriteSheet},
-    animation::animation::Animation,
-    text::text::{TextHolder, TextRenderer},
-    camera::camera2d::Camera2d,
-    ecs::{entity::Entity, world::World}
+use super::{
+    render_type::RenderType,
+    cache::{self, buffer::BufferCache, bind_group::BindGroupCache},
+    super::super::{
+        super::{ColorOption},
+        event::dispatcher::{EventDispatcher, Event, EventType, SubEventType},
+        shape::{shape::Shape, geometry_type::GeometryType, orientation::Orientation},
+        physics::transform::{Transform, Strategy},
+        texture,
+        texture::{cache::TextureCache, sprite::Sprite, sprite_sheet::SpriteSheet},
+        animation::animation::Animation,
+        text::text::{TextHolder, TextRenderer},
+        camera::camera2d::Camera2d,
+        ecs::{entity::Entity, world::World}
+    }
 };
 use crate::utils::constants::{shader::SHADER_2D, cache::{RENDERING_TYPE_BUFFER, DUMMY_TEXTURE}};
 
@@ -401,8 +403,7 @@ impl RenderState {
         shape: Option<&Shape>,
         transform: Option<&Transform>,
         animation: Option<&Animation>,
-        camera2d: &Camera2d,
-        is_background: bool
+        camera2d: &Camera2d
     ) {
         if let Some(sprite) = sprite {
             self.sprite(
@@ -410,8 +411,7 @@ impl RenderState {
                 entity,
                 sprite,
                 transform,
-                camera2d,
-                is_background
+                camera2d
             );
         } else if let Some(animation) = animation {
             self.animation(
@@ -419,8 +419,7 @@ impl RenderState {
                 entity,
                 animation,
                 transform,
-                camera2d,
-                is_background
+                camera2d
             );
         } else if let Some(shape) = shape {
             self.shape(
@@ -440,8 +439,7 @@ impl RenderState {
         entity: Option<&Entity>,
         sprite: &Sprite,
         transform: Option<&Transform>,
-        camera2d: &Camera2d,
-        is_background: bool
+        camera2d: &Camera2d
     ) {
         let texture: Arc<texture::texture::Texture> = {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
@@ -458,7 +456,7 @@ impl RenderState {
             self,
             RENDERING_TYPE_BUFFER,
             entity,
-            if is_background { RenderingType::Background.to_shader_index() } else { RenderingType::Texture.to_shader_index() }
+            RenderType::Texture.to_shader_index()
         );
         let rendering_type_bind_group: BindGroup = cache::bind_group::get_rendering_type_bind_group(
             self,
@@ -506,8 +504,7 @@ impl RenderState {
         entity: Option<&Entity>,
         animation: &Animation,
         transform: Option<&Transform>,
-        camera2d: &Camera2d,
-        is_background: bool
+        camera2d: &Camera2d
     ) {
         let sprite_sheet: Option<&SpriteSheet> = animation.get_playing_animation_now();
 
@@ -527,7 +524,7 @@ impl RenderState {
                 self,
                 RENDERING_TYPE_BUFFER,
                 entity,
-                if is_background { RenderingType::Background.to_shader_index() } else { RenderingType::Texture.to_shader_index() }
+                RenderType::Texture.to_shader_index()
             );
             let rendering_type_bind_group: BindGroup = cache::bind_group::get_rendering_type_bind_group(
                 self,
@@ -602,7 +599,7 @@ impl RenderState {
             self,
             RENDERING_TYPE_BUFFER,
             entity,
-            RenderingType::Text.to_shader_index()
+            RenderType::Text.to_shader_index()
         );
         let rendering_type_bind_group: BindGroup = cache::bind_group::get_rendering_type_bind_group(
             self,
