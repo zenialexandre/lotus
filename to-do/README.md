@@ -2,16 +2,20 @@
 
 ----------------
 
+## Doing now
+
+1 - Removing old concepts like fixed background sprites.
+
+2 - Implementing instancing/batching rendering.
+
 ## Project To-do List
 
-1 - Custom shaders support.
+1 - UI creations related system.
 
-2 - Migrate from `wgpu_text` to `glyphon`.
+2 - Custom shaders support.
 
-3 - Implement Batch Rendering.
+3 - Migrate from `wgpu_text` to `glyphon`.
 
 4 - Tilesets/Tilemaps handling and rendering.
 
-5 - UI creations related system.
-
-6 - Create own GUI Editor.
+5 - Create own GUI Editor.
