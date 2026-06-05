@@ -110,7 +110,7 @@ your_game!(
 fn setup(context: &mut Context) {
     // First of all, you create your Shape variable.
     // Shape is a Component in our ECS World.
-    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
+    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOpton::BLUE));
     
     // Then we use the context to access commands.
     // Commands are used mostly to mutate our ECS World.
@@ -149,7 +149,7 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
+    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::BLUE));
 
     // We need to create a Transform variable.
     // Setting the initial position to x=0.0 and y=0.0 (middle of the screen).
@@ -220,7 +220,7 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::BLUE);
+    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::BLUE));
     let transform: Transform = Transform::new(
         Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
         0.0,
@@ -244,20 +244,20 @@ fn update(context: &mut Context) {
     // Here we use the world to get a specific resource.
     // We only want to read the information of input.
     // So the input will not be mutable.
-    let input: ResourceRef<'_, Input> = context.world.get_resource::<Input>().unwrap();
+    let keyboard_input: KeyboardInput = context.world.get_resource_cloned::<KeyboardInput>().unwrap();
 
     // Here we get our resource as a mutable reference.
     // We want to change the value.
     let mut just_a_resource: ResourceRefMut<'_, JustAResource> = context.world.get_resource_mut::<JustAResource>().unwrap();
 
     // While we are pressing the X key, our shape will be rotated.
-    if input.is_key_pressed(KeyCode::KeyX) {
+    if keyboard_input.is_key_pressed(KeyboardKey::KeyX) {
         let my_rotation: f32 = transform.rotation + 100.0 * context.delta;
         transform.set_rotation(&context.render_state, my_rotation);
     }
 
     // Every time the X key is released, the resource value will be updated and printed out.
-    if input.is_key_released(KeyCode::KeyX) {
+    if keyboard_input.is_key_released(KeyboardKey::KeyX) {
         just_a_resource.0 += 1;
         eprintln!("Resource Value: {:?}", just_a_resource.0);
     }
@@ -283,8 +283,8 @@ fn setup(context: &mut Context) {
     // Start off by creating two objects.
     // One will be static and will serve as a table.
     // The other will be our main entity.
-    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::BLACK);
-    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()), Color::BLUE);
+    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::by_option(ColorOption::BLACK));
+    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()), Color::by_option(ColorOption::BLUE));
 
     context.commands.spawn(vec![
         Box::new(table),
@@ -323,17 +323,13 @@ fn setup(context: &mut Context) {
 }
 
 fn update(context: &mut Context) {
-    let input: Input = {
-        let input_ref: ResourceRef<'_, Input> = context.world.get_resource::<Input>().unwrap();
-        input_ref.clone()
-    };
-
+    let keyboard_input: KeyboardInput = context.world.get_resource_cloned::<KeyboardInput>().unwrap();
     let mut query: Query = Query::new(&context.world).with::<Gravity>();
     let entity: Entity = query.entities_with_components().unwrap().first().unwrap().clone();
 
     // Using the query above, we can search for the entities that have the Gravity component.
     // After releasing the specified key, our component of a entity is set to the default value of Earth.
-    if input.is_key_released(KeyCode::Enter) {
+    if keyboard_input.is_key_released(KeyboardKey::Enter) {
         let mut gravity: ComponentRefMut<'_, Gravity> = context.world.get_entity_component_mut::<Gravity>(&entity).unwrap();
         // Now you can see that the ball starts falling!
         gravity.value = 9.8;

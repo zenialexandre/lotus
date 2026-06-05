@@ -8,12 +8,13 @@
 [![crates.io](https://img.shields.io/crates/v/lotus_engine?logo=rust&logoColor=%23bf7d36)](https://crates.io/crates/lotus_engine)
 [![Documentation](https://img.shields.io/docsrs/lotus_engine)](https://docs.rs/lotus_engine)
 [![Downloads](https://img.shields.io/crates/d/lotus_engine.svg)](https://crates.io/crates/lotus_engine)
+[![Ask DeepWiki - Documentation](https://deepwiki.com/badge.svg)](https://deepwiki.com/zenialexandre/lotus)
 
 Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games.  
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
 Heavily inspired by awesome open-source projects like [`Bevy`](https://github.com/bevyengine/bevy), [`Comfy`](https://github.com/darthdeus/comfy) and [`LÖVE`](https://github.com/love2d/love).<br>
 
-First full game made with Lotus: [`CyberLancer: Neon Rush`](https://github.com/maumafra/cyberlancer).<br>
+Example of a game made with Lotus: [`CyberLancer: Neon Rush`](https://github.com/maumafra/cyberlancer).<br>
 
 ![cyberlancer](https://github.com/user-attachments/assets/ef3869d5-a7e5-4d89-bb94-c9dd56bfeb05)
 
