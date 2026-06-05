@@ -14,6 +14,8 @@ Lotus is a game engine with the main focus of being easy-to-use and straight for
 It's based on the Entity-Component-System paradigm, providing windowing, rendering, physics, input handling, and more.<br>
 Heavily inspired by awesome open-source projects like [`Bevy`](https://github.com/bevyengine/bevy), [`Comfy`](https://github.com/darthdeus/comfy) and [`LÖVE`](https://github.com/love2d/love).<br>
 
+Honorable mentions to other cool projects are: [`Nebula`](https://github.com/maumafra/nebula) and [`Macroquad`](https://github.com/not-fl3/macroquad).<br>
+
 Example of a game made with Lotus: [`CyberLancer: Neon Rush`](https://github.com/maumafra/cyberlancer).<br>
 
 ![cyberlancer](https://github.com/user-attachments/assets/ef3869d5-a7e5-4d89-bb94-c9dd56bfeb05)
@@ -87,7 +89,7 @@ You can see the documentation about it [`here`](https://docs.rs/lotus_engine/0.1
 As a brief overview:
 
 - Structs defined with the #derive macro *Component* are Components that can be spawned in our World within an Entity.
-- Structs defined with the #derive macro *Resource* are Resources that can be added to in our World.
+- Structs defined with the #derive macro *Resource* are Resources that can be added in our World.
 - *Entities* are defined by it's components and every entity has a unique ID.
 - Entities are stored in what is called as *Archetypes* in our World.
 - Archetypes are defined by the Components that our Entities have, so a Archetype will only have Entities with the same Components.
