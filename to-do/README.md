@@ -8,6 +8,10 @@
 
 2 - Implementing instancing/batching rendering.
 
+3 - Implementing error handling flow.
+
+4 - Create a new spawn function that doesn't receive list.
+
 ## Project To-do List
 
 1 - UI creations related system.
