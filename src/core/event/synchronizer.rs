@@ -1,7 +1,7 @@
 use std::any::TypeId;
 use atomic_refcell::{AtomicRef, AtomicRefMut};
 use cgmath::{Matrix4, Vector2, Vector3};
-use gilrs::{Axis, Button, GamepadId};
+use gilrs::{GamepadId, Axis, Button};
 use super::{
     dispatcher::{EventDispatcher, EventType, SubEventType},
     super::{

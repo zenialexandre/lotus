@@ -1,7 +1,7 @@
-use super::{render_type::RenderType, instance_data::InstanceData};
+use super::{render_type::RenderType};
 
 pub struct RenderBatch {
     pub render_type: RenderType,
     pub texture_path: Option<String>,
-    pub instances: Vec<InstanceData>,
+    pub instances: Vec<String>,
 }

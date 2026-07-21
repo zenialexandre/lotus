@@ -10,7 +10,7 @@
 
 ## Project To-do List
 
-1 - UI creations related system.
+1 - UI creations related system using the `taffy` crate.
 
 2 - Custom shaders support.
 

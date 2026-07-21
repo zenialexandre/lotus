@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use gilrs::GamepadId;
 use lotus_proc_macros::Resource;
-use super::gamepad_instance::GamepadInstance;
+use super::{gamepad_instance::GamepadInstance};
 
 /// Global resource to store all the gamepad inputs done on runtime.
 #[derive(Clone, Resource)]
@@ -23,6 +23,11 @@ impl Default for GamepadInput {
 }
 
 impl GamepadInput {
+    /// Return if is any gamepad connected at the given moment.
+    pub fn is_any_connected(&self) -> bool {
+        return self.get_all_connected().len() > 0;
+    }
+
     /// Returns the first gamepad instance that is connected.
     ///
     /// For reading purposes only.

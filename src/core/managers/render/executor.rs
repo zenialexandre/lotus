@@ -138,6 +138,7 @@ pub(crate) fn on_suboptimal(render_state: &mut RenderState, world: &mut World) {
     );
 }
 
+/// Sort the entities to be rendered by its drawing order component.
 fn get_entities_to_render_sorted(render_state: &mut RenderState, world: &World) -> Vec<Entity> {
     let mut entities_to_render_sorted: Vec<Entity> = render_state.entities_to_render.clone();
 

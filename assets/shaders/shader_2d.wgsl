@@ -26,11 +26,11 @@ struct VertexOutput {
 @group(2) @binding(2) var<uniform> view: mat4x4<f32>;
 
 @vertex
-fn vs_main(in: VertexInput) -> VertexOutput {
+fn vs_main(vertex: VertexInput, instance: InstanceInput) -> VertexOutput {
     var out: VertexOutput;
-    out.clip_position = projection * view * transform * vec4<f32>(in.position, 1.0);
-    out.texture_coordinates = in.texture_coordinates;
-    out.color = in.color;
+    out.clip_position = projection * view * transform * vec4<f32>(vertex.position, 1.0);
+    out.texture_coordinates = vertex.texture_coordinates;
+    out.color = vertex.color;
     return out;
 }
 
