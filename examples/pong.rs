@@ -1,9 +1,11 @@
-//! This is a more complex example of a more complete application.
-//! The Pong arcade game, but with sprites.
-//! This example shows off the usage of timer, audio, input and physics.
-//! The timer works as a respawn for the pong ball after it goes outbounds.
-//! The audio is used for the game music (streaming) and for the rackets hits (static).
-//! The input is used for mapping the users keyboard actions.
+#![doc =
+    r"This is a more complex example of a more complete application.
+    The Pong arcade game, but with sprites.
+    This example shows off the usage of timer, audio, input and physics.
+    The timer works as a respawn for the pong ball after it goes outbounds.
+    The audio is used for the game music (streaming) and for the rackets hits (static).
+    The input is used for mapping the users keyboard actions."
+]
 
 use lotus_engine::*;
 use rand::{RngExt, rngs::ThreadRng};
@@ -47,7 +49,6 @@ your_game!(
         icon_path: "textures/pong/pink_racket_256x256.png".to_string(),
         title: "Pong Game :)".to_string(),
         background_color: None,
-        background_image_path: Some("textures/pong/pong_background_960x600.png".to_string()),
         width: 960.0,
         height: 600.0,
         position_x: 200.0,
@@ -64,6 +65,7 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
+    let background: Sprite = Sprite::new("textures/pong/pong_background_960x600.png".to_string());
     let gray_racket_sprite: Sprite = Sprite::new("textures/pong/gray_racket_256x256.png".to_string());
     let pink_racket_sprite: Sprite = Sprite::new("textures/pong/pink_racket_256x256.png".to_string());
     let pong_ball_sprite: Sprite = Sprite::new("textures/pong/pong_ball_left_256x256.png".to_string());
@@ -87,12 +89,21 @@ fn setup(context: &mut Context) {
         Box::new(game_audio)
     ]);
 
+    context.commands.spawn(
+        vec![
+            Box::new(background),
+            Box::new(DrawOrder(0)),
+            Box::new(Transform::new(Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized), 0.0, Vector2::new(1.0, 1.0)))
+        ]
+    );
+
     spawn_border(context, Vector2::new(0.0, -1.0));
     spawn_border(context, Vector2::new(0.0, 1.0));
 
     context.commands.spawn(
         vec![
             Box::new(gray_racket_sprite),
+            Box::new(DrawOrder(2)),
             Box::new(Transform::new(
                 Position::new(Vector2::new(-1.0, 0.23), Strategy::Normalized),
                 0.0,
@@ -108,6 +119,7 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(pink_racket_sprite),
+            Box::new(DrawOrder(3)),
             Box::new(Transform::new(
                 Position::new(Vector2::new(1.0, 0.25), Strategy::Normalized),
                 0.0,
@@ -123,6 +135,7 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(pong_ball_sprite),
+            Box::new(DrawOrder(4)),
             Box::new(Transform::new(
                 Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
                 0.0,
@@ -158,6 +171,7 @@ fn spawn_border(context: &mut Context, position: Vector2<f32>) {
     context.commands.spawn(
         vec![
             Box::new(border),
+            Box::new(DrawOrder(1)),
             Box::new(Border()),
             Box::new(Transform::new(
                 Position::new(position, Strategy::Normalized),

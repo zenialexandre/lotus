@@ -1,7 +1,9 @@
-//! This example aims to recreate the Breakout arcade game.
-//! Is a show off of timer, multiple entities rendering, game state workflow, text rendering and physics.
-//! The targets are spawned as a matrix of 8 rows and 10 columns.
-//! Each target is a specific entity with its own physics.
+#![doc =
+    r"This example aims to recreate the Breakout arcade game.
+    Is a show off of timer, multiple entities rendering, game state workflow, text rendering and physics.
+    The targets are spawned as a matrix of 8 rows and 10 columns.
+    Each target is a specific entity with its own physics."
+]
 
 use lotus_engine::*;
 use std::time::Duration;
@@ -48,7 +50,6 @@ your_game!(
         icon_path: "textures/lotus_pink_256x256.png".to_string(),
         title: "Breakout Game :)".to_string(),
         background_color: Some(Color::by_option(ColorOption::Lightgray)),
-        background_image_path: None,
         width: 725.0,
         height: 695.0,
         position_x: 200.0,
@@ -305,7 +306,7 @@ fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity
             little_ball_velocity.x = randomized_direction.x * velocity_magnitude;
             little_ball_velocity.y = randomized_direction.y * velocity_magnitude;
 
-            let collision_offset: Vector2<f32> = collision_normal * 0.02;
+            let collision_offset: Vector2<f32> = collision_normal * 0.09;
             little_ball_transform.position.x += collision_offset.x;
         }
     }

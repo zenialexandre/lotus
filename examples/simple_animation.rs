@@ -1,8 +1,10 @@
-//! This example is a show off about the animation system of the engine.
-//! Our entity have a static sprite component and a animation component.
-//! The animation component doesn't have any dependency on other components.
-//! The animation component store N sprite sheets, with a title as the key.
-//! In this example, a looped animation can be controlled by the keyboard keys.
+#![doc =
+    r"This example is a show off about the animation system of the engine.
+    Our entity have a static sprite component and a animation component.
+    The animation component doesn't have any dependency on other components.
+    The animation component store N sprite sheets, with a title as the key.
+    In this example, a looped animation can be controlled by the keyboard keys."
+]
 
 use lotus_engine::*;
 

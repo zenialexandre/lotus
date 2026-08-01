@@ -3,7 +3,6 @@
 pub enum RenderingType {
     #[default]
     Shape,
-    Background,
     Texture,
     Text
 }
@@ -13,9 +12,8 @@ impl RenderingType {
     pub fn to_shader_index(&self) -> u32 {
         return match self {
             RenderingType::Shape => 0,
-            RenderingType::Background => 1,
-            RenderingType::Texture => 2,
-            RenderingType::Text => 3
+            RenderingType::Texture => 1,
+            RenderingType::Text => 2
         };
     }
 }

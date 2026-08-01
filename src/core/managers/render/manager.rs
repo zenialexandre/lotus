@@ -54,7 +54,6 @@ pub struct RenderState {
     pub surface_configuration: Option<SurfaceConfiguration>,
     pub physical_size: Option<PhysicalSize<u32>>,
     pub color: Option<crate::core::color::color::Color>,
-    pub background_image_path: Option<String>,
     pub window: Option<Arc<Window>>,
     pub render_pipeline_2d: Option<RenderPipeline>,
     pub number_of_indices: Option<u32>,
@@ -87,7 +86,6 @@ impl RenderState {
             surface_configuration: None,
             physical_size: None,
             color: None,
-            background_image_path: None,
             window: None,
             render_pipeline_2d: None,
             number_of_indices: None,
@@ -125,7 +123,8 @@ impl RenderState {
             &RequestAdapterOptions {
                 power_preference: PowerPreference::default(),
                 compatible_surface: Some(&surface),
-                force_fallback_adapter: false
+                force_fallback_adapter: false,
+                ..Default::default()
             },
         ).await.unwrap();
 
@@ -153,7 +152,8 @@ impl RenderState {
             present_mode,
             alpha_mode: surface_capabilities.alpha_modes[0],
             view_formats: vec![],
-            desired_maximum_frame_latency: 2
+            desired_maximum_frame_latency: 2,
+            color_space: SurfaceColorSpace::Auto
         };
         surface.configure(&device, &surface_configuration);
 
@@ -164,7 +164,6 @@ impl RenderState {
             surface_configuration: Some(surface_configuration),
             physical_size: Some(physical_size),
             color: None,
-            background_image_path: None,
             window: Some(window),
             render_pipeline_2d: None,
             number_of_indices: None,
@@ -401,8 +400,7 @@ impl RenderState {
         shape: Option<&Shape>,
         transform: Option<&Transform>,
         animation: Option<&Animation>,
-        camera2d: &Camera2d,
-        is_background: bool
+        camera2d: &Camera2d
     ) {
         if let Some(sprite) = sprite {
             self.sprite(
@@ -410,8 +408,7 @@ impl RenderState {
                 entity,
                 sprite,
                 transform,
-                camera2d,
-                is_background
+                camera2d
             );
         } else if let Some(animation) = animation {
             self.animation(
@@ -419,8 +416,7 @@ impl RenderState {
                 entity,
                 animation,
                 transform,
-                camera2d,
-                is_background
+                camera2d
             );
         } else if let Some(shape) = shape {
             self.shape(
@@ -440,8 +436,7 @@ impl RenderState {
         entity: Option<&Entity>,
         sprite: &Sprite,
         transform: Option<&Transform>,
-        camera2d: &Camera2d,
-        is_background: bool
+        camera2d: &Camera2d
     ) {
         let texture: Arc<texture::texture::Texture> = {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
@@ -458,7 +453,7 @@ impl RenderState {
             self,
             RENDERING_TYPE_BUFFER,
             entity,
-            if is_background { RenderingType::Background.to_shader_index() } else { RenderingType::Texture.to_shader_index() }
+            RenderingType::Texture.to_shader_index()
         );
         let rendering_type_bind_group: BindGroup = cache::bind_group::get_rendering_type_bind_group(
             self,
@@ -506,8 +501,7 @@ impl RenderState {
         entity: Option<&Entity>,
         animation: &Animation,
         transform: Option<&Transform>,
-        camera2d: &Camera2d,
-        is_background: bool
+        camera2d: &Camera2d
     ) {
         let sprite_sheet: Option<&SpriteSheet> = animation.get_playing_animation_now();
 
@@ -527,7 +521,7 @@ impl RenderState {
                 self,
                 RENDERING_TYPE_BUFFER,
                 entity,
-                if is_background { RenderingType::Background.to_shader_index() } else { RenderingType::Texture.to_shader_index() }
+                RenderingType::Texture.to_shader_index()
             );
             let rendering_type_bind_group: BindGroup = cache::bind_group::get_rendering_type_bind_group(
                 self,
@@ -753,7 +747,7 @@ impl RenderState {
             vertex: VertexState {
                 module: &shader_module,
                 entry_point: Some("vs_main"),
-                buffers: &[Vertex::descriptor()],
+                buffers: &[Some(Vertex::descriptor())],
                 compilation_options: PipelineCompilationOptions::default()
             },
             fragment: Some(FragmentState {
