@@ -1,14 +1,14 @@
 use std::collections::HashSet;
 use gilrs::Axis;
-use super::{super::input::Input, joystick::Joystick, gamepad_button::GamepadButton};
+use super::{super::input::Input, gamepad_joystick::GamepadJoystick, gamepad_button::GamepadButton};
 
 /// Struct to hold a gamepad instance.
 #[derive(Clone)]
 pub struct GamepadInstance {
     pub pressed: HashSet<GamepadButton>,
     pub previously_pressed: HashSet<GamepadButton>,
-    pub left_joystick: Joystick,
-    pub right_joystick: Joystick,
+    pub left_joystick: GamepadJoystick,
+    pub right_joystick: GamepadJoystick,
     pub is_connected: bool
 }
 
@@ -35,8 +35,8 @@ impl Default for GamepadInstance {
         return Self {
             pressed: HashSet::new(),
             previously_pressed: HashSet::new(),
-            left_joystick: Joystick::default(),
-            right_joystick: Joystick::default(),
+            left_joystick: GamepadJoystick::default(),
+            right_joystick: GamepadJoystick::default(),
             is_connected: true
         };
     }

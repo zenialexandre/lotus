@@ -1,5 +1,7 @@
-//! This example is a simple show off of the engine basic template.
-//! It will create a window with a white background and the 'Hello World!' message will be printed at each frame.
+#![doc =
+    r"This example is a simple show off of the engine basic template.
+    It will create a window with a white background and the 'Hello World!' message will be printed at each frame."
+]
 
 use lotus_engine::*;
 

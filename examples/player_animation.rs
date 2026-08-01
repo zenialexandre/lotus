@@ -1,8 +1,10 @@
-//! This example is a show off about the animation system of the engine in a more complex way.
-//! The entity in this case doesn't have the sprite component.
-//! It has three different sprite sheets to animate.
-//! The player is in a constant animation called 'idle'.
-//! The player can be animated by movement or by pressing a specific keyboard key for attacking.
+#![doc =
+    r"This example is a show off about the animation system of the engine in a more complex way.
+    The entity in this case doesn't have the sprite component.
+    It has three different sprite sheets to animate.
+    The player is in a constant animation called 'idle'.
+    The player can be animated by movement or by pressing a specific keyboard key for attacking."
+]
 
 use lotus_engine::*;
 use std::collections::HashMap;

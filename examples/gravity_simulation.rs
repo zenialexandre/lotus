@@ -1,7 +1,9 @@
-//! This example is a show off about applied gravity.
-//! The Gravity component will be affect all entities with the Velocity and RigidBody components.
-//! Making use of the velocity and collision components, one sprite is coliding with a shape.
-//! After the collision, the sprite bounce until its stops based on its restitution value.
+#![doc =
+    r"This example is a show off about applied gravity.
+    The Gravity component will be affect all entities with the Velocity and RigidBody components.
+    Making use of the velocity and collision components, one sprite is coliding with a shape.
+    After the collision, the sprite bounce until its stops based on its restitution value."
+]
 
 use lotus_engine::*;
 

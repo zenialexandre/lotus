@@ -2,24 +2,22 @@
 
 ----------------
 
-## Doing now
-
-1 - Removing old concepts like fixed background sprites.
-
-2 - Implementing instancing/batching rendering.
-
-3 - Implementing error handling flow.
-
-4 - Create a new spawn function that doesn't receive list.
-
 ## Project To-do List
 
-1 - UI creations related system.
+- Implement instancing/batching rendering.
 
-2 - Custom shaders support.
+- Create a new spawn function that doesn't receive list.
 
-3 - Migrate from `wgpu_text` to `glyphon`.
+- Migrate com `cgmath` to `nalgebra`.
 
-4 - Tilesets/Tilemaps handling and rendering.
+- Migrate from `wgpu_text` to `glyphon`.
 
-5 - Create own GUI Editor.
+- Implementing error handling flow.
+
+- UI creations related system.
+
+- Custom shaders support.
+
+- Tilesets/Tilemaps handling and rendering.
+
+- Create own GUI Editor.
