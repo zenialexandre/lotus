@@ -4,6 +4,8 @@
 
 ## Project To-do List
 
+- Create 'No Game' application state, replacing the white screen.
+
 - Implement instancing/batching rendering.
 
 - Migrate com `cgmath` to `nalgebra`.
