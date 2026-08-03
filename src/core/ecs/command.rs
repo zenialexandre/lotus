@@ -39,7 +39,7 @@ impl Commands {
 
     /// Spawn a new entity on the world with a singular component.
     ///
-    /// /// The entity will be rendered as its type demands.
+    /// The entity will be rendered as its type demands.
     pub fn spawn_singular(&mut self, component: Box<dyn Component>) {
         self.commands.push(Command::SpawnSingular(component));
     }
