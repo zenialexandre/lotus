@@ -119,9 +119,12 @@ impl World {
         }
     }
 
-    /// Spawn a new entity on the world.
-    ///
-    /// The entity can be rendered on the fly, if its a shape or a sprite.
+    /// Spawn a new entity on the world with its component.
+    pub(crate) fn spawn_singular(&mut self, render_state: &mut RenderState, component: Box<dyn Component>) -> Entity {
+        return self.spawn(render_state, vec![component]);
+    }
+
+    /// Spawn a new entity on the world with its components.
     pub(crate) fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
 

@@ -6,8 +6,6 @@
 
 - Implement instancing/batching rendering.
 
-- Create a new spawn function that doesn't receive list.
-
 - Migrate com `cgmath` to `nalgebra`.
 
 - Migrate from `wgpu_text` to `glyphon`.
