@@ -25,7 +25,7 @@ fn setup(context: &mut Context) {
         Color::by_option(ColorOption::Black),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(underdog_regular)]);
+    context.commands.spawn_singular(Box::new(underdog_regular));
 
     let codystar_light: Text = Text::new(
         &mut context.render_state,
@@ -34,7 +34,7 @@ fn setup(context: &mut Context) {
         Color::by_option(ColorOption::Blue),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(codystar_light)]);
+    context.commands.spawn_singular(Box::new(codystar_light));
 
     let codystar_regular: Text = Text::new(
         &mut context.render_state,
@@ -43,7 +43,7 @@ fn setup(context: &mut Context) {
         Color::by_option(ColorOption::Magenta),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(codystar_regular)]);
+    context.commands.spawn_singular(Box::new(codystar_regular));
 
     let roboto_mono: Text = Text::new(
         &mut context.render_state,
@@ -52,7 +52,7 @@ fn setup(context: &mut Context) {
         Color::by_option(ColorOption::Brown),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(roboto_mono)]);
+    context.commands.spawn_singular(Box::new(roboto_mono));
 }
 
 fn update(context: &mut Context) {

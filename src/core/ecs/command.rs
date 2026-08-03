@@ -9,6 +9,7 @@ use super::{
 /// Enumerator that store the mutable commands allowed in the world.
 pub enum Command {
     Spawn(Vec<Box<dyn Component>>),
+    SpawnSingular(Box<dyn Component>),
     Despawn(Entity),
     AddResource(Box<dyn Resource>),
     AddResources(Vec<Box<dyn Resource>>),
@@ -34,6 +35,13 @@ impl Commands {
     /// The entity will be rendered as its type demands.
     pub fn spawn(&mut self, components: Vec<Box<dyn Component>>) {
         self.commands.push(Command::Spawn(components));
+    }
+
+    /// Spawn a new entity on the world with a singular component.
+    ///
+    /// /// The entity will be rendered as its type demands.
+    pub fn spawn_singular(&mut self, component: Box<dyn Component>) {
+        self.commands.push(Command::SpawnSingular(component));
     }
 
     /// Despawn a specific entity from the world.
@@ -74,6 +82,9 @@ impl Commands {
             match command {
                 Command::Spawn(components) => {
                     world.spawn(render_state, components);
+                },
+                Command::SpawnSingular(component) => {
+                    world.spawn_singular(render_state, component);
                 },
                 Command::Despawn(entity) => {
                     if world.is_entity_alive(entity) {
