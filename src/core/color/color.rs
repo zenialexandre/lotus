@@ -1,18 +1,34 @@
+use lotus_proc_macros::Component;
 use crate::ColorOption;
 
 /// The struct that holds a Color object in the engine.
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Copy, Debug, Component)]
 pub struct Color {
-    r: f32,
-    g: f32,
-    b: f32,
-    a: f32
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32
 }
 
 impl Color {
     /// Create a new Color struct based on parameters.
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
         return Self { r, g, b, a};
+    }
+
+    /// Update the Red, Blue, Green and Alpha indicators.
+    pub fn rgba(&mut self, r: f32, g: f32, b: f32, a: f32) {
+        self.r = r;
+        self.g = g;
+        self.b = b;
+        self.a = a;
+    }
+
+    /// Update the Red, Blue and Green indicators.
+    pub fn rgb(&mut self, r: f32, g: f32, b: f32) {
+        self.r = r;
+        self.g = g;
+        self.b = b;
     }
 
     /// Create a new Color struct by using a option.

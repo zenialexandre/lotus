@@ -37,23 +37,24 @@ fn setup(context: &mut Context) {
 
         context.commands.spawn(
             vec![
-                Box::new(Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::by_option(ColorOption::Blue))),
+                Box::new(Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()))),
+                Box::new(Color::by_option(ColorOption::Blue)),
                 Box::new(Object()),
                 Box::new(Transform::new(
-                    Position::new(Vector2::new(randomic_position_x, randomic_position_y), Strategy::Normalized),
+                    Position::new(Vec2::new(randomic_position_x, randomic_position_y), Strategy::Normalized),
                     0.0,
-                    Vector2::new(0.15, 0.15)
+                    Vec2::new(0.15, 0.15)
                 )),
-                Box::new(Velocity::new(Vector2::new(randomic_velocity_x, randomic_velocity_y))),
+                Box::new(Velocity::new(Vec2::new(randomic_velocity_x, randomic_velocity_y))),
                 Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
             ]
         );
     }
 
-    spawn_border(context, Orientation::Horizontal, Vector2::new(0.0, -1.), Vector2::new(context.window_configuration.width as f32, 0.01));
-    spawn_border(context, Orientation::Horizontal, Vector2::new(0.0, 1.), Vector2::new(context.window_configuration.width as f32, 0.01));
-    spawn_border(context, Orientation::Vertical, Vector2::new(1.35, 0.), Vector2::new(0.01, context.window_configuration.height as f32));
-    spawn_border(context, Orientation::Vertical, Vector2::new(-1.35, 0.), Vector2::new(0.01, context.window_configuration.height as f32));
+    spawn_border(context, Orientation::Horizontal, Vec2::new(0.0, -1.), Vec2::new(context.window_configuration.width as f32, 0.01));
+    spawn_border(context, Orientation::Horizontal, Vec2::new(0.0, 1.), Vec2::new(context.window_configuration.width as f32, 0.01));
+    spawn_border(context, Orientation::Vertical, Vec2::new(1.35, 0.), Vec2::new(0.01, context.window_configuration.height as f32));
+    spawn_border(context, Orientation::Vertical, Vec2::new(-1.35, 0.), Vec2::new(0.01, context.window_configuration.height as f32));
 }
 
 fn update(context: &mut Context) {
@@ -66,12 +67,13 @@ fn update(context: &mut Context) {
     move_objects(context, &entities);
 }
 
-fn spawn_border(context: &mut Context, orientation: Orientation, position: Vector2<f32>, scale: Vector2<f32>) {
-    let border: Shape = Shape::new(orientation, GeometryType::Rectangle, Color::by_option(ColorOption::White));
+fn spawn_border(context: &mut Context, orientation: Orientation, position: Vec2, scale: Vec2) {
+    let border: Shape = Shape::new(orientation, GeometryType::Rectangle);
 
     context.commands.spawn(
         vec![
             Box::new(border),
+            Box::new(Color::by_option(ColorOption::White)),
             Box::new(Border()),
             Box::new(Transform::new(
                 Position::new(position, Strategy::Normalized),
@@ -113,7 +115,7 @@ fn move_objects(context: &mut Context, entities: &Vec<Entity>) {
         let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
         let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(entity).unwrap();
 
-        let new_position: Vector2<f32> = transform.position.to_vec() + velocity.to_vec() * context.delta;
+        let new_position: Vec2 = transform.position.to_vec() + velocity.to_vec() * context.delta;
         transform.set_position(&context.render_state, new_position);
     }
 }

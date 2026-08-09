@@ -19,8 +19,8 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(sprite),
-            Box::new(Transform::new_simple(Position::new(Vector2::new(-0.50, -0.50), Strategy::Normalized))),
-            Box::new(Velocity::new(Vector2::new(0.50, 0.50)))
+            Box::new(Transform::new_simple(Position::new(Vec2::new(-0.50, -0.50), Strategy::Normalized))),
+            Box::new(Velocity::new(Vec2::new(0.50, 0.50)))
         ]
     );
 }

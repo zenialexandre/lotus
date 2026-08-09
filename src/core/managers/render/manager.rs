@@ -1,6 +1,6 @@
 use wgpu::*;
 use uuid::Uuid;
-use cgmath::{ortho, Matrix4, SquareMatrix};
+use glam::{Mat4, camera::lh::proj::directx::orthographic};
 use wgpu_text::glyph_brush::Section;
 use winit::event_loop::ActiveEventLoop;
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
@@ -8,7 +8,7 @@ use std::{collections::HashMap, sync::Arc};
 use super::cache::{self, buffer::BufferCache, bind_group::BindGroupCache};
 use super::rendering_type::RenderingType;
 use super::super::super::{
-    super::{ColorOption},
+    super::Color,
     event::dispatcher::{EventDispatcher, Event, EventType, SubEventType},
     shape::{shape::Shape, geometry_type::GeometryType, orientation::Orientation},
     physics::transform::{Transform, Strategy},
@@ -53,7 +53,7 @@ pub struct RenderState {
     pub queue: Option<Queue>,
     pub surface_configuration: Option<SurfaceConfiguration>,
     pub physical_size: Option<PhysicalSize<u32>>,
-    pub color: Option<crate::core::color::color::Color>,
+    pub color: Option<Color>,
     pub window: Option<Arc<Window>>,
     pub render_pipeline_2d: Option<RenderPipeline>,
     pub number_of_indices: Option<u32>,
@@ -351,7 +351,7 @@ impl RenderState {
                             bounds: (width, height),
                             text: vec![
                                 wgpu_text::glyph_brush::Text::new(&text_renderer.text.content)
-                                    .with_color(text_renderer.text.color.to_array())
+                                    .with_color(text_renderer.color.to_array())
                                     .with_scale(text_renderer.text.font.size)
                             ],
                             ..Default::default()
@@ -400,6 +400,7 @@ impl RenderState {
         shape: Option<&Shape>,
         transform: Option<&Transform>,
         animation: Option<&Animation>,
+        color: Option<&Color>,
         camera2d: &Camera2d
     ) {
         if let Some(sprite) = sprite {
@@ -408,7 +409,8 @@ impl RenderState {
                 entity,
                 sprite,
                 transform,
-                camera2d
+                camera2d,
+                color
             );
         } else if let Some(animation) = animation {
             self.animation(
@@ -416,7 +418,8 @@ impl RenderState {
                 entity,
                 animation,
                 transform,
-                camera2d
+                camera2d,
+                color
             );
         } else if let Some(shape) = shape {
             self.shape(
@@ -424,7 +427,8 @@ impl RenderState {
                 entity,
                 shape,
                 transform,
-                camera2d
+                camera2d,
+                color
             );
         }
     }
@@ -436,8 +440,11 @@ impl RenderState {
         entity: Option<&Entity>,
         sprite: &Sprite,
         transform: Option<&Transform>,
-        camera2d: &Camera2d
+        camera2d: &Camera2d,
+        color: Option<&Color>
     ) {
+        let vertices: Vec<Vertex> = GeometryType::Square.to_vertex_array(Orientation::Horizontal, color.unwrap().to_array());
+        let indices: Vec<u16> = GeometryType::Square.to_index_array();
         let texture: Arc<texture::texture::Texture> = {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(sprite.path.clone()) {
                 texture_from_cache
@@ -480,8 +487,8 @@ impl RenderState {
         let (vertex_buffer, index_buffer): (Buffer, Buffer) = cache::buffer::get_vertex_and_index_buffers(
             self,
             entity,
-            &sprite.vertices,
-            &sprite.indices
+            &vertices,
+            &indices
         );
 
         self.rendering_type_bind_group = Some(rendering_type_bind_group);
@@ -491,7 +498,7 @@ impl RenderState {
         self.view_buffer = Some(view_buffer);
         self.vertex_buffer = Some(vertex_buffer);
         self.index_buffer = Some(index_buffer);
-        self.number_of_indices = Some(sprite.indices.len() as u32);
+        self.number_of_indices = Some(indices.len() as u32);
     }
 
     /// Prepare for animation rendering.
@@ -501,7 +508,8 @@ impl RenderState {
         entity: Option<&Entity>,
         animation: &Animation,
         transform: Option<&Transform>,
-        camera2d: &Camera2d
+        camera2d: &Camera2d,
+        color: Option<&Color>
     ) {
         let sprite_sheet: Option<&SpriteSheet> = animation.get_playing_animation_now();
 
@@ -535,7 +543,7 @@ impl RenderState {
                 Some(sprite_sheet)
             );
 
-            let mut vertices: Vec<Vertex> = GeometryType::Square.to_vertex_array(Orientation::Horizontal, ColorOption::White.to_rgba());
+            let mut vertices: Vec<Vertex> = GeometryType::Square.to_vertex_array(Orientation::Horizontal, color.unwrap().to_array());
             let indices: Vec<u16> = GeometryType::Square.to_index_array();
             let uv_coordinates : [f32; 8] = sprite_sheet.current_tile_uv_coordinates();
 
@@ -579,7 +587,8 @@ impl RenderState {
         entity: Option<&Entity>,
         shape: &Shape,
         transform: Option<&Transform>,
-        camera2d: &Camera2d
+        camera2d: &Camera2d,
+        color: Option<&Color>
     ) {
         let texture: Arc<texture::texture::Texture> = {
             if let Some(texture_from_cache) = self.texture_cache.get_texture(DUMMY_TEXTURE.to_string()) {
@@ -622,7 +631,7 @@ impl RenderState {
         let (vertex_buffer, index_buffer): (Buffer, Buffer) = cache::buffer::get_vertex_and_index_buffers(
             self,
             entity,
-            &shape.geometry_type.to_vertex_array(Orientation::Horizontal, shape.color.to_array()),
+            &shape.geometry_type.to_vertex_array(Orientation::Horizontal, color.unwrap().to_array()),
             &shape.geometry_type.to_index_array()
         );
 
@@ -636,10 +645,10 @@ impl RenderState {
         self.number_of_indices = Some(shape.geometry_type.to_index_array().len() as u32);
     }
 
-    pub(crate) fn get_projection_matrix(&self, camera2d: &Camera2d) -> Matrix4<f32> {
+    pub(crate) fn get_projection_matrix(&self, camera2d: &Camera2d) -> Mat4 {
         let aspect_ratio: f32 = self.physical_size.as_ref().unwrap().width as f32 / self.physical_size.as_ref().unwrap().height as f32;
 
-        return ortho(
+        return orthographic(
             -aspect_ratio * camera2d.zoom,
             aspect_ratio * camera2d.zoom,
             -1.0 * camera2d.zoom,
@@ -711,13 +720,11 @@ impl RenderState {
                 }
             }
 
-            let transform_unwrapped: [[f32; 4]; 4] = *transform_cloned.to_matrix().as_ref();
+            let transform_unwrapped: [[f32; 4]; 4] = transform_cloned.to_matrix().to_cols_array_2d();
             let transform_buffer: Buffer = cache::buffer::get_transform_buffer(self, entity, transform_unwrapped);
             self.transform_buffer = Some(transform_buffer);
         } else {
-            let identity_matrix: Matrix4<f32> = Matrix4::identity();
-            let identity_matrix_unwrapped: [[f32; 4]; 4] = *identity_matrix.as_ref();
-            let transform_buffer: Buffer = cache::buffer::get_transform_buffer(self, entity, identity_matrix_unwrapped);
+            let transform_buffer: Buffer = cache::buffer::get_transform_buffer(self, entity, Mat4::IDENTITY.to_cols_array_2d());
             self.transform_buffer = Some(transform_buffer);
         }
 

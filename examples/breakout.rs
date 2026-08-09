@@ -66,17 +66,12 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let player: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::by_option(ColorOption::Purple));
-    let little_ball: Shape = Shape::new(
-        Orientation::Horizontal,
-        GeometryType::Circle(Circle::new(64, 0.2)),
-        Color::by_option(ColorOption::Black)
-    );
+    let player: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle);
+    let little_ball: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::new(64, 0.2)));
     let start_text: Text = Text::new(
         &mut context.render_state,
         Font::new(Fonts::RobotoMonoItalic.get_path(), 40.0),
-        Position::new(Vector2::new(298.0, 380.0), Strategy::Pixelated),
-        Color::by_option(ColorOption::Black),
+        Position::new(Vec2::new(298.0, 380.0), Strategy::Pixelated),
         "> enter <".to_string()
     );
 
@@ -93,18 +88,19 @@ fn setup(context: &mut Context) {
         Box::new(LittleBallRespawnTimer::new()),
         Box::new(NextState::default())
     ]);
-    context.commands.spawn(vec![Box::new(start_text)]);
+    context.commands.spawn(vec![Box::new(start_text), Box::new(Color::by_option(ColorOption::Black))]);
 
     context.commands.spawn(
         vec![
             Box::new(player),
+            Box::new(Color::by_option(ColorOption::Purple)),
             Box::new(Player()),
             Box::new(Transform::new(
-                Position::new(Vector2::new(0.0, -0.85), Strategy::Normalized),
+                Position::new(Vec2::new(0.0, -0.85), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.15, 0.10)
+                Vec2::new(0.15, 0.10)
             )),
-            Box::new(Velocity::new(Vector2::new(2.0, 2.0))),
+            Box::new(Velocity::new(Vec2::new(2.0, 2.0))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
         ]
     );
@@ -112,19 +108,20 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(little_ball),
+            Box::new(Color::by_option(ColorOption::Black)),
             Box::new(LittleBall()),
             Box::new(Transform::new(
-                Position::new(Vector2::new(0.0, -0.5), Strategy::Normalized),
+                Position::new(Vec2::new(0.0, -0.5), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.10, 0.10)
+                Vec2::new(0.10, 0.10)
             )),
-            Box::new(Velocity::new(Vector2::new(velocity_x, -0.5))),
+            Box::new(Velocity::new(Vec2::new(velocity_x, -0.5))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
 
-    spawn_border(context, Vector2::new(1.05, 0.0));
-    spawn_border(context, Vector2::new(-1.05, 0.0));
+    spawn_border(context, Vec2::new(1.05, 0.0));
+    spawn_border(context, Vec2::new(-1.05, 0.0));
     spawn_targets(context);
 }
 
@@ -165,17 +162,18 @@ fn update(context: &mut Context) {
     }
 }
 
-fn spawn_border(context: &mut Context, position: Vector2<f32>) {
-    let border: Shape = Shape::new(Orientation::Vertical, GeometryType::Rectangle, Color::by_option(ColorOption::Cyan));
+fn spawn_border(context: &mut Context, position: Vec2) {
+    let border: Shape = Shape::new(Orientation::Vertical, GeometryType::Rectangle);
 
     context.commands.spawn(
         vec![
             Box::new(border),
+            Box::new(Color::by_option(ColorOption::Cyan)),
             Box::new(Border()),
             Box::new(Transform::new(
                 Position::new(position, Strategy::Normalized),
                 0.0,
-                Vector2::new(0.01, context.window_configuration.height as f32)
+                Vec2::new(0.01, context.window_configuration.height as f32)
             )),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
         ]
@@ -211,12 +209,13 @@ fn spawn_targets(context: &mut Context) {
 
             context.commands.spawn(
                 vec![
-                    Box::new(Shape::new(Orientation::Horizontal, GeometryType::Rectangle, color)),
+                    Box::new(Shape::new(Orientation::Horizontal, GeometryType::Rectangle)),
+                    Box::new(color),
                     Box::new(Target()),
                     Box::new(Transform::new(
-                        Position::new(Vector2::new(x, y), Strategy::Normalized),
+                        Position::new(Vec2::new(x, y), Strategy::Normalized),
                         0.0,
-                        Vector2::new(width, height)
+                        Vec2::new(width, height)
                     )),
                     Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle))),
                 ]
@@ -242,7 +241,7 @@ fn move_little_ball(context: &mut Context, little_ball_entity: Entity) {
     let mut little_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
     let little_ball_velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(&little_ball_entity).unwrap();
 
-    let new_position: Vector2<f32> = little_ball_transform.position.to_vec() + little_ball_velocity.to_vec() * context.delta;
+    let new_position: Vec2 = little_ball_transform.position.to_vec() + little_ball_velocity.to_vec() * context.delta;
     little_ball_transform.set_position(&context.render_state, new_position);
 }
 
@@ -254,13 +253,13 @@ fn check_player_little_ball_collision(context: &mut Context, player_entity: Enti
     let player_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(&player_entity).unwrap();
 
     if Collision::check(CollisionAlgorithm::Aabb, &player_collision, &little_ball_collision) {
-        let velocity_magnitude: f32 = little_ball_velocity.to_vec().magnitude();
+        let velocity_magnitude: f32 = little_ball_velocity.to_vec().length();
         let collision_point: f32 = (
             (little_ball_collision.collider.position.x - player_collision.collider.position.x) /
             (player_collision.collider.scale.x * 0.5)
         ).clamp(-1.0, 1.0);
 
-        let mut new_direction: Vector2<f32> = Vector2::new(
+        let mut new_direction: Vec2 = Vec2::new(
             collision_point * 1.5,
             1.0 - collision_point.abs() * 0.3
         ).normalize();
@@ -286,19 +285,19 @@ fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity
         let border_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(border).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &little_ball_collision, &border_collision) {
-            let velocity_magnitude: f32 = little_ball_velocity.to_vec().magnitude();
-            let collision_normal: Vector2<f32> = if border_collision.collider.position.x > 0.0 {
-                Vector2::new(-1.0, 0.0)
+            let velocity_magnitude: f32 = little_ball_velocity.to_vec().length();
+            let collision_normal: Vec2 = if border_collision.collider.position.x > 0.0 {
+                Vec2::new(-1.0, 0.0)
             } else {
-                Vector2::new(1.0, 0.0)
+                Vec2::new(1.0, 0.0)
             };
 
-            let new_direction: Vector2<f32> = (
+            let new_direction: Vec2 = (
                 little_ball_velocity.to_vec().normalize() - 2.0 *
                 little_ball_velocity.to_vec().normalize().dot(collision_normal) * collision_normal
             ).normalize();
 
-            let randomized_direction: Vector2<f32> = Vector2::new(
+            let randomized_direction: Vec2 = Vec2::new(
                 new_direction.x + random_factor * 0.3,
                 new_direction.y
             ).normalize();
@@ -306,7 +305,7 @@ fn check_little_ball_borders_collision(context: &mut Context, little_ball_entity
             little_ball_velocity.x = randomized_direction.x * velocity_magnitude;
             little_ball_velocity.y = randomized_direction.y * velocity_magnitude;
 
-            let collision_offset: Vector2<f32> = collision_normal * 0.09;
+            let collision_offset: Vec2 = collision_normal * 0.09;
             little_ball_transform.position.x += collision_offset.x;
         }
     }
@@ -324,10 +323,10 @@ fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity:
         let target_collision: ComponentRef<'_, Collision> = context.world.get_entity_component::<Collision>(target).unwrap();
 
         if Collision::check(CollisionAlgorithm::Aabb, &little_ball_collision, &target_collision) {
-            let velocity_magnitude: f32 = little_ball_velocity.to_vec().magnitude();
-            let impact_vector: Vector2<f32> = (target_collision.collider.position - little_ball_collision.collider.position).normalize();
+            let velocity_magnitude: f32 = little_ball_velocity.to_vec().length();
+            let impact_vector: Vec2 = (target_collision.collider.position - little_ball_collision.collider.position).normalize();
 
-            let mut new_direction: Vector2<f32> = Vector2::new(
+            let mut new_direction: Vec2 = Vec2::new(
                 -impact_vector.x * 0.8 + random_factor * 0.2,
                 -impact_vector.y * 0.8 + random_factor * 0.2
             ).normalize();
@@ -346,7 +345,7 @@ fn check_litte_ball_targets_collision(context: &mut Context, little_ball_entity:
 
 fn respawn_little_ball_after_outbounds(context: &mut Context, little_ball_entity: Entity) {
     let mut litte_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&little_ball_entity).unwrap();
-    let position_default: Vector2<f32> = Vector2::new(0.0, -0.25);
+    let position_default: Vec2 = Vec2::new(0.0, -0.25);
 
     if litte_ball_transform.position.y < -1.0 {
         let mut little_ball_respawn_timer: ResourceRefMut<'_, LittleBallRespawnTimer> = context.world.get_resource_mut::<LittleBallRespawnTimer>().unwrap();

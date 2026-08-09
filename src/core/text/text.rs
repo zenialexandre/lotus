@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use cgmath::Vector2;
+use glam::Vec2;
 use lotus_proc_macros::{Component, Resource};
 use uuid::Uuid;
 use wgpu::Queue;
 use wgpu_text::{glyph_brush::ab_glyph::FontArc, BrushBuilder, TextBrush};
 use winit::dpi::PhysicalSize;
+
 use super::{
     font::Font,
     super::{
@@ -35,20 +36,18 @@ impl Default for TextHolder {
 pub struct Text {
     pub font: Font,
     pub position: Position,
-    pub color: Color,
     pub content: String,
-    pub(crate) original_resolution: Vector2<f32>
+    pub(crate) original_resolution: Vec2
 }
 
 impl Text {
     /// Create a new text struct.
-    pub fn new(render_state: &mut RenderState, font: Font, position: Position, color: Color, content: String) -> Self {
+    pub fn new(render_state: &mut RenderState, font: Font, position: Position, content: String) -> Self {
         return Self {
             font,
             position,
-            color,
             content,
-            original_resolution: Vector2::new(
+            original_resolution: Vec2::new(
                 render_state.physical_size.as_ref().unwrap().width as f32,
                 render_state.physical_size.as_ref().unwrap().height as f32
             )
@@ -94,21 +93,22 @@ impl Text {
     }
 
     /// Creates a new event to update the text color.
-    pub fn color(&self, world: &World, entity: Entity, color: Color) {
+    pub fn color(&self, world: &World, entity: Entity, color: &Color) {
         let mut event_dispatcher: ResourceRefMut<'_, EventDispatcher> = world.get_resource_mut::<EventDispatcher>().unwrap();
-        event_dispatcher.send(Event::new(entity, EventType::Text(SubEventType::UpdateTextColor), color))
+        event_dispatcher.send(Event::new(entity, EventType::Text(SubEventType::UpdateTextColor), *color));
     }
 }
 
 /// Struct to store the texts to be rendered.
 pub(crate) struct TextRenderer {
     pub(crate) text_brush: TextBrush<FontArc>,
-    pub(crate) text: Text
+    pub(crate) text: Text,
+    pub(crate) color: Color
 }
 
 impl TextRenderer {
     /// Create a new text renderer struct.
-    pub(crate) fn new(render_state: &RenderState, text: &Text) -> Self {
+    pub(crate) fn new(render_state: &RenderState, text: &Text, color: &Color) -> Self {
         let font: FontArc = FontArc::try_from_vec(text.font.bytes.clone()).expect("Failed to load font.");
         let text_brush: TextBrush<FontArc> = BrushBuilder::using_font(font).build(
             &render_state.device.as_ref().unwrap(),
@@ -119,7 +119,8 @@ impl TextRenderer {
 
         return Self {
             text_brush,
-            text: text.clone()
+            text: text.clone(),
+            color: color.clone()
         };
     }
 
@@ -155,7 +156,7 @@ impl TextRenderer {
 
     /// Updates the text rendering context with the new color.
     pub(crate) fn color(&mut self, color: Color, queue: Option<Queue>, physical_size: Option<PhysicalSize<u32>>) {
-        self.text.color = color;
+        self.color = color;
 
         self.text_brush.update_matrix(
             wgpu_text::ortho(physical_size.as_ref().unwrap().width as f32, physical_size.as_ref().unwrap().height as f32),

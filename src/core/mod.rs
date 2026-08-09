@@ -43,11 +43,8 @@ pub mod asset_loader;
 /// Texture related features.
 pub mod texture;
 
-/// Visibility related features.
-pub mod visibility;
-
-/// Draw ordering related features.
-pub mod draw_order;
+/// Visual effects and similar related features.
+pub mod fx;
 
 /// Animation related features.
 pub mod animation;

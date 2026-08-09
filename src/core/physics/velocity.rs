@@ -1,4 +1,4 @@
-use cgmath::Vector2;
+use glam::Vec2;
 use lotus_proc_macros::Component;
 
 /// Struct to represent the velocity that can be applied over objects for smooth movemnet.
@@ -10,7 +10,7 @@ pub struct Velocity {
 
 impl Velocity {
     /// Create a new velocity with parameters.
-    pub fn new(value: Vector2<f32>) -> Self {
+    pub fn new(value: Vec2) -> Self {
         return Self {
             x: value.x,
             y: value.y
@@ -18,13 +18,13 @@ impl Velocity {
     }
 
     /// Update the velocity values.
-    pub fn update_values(&mut self, value: Vector2<f32>) {
+    pub fn update_values(&mut self, value: Vec2) {
         self.x = value.x;
         self.y = value.y;
     }
 
     /// Returns the velocity as a vector.
-    pub fn to_vec(&self) -> Vector2<f32> {
-        return Vector2::new(self.x, self.y);
+    pub fn to_vec(&self) -> Vec2 {
+        return Vec2::new(self.x, self.y);
     }
 }

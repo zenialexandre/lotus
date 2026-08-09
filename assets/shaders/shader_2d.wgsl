@@ -41,5 +41,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     if (rendering_type == TEXTURE) {
         return textureSample(texture, texture_sampler, in.texture_coordinates) * in.color;
     }
-    return vec4(in.color.rgb, 1.0); // Applying Blending::REPLACE.
+    return vec4(in.color.rgba);
 }

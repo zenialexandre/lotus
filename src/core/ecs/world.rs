@@ -7,23 +7,21 @@ use std::{
     sync::Arc
 };
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
-use cgmath::Vector2;
+use glam::Vec2;
 use lotus_proc_macros::Component;
 use uuid::Uuid;
-use crate::core::event::synchronizer;
-
 use super::{
     super::{
         event::{
+            synchronizer,
             dispatcher::EventDispatcher,
         },
-        super::Color,
+        super::{Color, ColorOption},
         camera::camera2d::Camera2d,
         bindings::keyboard::keyboard_input::KeyboardInput,
         bindings::mouse::mouse_input::MouseInput,
         bindings::gamepad::gamepad_input::GamepadInput,
-        draw_order::DrawOrder,
-        visibility::Visibility,
+        fx::{draw_order::DrawOrder, visibility::Visibility},
         text::{text::{Text, TextHolder, TextRenderer}, font::{Font, Fonts}},
         managers::render::manager::RenderState,
         physics::transform::{Transform, Position, Strategy}
@@ -100,11 +98,10 @@ impl World {
             let fps_text: Text = Text::new(
                 render_state,
                 Font::new(Fonts::RobotoMono.get_path(), 21.0),
-                Position::new(Vector2::new(0.0, 0.0), Strategy::Pixelated),
-                color,
+                Position::new(Vec2::new(0.0, 0.0), Strategy::Pixelated),
                 current_fps.to_string()
             );
-            self.spawn(render_state, vec![Box::new(fps_text), Box::new(DrawOrder(99999)), Box::new(Fps())]);
+            self.spawn(render_state, vec![Box::new(fps_text), Box::new(color), Box::new(DrawOrder(99999)), Box::new(Fps())]);
         }
     }
 
@@ -127,20 +124,32 @@ impl World {
     /// Spawn a new entity on the world with its components.
     pub(crate) fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
+        let mut components_refs: Vec<AtomicRefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
 
         if components.iter().any(|component| component.as_any().is::<Text>()) {
             let text: &Text = components.iter()
                 .find_map(|component| component.as_any().downcast_ref::<Text>()
             ).unwrap();
+            let color: Option<&Color> = components.iter()
+                .find_map(|component| component.as_any().downcast_ref::<Color>()
+            );
             let mut text_holder: ResourceRefMut<'_, TextHolder> = self.get_resource_mut::<TextHolder>().unwrap();
+            let backup_color: Color = Color::by_option(ColorOption::Black);
 
-            let text_renderer: TextRenderer = TextRenderer::new(render_state, &text);
+            let text_renderer: TextRenderer = TextRenderer::new(
+                render_state,
+                &text,
+                if color.is_some() { color.unwrap() } else { &backup_color }
+            );
             text_holder.text_renderers.insert(entity.0, text_renderer);
         }
 
-        let mut components_refs: Vec<AtomicRefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
         for component in components {
             components_refs.push(AtomicRefCell::new(component));
+        }
+
+        if !components_refs.iter().any(|component| component.borrow().as_any().is::<Color>()) {
+            components_refs.push(AtomicRefCell::new(Box::new(Color::by_option(ColorOption::White))));
         }
 
         if !components_refs.iter().any(|component| component.borrow().as_any().is::<Transform>()) {

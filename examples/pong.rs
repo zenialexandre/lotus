@@ -93,25 +93,25 @@ fn setup(context: &mut Context) {
         vec![
             Box::new(background),
             Box::new(DrawOrder(0)),
-            Box::new(Transform::new(Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized), 0.0, Vector2::new(1.0, 1.0)))
+            Box::new(Transform::new(Position::new(Vec2::new(0.0, 0.0), Strategy::Normalized), 0.0, Vec2::new(1.0, 1.0)))
         ]
     );
 
-    spawn_border(context, Vector2::new(0.0, -1.0));
-    spawn_border(context, Vector2::new(0.0, 1.0));
+    spawn_border(context, Vec2::new(0.0, -1.0));
+    spawn_border(context, Vec2::new(0.0, 1.0));
 
     context.commands.spawn(
         vec![
             Box::new(gray_racket_sprite),
             Box::new(DrawOrder(2)),
             Box::new(Transform::new(
-                Position::new(Vector2::new(-1.0, 0.23), Strategy::Normalized),
+                Position::new(Vec2::new(-1.0, 0.23), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.55, 0.55)
+                Vec2::new(0.55, 0.55)
             )),
             Box::new(Racket()),
             Box::new(GrayRacket()),
-            Box::new(Velocity::new(Vector2::new(1.5, 1.5))),
+            Box::new(Velocity::new(Vec2::new(1.5, 1.5))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
@@ -121,13 +121,13 @@ fn setup(context: &mut Context) {
             Box::new(pink_racket_sprite),
             Box::new(DrawOrder(3)),
             Box::new(Transform::new(
-                Position::new(Vector2::new(1.0, 0.25), Strategy::Normalized),
+                Position::new(Vec2::new(1.0, 0.25), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.55, 0.55)
+                Vec2::new(0.55, 0.55)
             )),
             Box::new(Racket()),
             Box::new(PinkRacket()),
-            Box::new(Velocity::new(Vector2::new(1.5, 1.5))),
+            Box::new(Velocity::new(Vec2::new(1.5, 1.5))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
@@ -137,12 +137,12 @@ fn setup(context: &mut Context) {
             Box::new(pong_ball_sprite),
             Box::new(DrawOrder(4)),
             Box::new(Transform::new(
-                Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+                Position::new(Vec2::new(0.0, 0.0), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.55, 0.55)
+                Vec2::new(0.55, 0.55)
             )),
             Box::new(PongBall()),
-            Box::new(Velocity::new(Vector2::new(1.0, 1.0))),
+            Box::new(Velocity::new(Vec2::new(1.0, 1.0))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
@@ -165,18 +165,19 @@ fn update(context: &mut Context) {
     respawn_pong_ball_after_outbounds(context, pong_ball);
 }
 
-fn spawn_border(context: &mut Context, position: Vector2<f32>) {
-    let border: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::by_option(ColorOption::Black));
+fn spawn_border(context: &mut Context, position: Vec2) {
+    let border: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle);
 
     context.commands.spawn(
         vec![
             Box::new(border),
+            Box::new(Color::by_option(ColorOption::Black)),
             Box::new(DrawOrder(1)),
             Box::new(Border()),
             Box::new(Transform::new(
                 Position::new(position, Strategy::Normalized),
                 0.0,
-                Vector2::new(context.window_configuration.width as f32, 0.01)
+                Vec2::new(context.window_configuration.width as f32, 0.01)
             )),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
         ]
@@ -193,11 +194,11 @@ fn move_gray_racket(context: &mut Context, keyboard_input: KeyboardInput) {
 
     if keyboard_input.is_key_pressed(KeyboardKey::KeyW) {
         transform.position.y += velocity.y * context.delta;
-        let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
+        let new_position: Vec2 = Vec2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
     } else if keyboard_input.is_key_pressed(KeyboardKey::KeyS) {
         transform.position.y -= velocity.y * context.delta;
-        let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
+        let new_position: Vec2 = Vec2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
     }
 }
@@ -212,11 +213,11 @@ fn move_pink_racket(context: &mut Context, keyboard_input: KeyboardInput) {
 
     if keyboard_input.is_key_pressed(KeyboardKey::ArrowUp) {
         transform.position.y += velocity.y * context.delta;
-        let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
+        let new_position: Vec2 = Vec2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
     } else if keyboard_input.is_key_pressed(KeyboardKey::ArrowDown) {
         transform.position.y -= velocity.y * context.delta;
-        let new_position: Vector2<f32> = Vector2::new(transform.position.x, transform.position.y);
+        let new_position: Vec2 = Vec2::new(transform.position.x, transform.position.y);
         transform.set_position(&context.render_state, new_position);
     }
 }
@@ -225,7 +226,7 @@ fn move_pong_ball(context: &mut Context, pong_ball: &Entity) {
     let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
     let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(&pong_ball).unwrap();
 
-    let new_position: Vector2<f32> = transform.position.to_vec() + velocity.to_vec() * context.delta;
+    let new_position: Vec2 = transform.position.to_vec() + velocity.to_vec() * context.delta;
     transform.set_position(&context.render_state, new_position);
 }
 
@@ -248,18 +249,18 @@ fn check_rackets_ball_collision(context: &mut Context, pong_ball: &Entity, rando
             let relative_collision_point: f32 = pong_ball_transform.position.y - racket_transform.position.y;
             let rebound_angle: f32 = relative_collision_point * 1.0 + random_factor;
 
-            let pong_ball_new_velocity: Vector2<f32>;
+            let pong_ball_new_velocity: Vec2;
 
             if racket_transform.position.x > 0.0 {
-                pong_ball_new_velocity = Vector2::new(-1.0, rebound_angle).normalize() * pong_ball_velocity.to_vec().magnitude();
+                pong_ball_new_velocity = Vec2::new(-1.0, rebound_angle).normalize() * pong_ball_velocity.to_vec().length();
                 pong_ball_velocity.x = pong_ball_new_velocity.x; pong_ball_velocity.y = pong_ball_new_velocity.y;
                 pong_ball_transform.position.x -= 0.1;
             } else if racket_transform.position.x < 0.0 {
-                pong_ball_new_velocity = Vector2::new(1.0, rebound_angle).normalize() * pong_ball_velocity.to_vec().magnitude();
+                pong_ball_new_velocity = Vec2::new(1.0, rebound_angle).normalize() * pong_ball_velocity.to_vec().length();
                 pong_ball_velocity.x = pong_ball_new_velocity.x; pong_ball_velocity.y = pong_ball_new_velocity.y;
                 pong_ball_transform.position.x += 0.1;
             }
-            let new_position: Vector2<f32> = Vector2::new(pong_ball_transform.position.x, pong_ball_transform.position.y);
+            let new_position: Vec2 = Vec2::new(pong_ball_transform.position.x, pong_ball_transform.position.y);
             pong_ball_transform.set_position(&context.render_state, new_position);
         }
     }
@@ -277,19 +278,19 @@ fn check_borders_ball_collision(context: &mut Context, pong_ball: &Entity, rando
         let mut pong_ball_velocity: ComponentRefMut<'_, Velocity> = context.world.get_entity_component_mut::<Velocity>(&pong_ball).unwrap();
         let mut pong_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(&pong_ball).unwrap();
 
-        let pong_ball_new_velocity: Vector2<f32>;
+        let pong_ball_new_velocity: Vec2;
 
         if Collision::check(CollisionAlgorithm::Aabb, &border_collision, &pong_ball_collision) {
             if border_transform.position.y > 0.0 {
-                pong_ball_new_velocity = Vector2::new(pong_ball_velocity.x.signum(), -1.0 + random_factor).normalize() * pong_ball_velocity.to_vec().magnitude();
+                pong_ball_new_velocity = Vec2::new(pong_ball_velocity.x.signum(), -1.0 + random_factor).normalize() * pong_ball_velocity.to_vec().length();
                 pong_ball_velocity.x = pong_ball_new_velocity.x; pong_ball_velocity.y = pong_ball_new_velocity.y;
                 pong_ball_transform.position.y -= 0.1;
             } else if border_transform.position.y < 0.0 {
-                pong_ball_new_velocity = Vector2::new(pong_ball_velocity.x.signum(), 1.0 + random_factor).normalize() * pong_ball_velocity.to_vec().magnitude();
+                pong_ball_new_velocity = Vec2::new(pong_ball_velocity.x.signum(), 1.0 + random_factor).normalize() * pong_ball_velocity.to_vec().length();
                 pong_ball_velocity.x = pong_ball_new_velocity.x; pong_ball_velocity.y = pong_ball_new_velocity.y;
                 pong_ball_transform.position.y += 0.1;
             }
-            let new_position: Vector2<f32> = Vector2::new(pong_ball_transform.position.x, pong_ball_transform.position.y);
+            let new_position: Vec2 = Vec2::new(pong_ball_transform.position.x, pong_ball_transform.position.y);
             pong_ball_transform.set_position(&context.render_state, new_position);
         }
     }
@@ -297,7 +298,7 @@ fn check_borders_ball_collision(context: &mut Context, pong_ball: &Entity, rando
 
 fn respawn_pong_ball_after_outbounds(context: &mut Context, pong_ball: &Entity) {
     let mut pong_ball_transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(pong_ball).unwrap();
-    let position_default: Vector2<f32> = Vector2::new(0.0, 0.0);
+    let position_default: Vec2 = Vec2::new(0.0, 0.0);
 
     if pong_ball_transform.position.x > 2.0 || pong_ball_transform.position.x < -2.0 {
         let mut pong_ball_respawn_timer: ResourceRefMut<'_, PongBallRespawnTimer> = context.world.get_resource_mut::<PongBallRespawnTimer>().unwrap();

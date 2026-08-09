@@ -1,4 +1,4 @@
-use cgmath::Vector2;
+use glam::Vec2;
 use lotus_proc_macros::Component;
 use super::super::shape::geometry_type::GeometryType;
 
@@ -6,13 +6,13 @@ use super::super::shape::geometry_type::GeometryType;
 #[derive(Clone, Debug)]
 pub struct Collider {
     pub geometry_type: GeometryType,
-    pub position: Vector2<f32>,
-    pub scale: Vector2<f32>
+    pub position: Vec2,
+    pub scale: Vec2
 }
 
 impl Collider {
     /// Create a new collider with parameters.
-    pub fn new(geometry_type: GeometryType, position: Vector2<f32>, scale: Vector2<f32>) -> Self {
+    pub fn new(geometry_type: GeometryType, position: Vec2, scale: Vec2) -> Self {
         return Self {
             geometry_type,
             position,
@@ -24,8 +24,8 @@ impl Collider {
     pub fn new_simple(geometry_type: GeometryType) -> Self {
         return Self {
             geometry_type,
-            position: Vector2::new(0.0, 0.0),
-            scale: Vector2::new(0.0, 0.0)
+            position: Vec2::new(0.0, 0.0),
+            scale: Vec2::new(0.0, 0.0)
         };
     }
 }
@@ -49,10 +49,10 @@ impl CollisionAlgorithm {
 
     /// Returns if a collision is made by the AABB algorithm.
     pub fn check_aabb(a: &Collider, b: &Collider) -> bool {
-        let a_min: Vector2<f32> = a.position - a.scale / 2.0;
-        let a_max: Vector2<f32> = a.position + a.scale / 2.0;
-        let b_min: Vector2<f32> = b.position - b.scale / 2.0;
-        let b_max: Vector2<f32> = b.position + b.scale / 2.0;
+        let a_min: Vec2 = a.position - a.scale / 2.0;
+        let a_max: Vec2 = a.position + a.scale / 2.0;
+        let b_min: Vec2 = b.position - b.scale / 2.0;
+        let b_max: Vec2 = b.position + b.scale / 2.0;
 
         return a_min.x < b_max.x &&
             a_max.x > b_min.x &&

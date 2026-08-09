@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 use lotus_proc_macros::Component;
-use super::ecs::{world::World, entity::Entity};
+use super::super::ecs::{world::World, entity::Entity};
 
 /// Struct to order the drawing process of entities.
-/// The smaller number will be rendered first.    
+/// The smaller number will be rendered first.
 #[derive(Clone, Component)]
 pub struct DrawOrder(pub u32);
 

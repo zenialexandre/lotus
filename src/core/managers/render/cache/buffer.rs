@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use cgmath::Matrix4;
+use glam::Mat4;
 use wgpu::{Buffer, BufferUsages, util::{BufferInitDescriptor, DeviceExt}};
 use super::{
     utils,
@@ -114,8 +114,8 @@ pub(crate) fn get_projection_or_view_buffer(render_state: &mut RenderState, is_p
     let title: &str = if is_projection { PROJECTION } else { VIEW };
     let uuid: String = utils::extract_id_from_entity(entity);
     let key: (String, String) = (uuid, title.to_string().clone());
-    let matrix: Matrix4<f32> = if is_projection { render_state.get_projection_matrix(camera2d) } else { camera2d.view_matrix };
-    let matrix_unwrapped: [[f32; 4]; 4] = *matrix.as_ref();
+    let matrix: Mat4 = if is_projection { render_state.get_projection_matrix(camera2d) } else { camera2d.view_matrix };
+    let matrix_unwrapped: [[f32; 4]; 4] = matrix.to_cols_array_2d();
 
     if let Some(buffer) = render_state.buffer_cache.find(key.clone()) {
         render_state.queue.as_ref().unwrap().write_buffer(
