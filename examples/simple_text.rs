@@ -17,47 +17,42 @@ fn setup(context: &mut Context) {
     let underdog_regular: Text = Text::new(
         &mut context.render_state,
         Font::new(Fonts::UnderdogRegular.get_path(), 80.0),
-        Position::new(Vector2::new(-0.30, 0.0), Strategy::Normalized),
-        Color::new(0.0, 0.0, 0.0, 1.0),
+        Position::new(Vec2::new(-0.30, 0.0), Strategy::Normalized),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(underdog_regular)]);
+    context.commands.spawn(vec![Box::new(underdog_regular), Box::new(Color::new(0.0, 0.0, 0.0, 1.0))]);
 
     let codystar_light: Text = Text::new(
         &mut context.render_state,
         Font::new(Fonts::CodystarLight.get_path(), 80.0),
-        Position::new(Vector2::new(-0.30, 0.25), Strategy::Normalized),
-        Color::by_option(ColorOption::Blue),
+        Position::new(Vec2::new(-0.30, 0.25), Strategy::Normalized),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(codystar_light)]);
+    context.commands.spawn(vec![Box::new(codystar_light), Box::new(Color::by_option(ColorOption::Blue))]);
 
     let codystar_regular: Text = Text::new(
         &mut context.render_state,
         Font::new(Fonts::CodystarRegular.get_path(), 80.0),
-        Position::new(Vector2::new(-0.30, 0.45), Strategy::Normalized),
-        Color::by_option(ColorOption::Magenta),
+        Position::new(Vec2::new(-0.30, 0.45), Strategy::Normalized),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(codystar_regular)]);
+    context.commands.spawn(vec![Box::new(codystar_regular), Box::new(Color::by_option(ColorOption::Magenta))]);
 
     let roboto_mono: Text = Text::new(
         &mut context.render_state,
         Font::new(Fonts::RobotoMono.get_path(), 80.0),
-        Position::new(Vector2::new(-0.30, 0.65), Strategy::Normalized),
-        Color::by_option(ColorOption::Brown),
+        Position::new(Vec2::new(-0.30, 0.65), Strategy::Normalized),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(roboto_mono)]);
+    context.commands.spawn(vec![Box::new(roboto_mono), Box::new(Color::by_option(ColorOption::Brown))]);
 
     let roboto_mono_italic: Text = Text::new(
         &mut context.render_state,
         Font::new(Fonts::RobotoMonoItalic.get_path(), 80.0),
-        Position::new(Vector2::new(-0.30, 0.85), Strategy::Normalized),
-        Color::by_option(ColorOption::Red),
+        Position::new(Vec2::new(-0.30, 0.85), Strategy::Normalized),
         "Hello Text!".to_string()
     );
-    context.commands.spawn(vec![Box::new(roboto_mono_italic)]);
+    context.commands.spawn(vec![Box::new(roboto_mono_italic), Box::new(Color::by_option(ColorOption::Red))]);
 }
 
 fn update(_context: &mut Context) {}

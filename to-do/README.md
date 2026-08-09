@@ -8,8 +8,6 @@
 
 - Implement instancing/batching rendering.
 
-- Migrate com `cgmath` to `nalgebra`.
-
 - Migrate from `wgpu_text` to `glyphon`.
 
 - Implementing error handling flow.

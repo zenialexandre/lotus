@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use atomic_refcell::{AtomicRef, AtomicRefMut};
-use cgmath::{Matrix4, Vector2, Vector3};
+use glam::{Mat4, Vec2, Vec3};
 use gilrs::{Axis, Button, GamepadId};
 use super::{
     dispatcher::{EventDispatcher, EventType, SubEventType},
@@ -26,7 +26,7 @@ pub(crate) fn events(world: &mut World, render_state: &RenderState) {
             EventType::Transform(sub_event_type) => {
                 let mut transform: ComponentRefMut<'_, Transform> = world.get_entity_component_mut::<Transform>(&event.entity).unwrap();
 
-                if let Some(value) = event.get::<Vector2<f32>>() {
+                if let Some(value) = event.get::<Vec2>() {
                     if sub_event_type == &SubEventType::UpdatePixelatedPosition {
                         transform.position.x = value.x;
                         transform.position.y = value.y;
@@ -137,7 +137,7 @@ pub(crate) fn camera(world: &mut World, render_state: &mut RenderState) {
     if let (Some(entity), Some(position)) = (target_entity, target_position) {
         let mut camera2d: ResourceRefMut<'_, Camera2d> = world.get_resource_mut::<Camera2d>().unwrap();
         camera2d.transform.position = position.clone();
-        camera2d.view_matrix = Matrix4::from_translation(Vector3::new(
+        camera2d.view_matrix = Mat4::from_translation(Vec3::new(
             -position.x.clone(),
             -position.y,
             0.0

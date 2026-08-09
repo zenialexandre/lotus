@@ -14,29 +14,31 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::by_option(ColorOption::Black));
-    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()), Color::by_option(ColorOption::Blue));
+    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle);
+    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()));
 
     context.commands.spawn(vec![
         Box::new(table),
+        Box::new(Color::by_option(ColorOption::Black)),
         Box::new(Transform::new(
-            Position::new(Vector2::new(0.0, -0.70), Strategy::Normalized),
+            Position::new(Vec2::new(0.0, -0.70), Strategy::Normalized),
             0.0,
-            Vector2::new(0.90, 0.10)
+            Vec2::new(0.90, 0.10)
         )),
         Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
     ]);
 
     context.commands.spawn(vec![
         Box::new(object),
+        Box::new(Color::by_option(ColorOption::Blue)),
         Box::new(Transform::new(
-            Position::new(Vector2::new(400.0, 100.0), Strategy::Pixelated),
+            Position::new(Vec2::new(400.0, 100.0), Strategy::Pixelated),
             0.0,
-            Vector2::new(0.50, 0.50)
+            Vec2::new(0.50, 0.50)
         )),
         Box::new(Collision::new(Collider::new_simple(GeometryType::Square))),
         Box::new(Gravity::new(0.0)),
-        Box::new(Velocity::new(Vector2::new(0.2, 0.2))),
+        Box::new(Velocity::new(Vec2::new(0.2, 0.2))),
         Box::new(RigidBody::new(BodyType::Dynamic, 1.0, 0.9, 1.0))
     ]);
 }

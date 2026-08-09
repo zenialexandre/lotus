@@ -1,4 +1,4 @@
-use cgmath::{Deg, Matrix4, Vector2, Vector3};
+use glam::{Mat4, Vec2, Vec3, Quat};
 use lotus_proc_macros::Component;
 use super::super::managers::render::manager::RenderState;
 
@@ -33,7 +33,7 @@ pub struct Position {
 
 impl Position {
     /// Creates a new position struct.
-    pub fn new(value: Vector2<f32>, strategy: Strategy) -> Self {
+    pub fn new(value: Vec2, strategy: Strategy) -> Self {
         return Self {
             x: value.x,
             y: value.y,
@@ -42,14 +42,14 @@ impl Position {
     }
 
     /// Update the position values.
-    pub fn update_values(&mut self, value: Vector2<f32>) {
+    pub fn update_values(&mut self, value: Vec2) {
         self.x = value.x;
         self.y = value.y;
     }
 
     /// Returns the position as a vector.
-    pub fn to_vec(&self) -> Vector2<f32> {
-        return Vector2::new(self.x, self.y);
+    pub fn to_vec(&self) -> Vec2 {
+        return Vec2::new(self.x, self.y);
     }
 }
 
@@ -58,7 +58,7 @@ impl Position {
 pub struct Transform {
     pub position: Position,
     pub rotation: f32,
-    pub scale: Vector2<f32>,
+    pub scale: Vec2,
     pub(crate) dirty_position: bool,
     pub(crate) dirty_scale: bool
 }
@@ -67,9 +67,9 @@ impl Default for Transform {
     /// Returns a default transform struct.
     fn default() -> Self {
         return Self {
-            position: Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+            position: Position::new(Vec2::new(0.0, 0.0), Strategy::Normalized),
             rotation: 0.0,
-            scale: Vector2::new(1.0, 1.0),
+            scale: Vec2::new(1.0, 1.0),
             dirty_position: true,
             dirty_scale: true
         };
@@ -78,7 +78,7 @@ impl Default for Transform {
 
 impl Transform {
     /// Create a new transform with parameters.
-    pub fn new(position: Position, rotation: f32, scale: Vector2<f32>) -> Self {
+    pub fn new(position: Position, rotation: f32, scale: Vec2) -> Self {
         return Self {
             position,
             rotation,
@@ -97,16 +97,18 @@ impl Transform {
     }
 
     /// Returns the current transform struct as a matrix of f32s.
-    pub fn to_matrix(&self) -> Matrix4<f32> {
-        return Matrix4::from_translation(Vector3::new(self.position.x, self.position.y, 0.0)) *
-            Matrix4::from_angle_z(Deg(self.rotation)) *
-            Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, 1.0);
+    pub fn to_matrix(&self) -> Mat4 {
+        return Mat4::from_scale_rotation_translation(
+            Vec3::new(self.scale.x, self.scale.y, 1.0),
+            Quat::from_rotation_z(self.rotation.to_radians()),
+            Vec3::new(self.position.x, self.position.y, 0.0)
+        );
     }
 
     /// Write the transform matrix updates to its related buffer on rendering surface.
     pub fn write_update_to_buffer(&self, render_state: &RenderState) {
-        let transform_matrix: Matrix4<f32> = self.to_matrix();
-        let transform_matrix_as_ref: &[[f32; 4]; 4] = transform_matrix.as_ref();
+        let transform_matrix: Mat4 = self.to_matrix();
+        let transform_matrix_as_ref: &[[f32; 4]; 4] = &transform_matrix.to_cols_array_2d();
 
         if let Some(transform_buffer) = render_state.transform_buffer.as_ref() {
             render_state.queue.as_ref().unwrap().write_buffer(
@@ -126,7 +128,7 @@ impl Transform {
     }
 
     /// Set the current position and sends it to the buffer.
-    pub fn set_position(&mut self, render_state: &RenderState, position: Vector2<f32>) {
+    pub fn set_position(&mut self, render_state: &RenderState, position: Vec2) {
         self.position.x = position.x;
         self.position.y = position.y;
         self.write_update_to_buffer(render_state);
@@ -149,7 +151,7 @@ impl Transform {
     /// Useful to set a brand new position using pixelated values.
     ///
     /// Your pixelated coordinate will be normalized.
-    pub fn set_position_pixelated(&mut self, render_state: &RenderState, position: Vector2<f32>) {
+    pub fn set_position_pixelated(&mut self, render_state: &RenderState, position: Vec2) {
         self.dirty_position = true;
         self.set_position(render_state, position);
     }
@@ -175,8 +177,8 @@ impl Transform {
     }
 
     /// Get the current position.
-    pub fn get_position(&self) -> Vector2<f32> {
-        return Vector2::new(self.position.x, self.position.y);
+    pub fn get_position(&self) -> Vec2 {
+        return Vec2::new(self.position.x, self.position.y);
     }
 
     /// Set the rotation on initialization.
@@ -199,7 +201,7 @@ impl Transform {
     }
 
     /// Set the scale on initialization.
-    pub fn scale(self, scale: Vector2<f32>) -> Self {
+    pub fn scale(self, scale: Vec2) -> Self {
         return Self {
             scale,
             ..self
@@ -207,14 +209,14 @@ impl Transform {
     }
 
     /// Set the current scale and sends it to the buffer.
-    pub fn set_scale(&mut self, render_state: &RenderState, scale: Vector2<f32>) {
+    pub fn set_scale(&mut self, render_state: &RenderState, scale: Vec2) {
         self.scale = scale;
         self.dirty_scale = true;
         self.write_update_to_buffer(render_state);
     }
 
     /// Get the current scale.
-    pub fn get_scale(&self) -> Vector2<f32> {
+    pub fn get_scale(&self) -> Vec2 {
         return self.scale;
     }
 }

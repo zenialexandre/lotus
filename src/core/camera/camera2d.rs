@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, SquareMatrix};
+use glam::Mat4;
 use lotus_proc_macros::Resource;
 use super::super::{ecs::entity::Entity, physics::transform::Transform};
 
@@ -8,7 +8,7 @@ pub struct Camera2d {
     pub transform: Transform,
     pub zoom: f32,
     pub target: Option<Entity>,
-    pub view_matrix: Matrix4<f32>
+    pub view_matrix: Mat4
 }
 
 impl Default for Camera2d {
@@ -17,7 +17,7 @@ impl Default for Camera2d {
             transform: Transform::default(),
             zoom: 1.0,
             target: None,
-            view_matrix: Matrix4::identity()
+            view_matrix: Mat4::IDENTITY
         }
     }
 }

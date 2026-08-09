@@ -1,21 +1,19 @@
 use lotus_proc_macros::Component;
-use super::{super::color::color::Color, geometry_type::GeometryType, orientation::Orientation};
+use super::{geometry_type::GeometryType, orientation::Orientation};
 
 /// Struct that represents every solid geometric form on the engine.
 #[derive(Clone, Debug, Component)]
 pub struct Shape {
     pub orientation: Orientation,
-    pub geometry_type: GeometryType,
-    pub color: Color
+    pub geometry_type: GeometryType
 }
 
 impl Shape {
     /// Create a new shape with parameters.
-    pub fn new(orientation: Orientation, geometry_type: GeometryType, color: Color) -> Self {
+    pub fn new(orientation: Orientation, geometry_type: GeometryType) -> Self {
         return Self {
             orientation,
-            geometry_type,
-            color
+            geometry_type
         };
     }
 
@@ -27,11 +25,6 @@ impl Shape {
     /// Alter the geometry type of a certain shape.
     pub fn geometry_type(&mut self, geometry_type: GeometryType) {
         self.geometry_type = geometry_type;
-    }
-
-    /// Alter the color of a certain shape.
-    pub fn color(&mut self, color: Color) {
-        self.color = color;
     }
 }
 

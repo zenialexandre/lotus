@@ -8,7 +8,7 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        commands.spawn(vec![Box::new(Velocity::new(Vector2::new(0.0, 0.0)))]);
+        commands.spawn(vec![Box::new(Velocity::new(Vec2::new(0.0, 0.0)))]);
         commands.flush_commands(&mut world, &mut render_state);
 
         assert!(world.archetypes.len() == 1);
@@ -25,7 +25,7 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        commands.spawn(vec![Box::new(Velocity::new(Vector2::new(0.0, 0.0)))]);
+        commands.spawn(vec![Box::new(Velocity::new(Vec2::new(0.0, 0.0)))]);
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
@@ -47,8 +47,8 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
-        commands.spawn(vec![Box::new(dummy_shape)]);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
+        commands.spawn(vec![Box::new(dummy_shape), Box::new(Color::by_option(ColorOption::Black))]);
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
@@ -64,8 +64,8 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
-        commands.spawn(vec![Box::new(dummy_shape)]);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
+        commands.spawn(vec![Box::new(dummy_shape), Box::new(Color::by_option(ColorOption::Black))]);
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
@@ -81,8 +81,8 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
-        commands.spawn(vec![Box::new(dummy_shape)]);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
+        commands.spawn(vec![Box::new(dummy_shape), Box::new(Color::by_option(ColorOption::Black))]);
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
@@ -99,8 +99,8 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
-        commands.spawn(vec![Box::new(dummy_shape)]);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
+        commands.spawn(vec![Box::new(dummy_shape), Box::new(Color::by_option(ColorOption::Black))]);
         commands.flush_commands(&mut world, &mut render_state);
 
         let entity: Entity = {
@@ -117,8 +117,8 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
-        commands.spawn(vec![Box::new(dummy_shape)]);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
+        commands.spawn(vec![Box::new(dummy_shape), Box::new(Color::by_option(ColorOption::Black))]);
         commands.flush_commands(&mut world, &mut render_state);
 
         let mut query: Query = Query::new(&world).with::<Shape>();
@@ -133,8 +133,8 @@ pub mod tests {
         let mut world: World = World::new();
         let mut render_state: RenderState = RenderState::dummy();
 
-        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::Black));
-        commands.spawn(vec![Box::new(dummy_shape)]);
+        let dummy_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
+        commands.spawn(vec![Box::new(dummy_shape), Box::new(Color::by_option(ColorOption::Black))]);
         commands.flush_commands(&mut world, &mut render_state);
 
         let mut query: Query = Query::new(&world).with::<Text>();

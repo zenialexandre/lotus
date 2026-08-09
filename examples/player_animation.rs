@@ -58,7 +58,7 @@ fn setup(context: &mut Context) {
 
     context.commands.spawn(vec![
         Box::new(animation),
-        Box::new(Velocity::new(Vector2::new(0.5, 0.5)))
+        Box::new(Velocity::new(Vec2::new(0.5, 0.5)))
     ]);
 }
 

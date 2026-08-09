@@ -21,19 +21,20 @@ your_game!(
 
 fn setup(context: &mut Context) {
     let circle: Circle = Circle::new(64, 0.5);
-    let red_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::by_option(ColorOption::Red));
-    let blue_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()), Color::by_option(ColorOption::Blue));
+    let red_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()));
+    let blue_object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(circle.clone()));
 
     context.commands.spawn(
         vec![
             Box::new(red_object),
+            Box::new(Color::by_option(ColorOption::Red)),
             Box::new(Object()),
             Box::new(Transform::new(
-                Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+                Position::new(Vec2::new(0.0, 0.0), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.30, 0.30)
+                Vec2::new(0.30, 0.30)
             )),
-            Box::new(Velocity::new(Vector2::new(0.45, 0.45))),
+            Box::new(Velocity::new(Vec2::new(0.45, 0.45))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
@@ -41,21 +42,22 @@ fn setup(context: &mut Context) {
     context.commands.spawn(
         vec![
             Box::new(blue_object),
+            Box::new(Color::by_option(ColorOption::Blue)),
             Box::new(Object()),
             Box::new(Transform::new(
-                Position::new(Vector2::new(-0.45, 0.0), Strategy::Normalized),
+                Position::new(Vec2::new(-0.45, 0.0), Strategy::Normalized),
                 0.0,
-                Vector2::new(0.30, 0.30)
+                Vec2::new(0.30, 0.30)
             )),
-            Box::new(Velocity::new(Vector2::new(0.45, 0.45))),
+            Box::new(Velocity::new(Vec2::new(0.45, 0.45))),
             Box::new(Collision::new(Collider::new_simple(GeometryType::Square)))
         ]
     );
 
-    spawn_border(context, Orientation::Horizontal, Vector2::new(0.0, -1.), Vector2::new(context.window_configuration.width as f32, 0.01));
-    spawn_border(context, Orientation::Horizontal, Vector2::new(0.0, 1.), Vector2::new(context.window_configuration.width as f32, 0.01));
-    spawn_border(context, Orientation::Vertical, Vector2::new(1.35, 0.), Vector2::new(0.01, context.window_configuration.height as f32));
-    spawn_border(context, Orientation::Vertical, Vector2::new(-1.35, 0.), Vector2::new(0.01, context.window_configuration.height as f32));
+    spawn_border(context, Orientation::Horizontal, Vec2::new(0.0, -1.), Vec2::new(context.window_configuration.width as f32, 0.01));
+    spawn_border(context, Orientation::Horizontal, Vec2::new(0.0, 1.), Vec2::new(context.window_configuration.width as f32, 0.01));
+    spawn_border(context, Orientation::Vertical, Vec2::new(1.35, 0.), Vec2::new(0.01, context.window_configuration.height as f32));
+    spawn_border(context, Orientation::Vertical, Vec2::new(-1.35, 0.), Vec2::new(0.01, context.window_configuration.height as f32));
 }
 
 fn update(context: &mut Context) {
@@ -67,12 +69,13 @@ fn update(context: &mut Context) {
     move_objects(context, &entities);
 }
 
-fn spawn_border(context: &mut Context, orientation: Orientation, position: Vector2<f32>, scale: Vector2<f32>) {
-    let border: Shape = Shape::new(orientation, GeometryType::Rectangle, Color::by_option(ColorOption::White));
+fn spawn_border(context: &mut Context, orientation: Orientation, position: Vec2, scale: Vec2) {
+    let border: Shape = Shape::new(orientation, GeometryType::Rectangle);
 
     context.commands.spawn(
         vec![
             Box::new(border),
+            Box::new(Color::by_option(ColorOption::White)),
             Box::new(Border()),
             Box::new(Transform::new(
                 Position::new(position, Strategy::Normalized),
@@ -121,7 +124,7 @@ fn check_object_collision(context: &mut Context, entities: &Vec<Entity>) {
             if Collision::check(CollisionAlgorithm::Aabb, &collision, &next_entity_collision) {
                 let mut thread_rng: ThreadRng = rng();
                 let random_angle: f32 = thread_rng.random_range(0.0..std::f32::consts::TAU);
-                let new_direction: Vector2<f32> = Vector2::new(random_angle.cos(), random_angle.sin());
+                let new_direction: Vec2 = Vec2::new(random_angle.cos(), random_angle.sin());
                 let collision_impulse: f32 = 1.5;
 
                 velocity.update_values(new_direction * collision_impulse);
@@ -136,7 +139,7 @@ fn move_objects(context: &mut Context, entities: &Vec<Entity>) {
         let mut transform: ComponentRefMut<'_, Transform> = context.world.get_entity_component_mut::<Transform>(entity).unwrap();
         let velocity: ComponentRef<'_, Velocity> = context.world.get_entity_component::<Velocity>(entity).unwrap();
 
-        let new_position: Vector2<f32> = transform.position.to_vec() + velocity.to_vec() * context.delta;
+        let new_position: Vec2 = transform.position.to_vec() + velocity.to_vec() * context.delta;
         transform.set_position(&context.render_state, new_position);
     }
 }

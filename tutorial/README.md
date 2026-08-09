@@ -110,12 +110,12 @@ your_game!(
 fn setup(context: &mut Context) {
     // First of all, you create your Shape variable.
     // Shape is a Component in our ECS World.
-    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOpton::BLUE));
+    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
 
     // Then we use the context to access commands.
     // Commands are used mostly to mutate our ECS World.
     // In this case, we spawn a new entity that is a Shape!
-    context.commands.spawn(vec![Box::new(my_shape)]);
+    context.commands.spawn(vec![Box::new(my_shape), Box::new(Color::by_option(ColorOption::Blue))]);
 }
 
 fn update(context: &mut Context) {
@@ -149,7 +149,7 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::BLUE));
+    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
 
     // We need to create a Transform variable.
     // Setting the initial position to x=0.0 and y=0.0 (middle of the screen).
@@ -157,13 +157,13 @@ fn setup(context: &mut Context) {
     // And scale to x=0.25 and y=0.25.
     // The strategy normalized means that it will not use pixelated coordinates.
     let transform: Transform = Transform::new(
-        Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+        Position::new(Vec2::new(0.0, 0.0), Strategy::Normalized),
         0.0,
-        Vector2::new(0.25, 0.25)
+        Vec2::new(0.25, 0.25)
     );
 
     // Now we send the transform component too.
-    context.commands.spawn(vec![Box::new(my_shape), Box::new(transform)]);
+    context.commands.spawn(vec![Box::new(my_shape), Box::new(transform), Box::new(Color::by_option(ColorOption::Blue))]);
 }
 
 fn update(context: &mut Context) {
@@ -220,15 +220,15 @@ your_game!(
 );
 
 fn setup(context: &mut Context) {
-    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square, Color::by_option(ColorOption::BLUE));
+    let my_shape: Shape = Shape::new(Orientation::Horizontal, GeometryType::Square);
     let transform: Transform = Transform::new(
-        Position::new(Vector2::new(0.0, 0.0), Strategy::Normalized),
+        Position::new(Vec2::new(0.0, 0.0), Strategy::Normalized),
         0.0,
-        Vector2::new(0.25, 0.25)
+        Vec2::new(0.25, 0.25)
     );
 
     // Add our component.
-    context.commands.spawn(vec![Box::new(my_shape), Box::new(transform), Box::new(JustAComponent())]);
+    context.commands.spawn(vec![Box::new(my_shape), Box::new(Color::by_option(ColorOption::Blue)), Box::new(transform), Box::new(JustAComponent())]);
 
     // Add our resource with its initial value.
     context.commands.add_resource(Box::new(JustAResource(1)));
@@ -283,15 +283,16 @@ fn setup(context: &mut Context) {
     // Start off by creating two objects.
     // One will be static and will serve as a table.
     // The other will be our main entity.
-    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle, Color::by_option(ColorOption::BLACK));
-    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()), Color::by_option(ColorOption::BLUE));
+    let table: Shape = Shape::new(Orientation::Horizontal, GeometryType::Rectangle);
+    let object: Shape = Shape::new(Orientation::Horizontal, GeometryType::Circle(Circle::default()));
 
     context.commands.spawn(vec![
         Box::new(table),
+        Box::new(Color::by_option(ColorOption::Black)),
         Box::new(Transform::new(
-            Position::new(Vector2::new(0.0, -0.70), Strategy::Normalized),
+            Position::new(Vec2::new(0.0, -0.70), Strategy::Normalized),
             0.0,
-            Vector2::new(0.90, 0.10)
+            Vec2::new(0.90, 0.10)
         )),
         // Our table Collision.
         Box::new(Collision::new(Collider::new_simple(GeometryType::Rectangle)))
@@ -305,15 +306,16 @@ fn setup(context: &mut Context) {
     // Keep in mind that the gravity will only affect entities with 'Dynamic' rigid bodies and velocity. 
     context.commands.spawn(vec![
         Box::new(object),
+        Box::new(Color::by_option(ColorOption::Blue)),
         Box::new(Transform::new(
-            Position::new(Vector2::new(400.0, 100.0), Strategy::Pixelated),
+            Position::new(Vec2::new(400.0, 100.0), Strategy::Pixelated),
             0.0,
-            Vector2::new(0.50, 0.50)
+            Vec2::new(0.50, 0.50)
         )),
         Box::new(Collision::new(Collider::new_simple(GeometryType::Square))),
         // Gravity created with a specific value.
         Box::new(Gravity::new(0.0)),
-        Box::new(Velocity::new(Vector2::new(0.2, 0.2))),
+        Box::new(Velocity::new(Vec2::new(0.2, 0.2))),
         // The first parameter is the type of the body, in this case: Dynamic.
         // The next parameter is the mass of the body (it will affect movement after collisions with other objects with mass).
         // The third parameter is the restitution factor (it can affect movement after collisions).

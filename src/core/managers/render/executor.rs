@@ -2,12 +2,11 @@ use wgpu::*;
 use atomic_refcell::AtomicRefMut;
 use crate::RenderState;
 use super::super::super::{
-    super::ColorOption,
-    color::color,
+    super::{ColorOption, Color},
     event::dispatcher::EventDispatcher,
     shape::shape::Shape,
     physics::transform::Transform,
-    draw_order::DrawOrder,
+    fx::draw_order::DrawOrder,
     texture::sprite::Sprite,
     animation::animation::Animation,
     text::text::TextHolder,
@@ -34,7 +33,7 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
                 view: &texture_view,
                 resolve_target: None,
                 ops: Operations {
-                    load: LoadOp::Clear(color::Color::to_wgpu(render_state.color.unwrap_or_else(|| color::Color::by_option(ColorOption::White)))),
+                    load: LoadOp::Clear(Color::to_wgpu(render_state.color.unwrap_or_else(|| Color::by_option(ColorOption::White)))),
                     store: StoreOp::Store
                 },
             })],
@@ -62,6 +61,9 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
                 let animation: Option<&Animation> = components.iter().find_map(
                     |component| component.as_any().downcast_ref::<Animation>()
                 );
+                let color: Option<&Color> = components.iter().find_map(
+                    |component| component.as_any().downcast_ref::<Color>()
+                );
 
                 if let Some(animation) = animation {
                     if !animation.playing_stack.is_empty() {
@@ -73,6 +75,7 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
                             None,
                             transform,
                             Some(animation),
+                            color,
                             &camera2d
                         );
 
@@ -92,6 +95,7 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
                         None,
                         transform,
                         animation,
+                        color,
                         &camera2d
                     );
 
@@ -107,6 +111,7 @@ pub(crate) fn on_success(render_state: &mut RenderState, world: &mut World, surf
                         Some(shape),
                         transform,
                         None,
+                        color,
                         &camera2d
                     );
 

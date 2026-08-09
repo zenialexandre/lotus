@@ -1,6 +1,6 @@
 [package]
 name = "lotus_engine"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["Alexandre Zeni <zenialexandre123@gmail.com>"]
 description = "Lotus is a game engine with the main focus of being easy-to-use and straight forward on developing 2D games."
 license = "MPL-2.0"
@@ -16,8 +16,7 @@ gilrs = "0.11.1"
 kira = "0.12.2"
 cpal = "0.18.1"
 wgpu_text = "30.0.0"
-cgmath = "0.18.0"
-#nalgebra = "0.35.0" - TODO -> from cgmath (deprecated) to nalgebra
+glam = "0.33.3"
 image = { version = "0.25.6", features = ["png", "jpeg"] }
 pollster = "1.0.1"
 bytemuck = { version = "1.25.2", features = [ "derive" ] }
