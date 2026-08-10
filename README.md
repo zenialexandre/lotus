@@ -1,3 +1,5 @@
+
+
 <h1>
   <p align="center">
     <img src="https://github.com/user-attachments/assets/362d4579-c524-40c8-b1b1-fe4ddac92d2f" alt="Lotus logo" width="256">
@@ -151,7 +153,7 @@ cargo init --bin
 - Add the engine as a depedency on your Cargo.toml:
 ```rust
 [dependencies]
-lotus_engine = "0.1.x"
+lotus_engine = "0.3.6"
 ```
 
 - You may use the following command to get the latest version of the crate:
