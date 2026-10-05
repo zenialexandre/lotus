@@ -12,7 +12,7 @@
 
 - Implementing error handling flow.
 
-- UI creations related system.
+- UI creations related system - `taffy`.
 
 - Custom shaders support.
 
