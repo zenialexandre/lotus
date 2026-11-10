@@ -41,8 +41,8 @@ impl Animation {
         return self.sprite_sheets.get_mut(&title);
     }
 
-    /// Returns the current animation playing on top of the stack.
-    pub fn get_playing_animation_now(&self) -> Option<&SpriteSheet> {
+    /// Returns the current sprite sheet on top of the stack.
+    pub fn get_current_animation_sprite_sheet(&self) -> Option<&SpriteSheet> {
         for title in &self.playing_stack {
             if let Some(sprite_sheet) = self.sprite_sheets.get(title) {
                 if sprite_sheet.animation_state == AnimationState::Playing {
@@ -53,10 +53,34 @@ impl Animation {
         return None;
     }
 
+    /// Returns the current animation title playing on top of the stack.
+    pub fn get_current_animation_title(&self) -> Option<&String> {
+        for title in &self.playing_stack {
+            if let Some(sprite_sheet) = self.sprite_sheets.get(title) {
+                if sprite_sheet.animation_state == AnimationState::Playing {
+                    return Some(&title);
+                }
+            }
+        }
+        return None;
+    }
+
+    /// Returns the current animation stack playing on top of the stack.
+    pub fn get_current_animation_stack(&self) -> Option<&HashMap<String, SpriteSheet>> {
+        for title in &self.playing_stack {
+            if let Some(sprite_sheet) = self.sprite_sheets.get(title) {
+                if sprite_sheet.animation_state == AnimationState::Playing {
+                    return Some(&self.sprite_sheets);
+                }
+            }
+        }
+        return None;
+    }
+
     /// Plays the animation of a certain sprite sheet.
     pub fn play(&mut self, title: String) {
         if
-            self.get_playing_animation_now().is_some() &&
+            self.get_current_animation_sprite_sheet().is_some() &&
             self.playing_stack.front().map(|t| t == &title).unwrap_or(false)
         {
             return;
