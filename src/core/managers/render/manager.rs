@@ -511,7 +511,7 @@ impl RenderState {
         camera2d: &Camera2d,
         color: Option<&Color>
     ) {
-        let sprite_sheet: Option<&SpriteSheet> = animation.get_playing_animation_now();
+        let sprite_sheet: Option<&SpriteSheet> = animation.get_current_animation_sprite_sheet();
 
         if let Some(sprite_sheet) = sprite_sheet {
             let texture: Arc<texture::texture::Texture> = {
