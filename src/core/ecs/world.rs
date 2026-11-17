@@ -117,12 +117,12 @@ impl World {
     }
 
     /// Spawn a new entity on the world with its component.
-    pub(crate) fn spawn_singular(&mut self, render_state: &mut RenderState, component: Box<dyn Component>) -> Entity {
+    pub fn spawn_singular(&mut self, render_state: &mut RenderState, component: Box<dyn Component>) -> Entity {
         return self.spawn(render_state, vec![component]);
     }
 
     /// Spawn a new entity on the world with its components.
-    pub(crate) fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
+    pub fn spawn(&mut self, render_state: &mut RenderState, components: Vec<Box<dyn Component>>) -> Entity {
         let entity: Entity = Entity(Uuid::new_v4());
         let mut components_refs: Vec<AtomicRefCell<Box<dyn Component>>> = Vec::with_capacity(components.len());
 
@@ -270,6 +270,16 @@ impl World {
         } else {
             return None;
         }
+    }
+
+    /// Returns a specific entity by its identifier.
+    ///
+    /// Unoptimized function, use at your own risk.
+    pub fn get_entity(&self, uuid: Uuid) -> Option<&Entity> {
+        return self.archetypes.values()
+            .find_map(|archetype| {
+               archetype.entities.iter().find(|entity| entity.0 == uuid)
+            });
     }
 
     /// Returns a specific component from an entity.
